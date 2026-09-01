@@ -1,14 +1,13 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { IconBoxes } from '@/components/Icon';
 import { ThumbRow } from '@/components/ThumbRow';
 import { Empty, Loading, Screen, SectionLabel } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
-import { useThumbUrls } from '@/features/item/thumbs';
-import { useAllItems } from '@/features/search/api';
 import { useLocations } from '@/features/storage/api';
+import { useCoverStacks } from '@/features/storage/covers';
 import { LocationSheet } from '@/features/storage/LocationSheet';
 import { useT } from '@/lib/i18n';
 import { useTheme, type, radius, space } from '@/lib/theme';
@@ -29,27 +28,13 @@ export default function PlacesTab() {
   const locations = useLocations(activeId);
 
   /**
-   * 장소마다 대표 사진 한 장.
+   * 장소마다 **여러 장**을 겹쳐 보여 준다.
    *
-   * 이름과 개수만 있으면 줄이 커다란 빈 판처럼 보인다. 사진이 있으면 "아, 저기" 하고
-   * 바로 알아본다 — 이 앱에서 장소를 기억하는 방식은 이름이 아니라 그 안의 물건이다.
-   *
-   * ⚠ 새 질의를 만들지 않는다. 찾기 탭이 쓰는 `useAllItems` 와 **같은 캐시 키**라
-   *   이미 받아 둔 데이터를 그대로 읽는다 (네트워크 비용 0).
+   * ⚠ 예전에는 안의 물건 사진 **한 장**을 썼는데, 그게 그 장소의 대표 사진처럼
+   *   읽혔다(사용자 보고 2026-09-02). 장소에는 제 사진이 없다 — 빌려 온 것임이
+   *   보여야 한다. 이동 화면과 **같은 규칙·같은 컴포넌트**를 쓴다.
    */
-  const items = useAllItems(activeId);
-  const thumbs = useThumbUrls();
-  const coverOf = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const it of items.data ?? []) {
-      if (it.thumb_path && !m.has(it.location_id)) m.set(it.location_id, it.thumb_path);
-    }
-    return m;
-  }, [items.data]);
-
-  useEffect(() => {
-    thumbs.ensure([...coverOf.values()]);
-  }, [coverOf, thumbs]);
+  const { cover, thumbs } = useCoverStacks(activeId);
 
   /**
    * ⚠ 여기 있던 인라인 입력칸을 **공용 시트**(LocationSheet)로 바꿨다 (2026-09-01).
@@ -118,7 +103,7 @@ export default function PlacesTab() {
                 key={l.id}
                 title={l.name}
                 subtitle={t.places.summary(l.container_count, l.item_count)}
-                thumb={thumbs.get(coverOf.get(l.id))}
+                stack={{ paths: cover.loc.get(l.id), get: thumbs.get }}
                 fallback={<IconBoxes color={c.textFaint} size={20} />}
                 onPress={() => router.push(`/location/${l.id}`)}
               />

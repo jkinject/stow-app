@@ -2,6 +2,7 @@ import { Image, type ImageSource } from 'expo-image';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ThumbStack } from '@/components/ThumbStack';
 import { IMAGE_CACHE_POLICY } from '@/features/item/thumbs';
 import { useTheme, type, radius, space, tracking } from '@/lib/theme';
 
@@ -20,6 +21,7 @@ export function ThumbRow({
   caption,
   meta,
   thumb,
+  stack,
   fallback,
   onPress,
   onLongPress,
@@ -33,6 +35,14 @@ export function ThumbRow({
   meta?: ReactNode;
   /** ⚠ `{ uri, cacheKey }` 통째로 — 자세한 이유는 features/item/thumbs.ts 참고 */
   thumb?: ImageSource;
+  /**
+   * 사진 **여러 장**을 겹쳐 보여 줄 때. 넘기면 `thumb` 대신 이것이 그려진다.
+   *
+   * ⚠ 물건에는 쓰지 않는다. 물건 사진은 그 물건의 진짜 사진이라 한 장이 맞다.
+   *   장소·박스처럼 **제 사진이 없어 안의 것을 빌려 오는** 줄에만 쓴다 — 한 장만
+   *   놓으면 그게 대표 사진처럼 읽힌다(ThumbStack 주석 참고).
+   */
+  stack?: { paths?: string[]; get: (p?: string | null) => ImageSource | undefined };
   /**
    * 사진이 없을 때 자리에 넣을 것. 기본은 **제목 첫 글자**다.
    *
@@ -55,20 +65,24 @@ export function ThumbRow({
         pressed && onPress ? { opacity: 0.7 } : null,
       ]}
     >
-      <View style={[st.thumb, { backgroundColor: c.sunk }]}>
-        {thumb ? (
-          <Image
-            source={thumb}
-            style={st.thumbImg}
-            contentFit="cover"
-            transition={120}
-            cachePolicy={IMAGE_CACHE_POLICY}
-            recyclingKey={thumb.cacheKey}
-          />
-        ) : (
-          (fallback ?? <Text style={[st.thumbFallback, { color: c.textFaint }]}>{title.slice(0, 1)}</Text>)
-        )}
-      </View>
+      {stack ? (
+        <ThumbStack paths={stack.paths} get={stack.get} size={THUMB} fallback={fallback} />
+      ) : (
+        <View style={[st.thumb, { backgroundColor: c.sunk }]}>
+          {thumb ? (
+            <Image
+              source={thumb}
+              style={st.thumbImg}
+              contentFit="cover"
+              transition={120}
+              cachePolicy={IMAGE_CACHE_POLICY}
+              recyclingKey={thumb.cacheKey}
+            />
+          ) : (
+            (fallback ?? <Text style={[st.thumbFallback, { color: c.textFaint }]}>{title.slice(0, 1)}</Text>)
+          )}
+        </View>
+      )}
 
       <View style={st.main}>
         <Text style={[st.title, { color: c.text }]} numberOfLines={1}>
@@ -91,6 +105,9 @@ export function ThumbRow({
   );
 }
 
+/** 썸네일 한 변. 겹쳐 놓을 때도 같은 크기라야 다른 목록과 줄이 맞는다 */
+const THUMB = 52;
+
 const st = StyleSheet.create({
   row: {
     borderRadius: radius.sm,
@@ -100,8 +117,8 @@ const st = StyleSheet.create({
     gap: space.md,
   },
   thumb: {
-    width: 52,
-    height: 52,
+    width: THUMB,
+    height: THUMB,
     borderRadius: radius.sm,
     overflow: 'hidden',
     alignItems: 'center',
