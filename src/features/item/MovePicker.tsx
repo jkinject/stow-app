@@ -10,6 +10,20 @@ import { useTheme, type, radius } from '@/lib/theme';
 
 export type MoveTarget = { containerId: string } | { locationId: string };
 
+const HEX6 = /^#[0-9a-fA-F]{6}$/;
+
+/**
+ * 강조색에 투명도를 붙여 **옅게 깔 배경**을 만든다.
+ *
+ * ⚠ 팔레트의 `accent` 는 라이트·다크 둘 다 `#RRGGBB` 6자리다(lib/theme.ts). 누가
+ *   rgba() 나 8자리로 바꾸면 `#RRGGBBAA` + `AA` 가 되어 **깨진 색**이 나온다.
+ *   그때는 조용히 카드색으로 떨어진다 — 강조가 사라지는 것보다 알아볼 수 없는 줄이
+ *   그려지는 쪽이 나쁘다.
+ */
+function tinted(accent: string, alpha: string, fallback: string) {
+  return HEX6.test(accent) ? accent + alpha : fallback;
+}
+
 /**
  * 물건을 옮길 곳 고르기.
  *
@@ -201,7 +215,14 @@ export function MovePicker({
                     }}
                     style={({ pressed }) => [
                       st.row,
-                      { backgroundColor: c.card },
+                      {
+                        // 물건이 든 장소는 옅게, 정확한 자리(박스/직속)는 진하게 —
+                        // 두 단계로 나눠야 "이 장소 안, 그중 이 칸" 이 한눈에 읽힌다
+                        backgroundColor: holdsCurrent
+                          ? tinted(c.accent, '1F', c.card)
+                          : c.card,
+                        borderColor: holdsCurrent ? c.accent : 'transparent',
+                      },
                       pressed && { opacity: 0.6 },
                     ]}
                   >
@@ -318,7 +339,6 @@ export function MovePicker({
 function Target({
   label,
   sub,
-  strong,
   here,
   busy,
   onPress,
@@ -326,7 +346,6 @@ function Target({
   label: string;
   /** 없으면 한 줄짜리 줄이 된다 (장소 직속 항목) */
   sub?: string;
-  strong?: boolean;
   here: boolean;
   busy: boolean;
   onPress: () => void;
@@ -339,13 +358,15 @@ function Target({
       disabled={here || busy}
       style={({ pressed }) => [
         st.row,
-        { backgroundColor: c.card },
-        here && { borderColor: c.accent },
+        {
+          backgroundColor: here ? tinted(c.accent, '33', c.card) : c.card,
+          borderColor: here ? c.accent : 'transparent',
+        },
         (pressed || here || busy) && { opacity: here ? 1 : 0.6 },
       ]}
     >
       <View style={st.rowMain}>
-        <Text style={[strong ? st.rowTitleStrong : st.rowTitle, { color: c.text }]} numberOfLines={1}>
+        <Text style={[st.rowTitle, { color: c.text }]} numberOfLines={1}>
           {label}
         </Text>
         {!!sub && (
@@ -376,6 +397,10 @@ const st = StyleSheet.create({
   indent: { paddingLeft: 20 },
   row: {
     borderRadius: radius.sm,
+    // ⚠ 강조할 때만 borderWidth 를 주면 그 줄만 2px 커져 목록이 흔들린다.
+    //   자리를 항상 잡아 두고 **색만** 바꾼다.
+    borderWidth: 1,
+    borderColor: 'transparent',
     paddingHorizontal: 14,
     paddingVertical: 12,
     flexDirection: 'row',
