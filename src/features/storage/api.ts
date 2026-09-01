@@ -110,6 +110,24 @@ export function useContainers(householdId: string | null, locationId: string) {
   });
 }
 
+/**
+ * 박스가 생겼을 때 다시 읽어야 하는 목록들.
+ *
+ * ⚠ 예전에는 `storageKeys.containers(hh, locationId)` **하나만** 비웠다. 그래서
+ *   장소 화면에서 박스를 만든 뒤 물건 이동 화면(`useAllContainers`)을 열면 방금 만든
+ *   박스가 안 보였다 — staleTime 30초 동안. 장소 목록의 박스 개수도 옛 값이었다.
+ *   목록이 여러 개면 만든 곳만 고쳐 놓고 끝내면 안 된다.
+ */
+function invalidateContainerViews(
+  qc: ReturnType<typeof useQueryClient>,
+  householdId: string,
+  locationId: string,
+) {
+  void qc.invalidateQueries({ queryKey: storageKeys.containers(householdId, locationId) });
+  void qc.invalidateQueries({ queryKey: ['all-containers'] });  // 이동 화면의 목적지 목록
+  void qc.invalidateQueries({ queryKey: storageKeys.locations(householdId) }); // 박스 개수
+}
+
 /** 컨테이너 생성. qr_token 은 DB default 로 자동 발급된다 (AC10) */
 export function useCreateContainer(householdId: string, locationId: string) {
   const qc = useQueryClient();
@@ -123,8 +141,30 @@ export function useCreateContainer(householdId: string, locationId: string) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: storageKeys.containers(householdId, locationId) }),
+    onSuccess: () => invalidateContainerViews(qc, householdId, locationId),
+  });
+}
+
+/**
+ * 장소를 **인자로 받는** 박스 생성.
+ *
+ * 위의 `useCreateContainer` 는 장소 하나에 묶여 있어, 여러 장소가 한 화면에 나열되는
+ * 이동 화면에서는 쓸 수 없다 — 훅을 반복문 안에서 부를 수 없기 때문이다.
+ */
+export function useCreateContainerIn(householdId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ locationId, name }: { locationId: string; name: string }) => {
+      if (!householdId) throw new Error('가구 정보가 없습니다.');
+      const { data, error } = await supabase
+        .from('containers')
+        .insert({ household_id: householdId, location_id: locationId, name: name.trim() })
+        .select('id, name')
+        .single();
+      if (error) throw error;
+      return data as { id: string; name: string };
+    },
+    onSuccess: (_d, v) => invalidateContainerViews(qc, householdId!, v.locationId),
   });
 }
 

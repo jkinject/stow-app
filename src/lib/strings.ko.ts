@@ -191,6 +191,8 @@ export const KO = {
     moving: '옮기는 중…',
     moveFailed: '옮기지 못했습니다',
     moveTitle: '어디로 옮길까요?',
+    addBoxHere: '+ 여기에 박스 만들기',
+    addBoxHint: '만들면 이 물건이 바로 그 박스로 들어갑니다.',
     moveHere: '지금 여기',
     moveToLocation: '박스에 넣지 않고 이 장소에 두기',
     noPlaces: '장소가 없습니다',

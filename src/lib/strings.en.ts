@@ -174,6 +174,8 @@ export const EN: Dict = {
     moving: 'Moving…',
     moveFailed: "Couldn't move it",
     moveTitle: 'Move it where?',
+    addBoxHere: '+ New box here',
+    addBoxHint: 'The item goes straight into it.',
     moveHere: 'Here now',
     moveToLocation: 'Keep it here, without a box',
     noPlaces: 'No places',

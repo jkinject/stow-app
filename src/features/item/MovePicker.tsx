@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, Empty, Loading } from '@/components/ui';
-import { useAllContainers, useLocations } from '@/features/storage/api';
+import { Button, Empty, Field, Loading } from '@/components/ui';
+import { useAllContainers, useCreateContainerIn, useLocations } from '@/features/storage/api';
 import { LocationSheet } from '@/features/storage/LocationSheet';
 import { useT } from '@/lib/i18n';
 import { useTheme, type, radius } from '@/lib/theme';
@@ -63,6 +63,35 @@ export function MovePicker({
    */
   const [creating, setCreating] = useState(false);
 
+  /**
+   * ⚠⚠ 두 번째 막다른 길 (2026-09-01 사용자 보고).
+   *
+   *   이 화면에는 **장소를 만드는 길만** 있었다. 박스가 하나도 없는 장소를 고르면
+   *   할 수 있는 건 "박스에 넣지 않고 이 장소에 두기" 뿐이다. 물건을 박스에 담으려고
+   *   들어온 사람이 박스를 만들 수 없었다 — 나가서 장소 화면을 찾아 들어가 박스를
+   *   만들고 다시 돌아와야 했다.
+   *
+   *   만든 박스로 **바로 옮긴다.** 이 화면은 원래 한 번 누르면 옮기는 화면이고,
+   *   박스를 만드는 이유가 곧 "여기에 넣겠다" 이기 때문이다. 이름을 잘못 지었다면
+   *   박스 상세에서 고치면 된다 — 되돌리는 비용이 작다.
+   */
+  const [boxFor, setBoxFor] = useState<string | null>(null);
+  const [boxName, setBoxName] = useState('');
+  const createBox = useCreateContainerIn(householdId);
+
+  async function onAddBox(locationId: string) {
+    const n = boxName.trim();
+    if (!n || createBox.isPending) return;
+    try {
+      const row = await createBox.mutateAsync({ locationId, name: n });
+      setBoxName('');
+      setBoxFor(null);
+      onPick({ containerId: row.id });
+    } catch (e) {
+      Alert.alert(t.location.boxAddFailed, e instanceof Error ? e.message : t.common.tryAgain);
+    }
+  }
+
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent={false}>
       <View style={[st.root, { backgroundColor: c.bg, paddingTop: insets.top }]}>
@@ -107,6 +136,43 @@ export function MovePicker({
                       />
                     </View>
                   ))}
+
+                  {/* 박스를 만드는 길. 장소마다 따로 둔다 — 어느 장소에 만드는지가
+                      곧 그 물건이 갈 자리라, 목록 맨 아래 버튼 하나로는 알 수 없다. */}
+                  <View style={st.indent}>
+                    {boxFor === loc.id ? (
+                      <View style={st.newBox}>
+                        <Field
+                          value={boxName}
+                          onChangeText={setBoxName}
+                          placeholder={t.location.boxPlaceholder}
+                          autoFocus
+                          onSubmitEditing={() => onAddBox(loc.id)}
+                          returnKeyType="done"
+                        />
+                        <Button
+                          label={t.common.add}
+                          onPress={() => onAddBox(loc.id)}
+                          busy={createBox.isPending}
+                        />
+                        <Text style={[st.hint, { color: c.textFaint }]}>{t.item.addBoxHint}</Text>
+                      </View>
+                    ) : (
+                      <Pressable
+                        onPress={() => {
+                          setBoxName('');
+                          setBoxFor(loc.id);
+                        }}
+                        disabled={busy}
+                        hitSlop={8}
+                        style={st.addMore}
+                      >
+                        <Text style={[st.addMoreText, { color: c.accentText }]}>
+                          {t.item.addBoxHere}
+                        </Text>
+                      </Pressable>
+                    )}
+                  </View>
                 </View>
               );
             })}
@@ -199,5 +265,7 @@ const st = StyleSheet.create({
   here: { fontSize: type.caption, fontWeight: '700' },
   rescue: { paddingHorizontal: 20, gap: 4 },
   addMore: { alignSelf: 'flex-start', paddingVertical: 8 },
+  newBox: { gap: 10, paddingVertical: 4 },
+  hint: { fontSize: type.caption },
   addMoreText: { fontSize: type.body, fontWeight: '600' },
 });
