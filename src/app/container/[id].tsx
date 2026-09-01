@@ -74,7 +74,16 @@ export default function ContainerDetail() {
   // 찾기 탭과 같은 2열 격자. 한 박스의 내용물은 많아야 수십 개라
   // FlatList 없이 감싸기(flexWrap)로 충분하다 — Screen 의 ScrollView 와 중첩되지 않는다.
   const win = useWindowDimensions();
-  const cardW = (win.width - 20 * 2 - 10) / 2;
+  /**
+   * 한 줄에 두 장. 남는 폭을 정확히 반으로 나눈다.
+   *
+   * ⚠⚠ 이 식은 **아래 스타일과 같은 값을 봐야 한다** (body 의 좌우 여백, list 의 gap).
+   *   예전에는 여기에 20 과 10 을 **숫자로 베껴 두고** 스타일에는 따로 적어 뒀다.
+   *   그래서 간격을 척도에 맞추며 스타일의 gap 만 10→12 로 바뀌자, 카드 두 장이
+   *   1px 넘쳐서 **한 줄에 하나씩** 떨어졌다(2026-09-02 사용자 보고).
+   *   토큰을 직접 참조하면 두 값이 다시 어긋날 수 없다. 숫자를 적지 말 것.
+   */
+  const cardW = (win.width - space.xl * 2 - space.md) / 2;
   // 박스도 모양이 제각각이라 사진이 있으면 찾기가 훨씬 쉽다 (사용자 요청)
   const boxPhoto = useItemPhotoUrl(container.data?.photo_path);
   const setPhoto = useSetPhoto('containers', containerId, activeId);

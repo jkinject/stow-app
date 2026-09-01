@@ -38,7 +38,16 @@ export default function LocationDetail() {
 
   // 박스와 낱개 물건 모두 찾기 탭과 같은 2열 격자로 통일한다
   const win = useWindowDimensions();
-  const cardW = (win.width - 20 * 2 - 10) / 2;
+  /**
+   * 한 줄에 두 장. 남는 폭을 정확히 반으로 나눈다.
+   *
+   * ⚠⚠ 이 식은 **아래 스타일과 같은 값을 봐야 한다** (body 의 좌우 여백, list 의 gap).
+   *   예전에는 여기에 20 과 10 을 **숫자로 베껴 두고** 스타일에는 따로 적어 뒀다.
+   *   그래서 간격을 척도에 맞추며 스타일의 gap 만 10→12 로 바뀌자, 카드 두 장이
+   *   1px 넘쳐서 **한 줄에 하나씩** 떨어졌다(2026-09-02 사용자 보고).
+   *   토큰을 직접 참조하면 두 값이 다시 어긋날 수 없다. 숫자를 적지 말 것.
+   */
+  const cardW = (win.width - space.xl * 2 - space.md) / 2;
 
   // 박스에 안 들어간 낱개 물건도 박스 안 물건과 똑같이 보여야 한다
   const thumbs = useThumbUrls();

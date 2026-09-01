@@ -43,8 +43,10 @@ import { useTheme, type, radius, overlay, space } from '@/lib/theme';
  *   가상화는 FlatList 가 기본으로 해 주므로 별도 윈도잉 코드가 필요 없다.
  */
 
-const GAP = 10;
-const PADDING = 14;
+// ⚠ 이 두 값은 격자 스타일과 cardW 계산이 **함께** 본다. 하나만 고치면 카드가
+//   넘쳐서 한 줄에 하나씩 떨어진다 — 박스·장소 상세에서 실제로 그랬다.
+const GAP = space.md;
+const PADDING = space.lg;
 /** 한 번에 더 그릴 개수. 2열이므로 짝수여야 마지막 줄이 어긋나지 않는다 */
 const PAGE = 24;
 
