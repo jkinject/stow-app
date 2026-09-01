@@ -1,0 +1,35 @@
+{
+  "agents": [
+    {
+      "agent_id": "aarchitect-homestore-35101a4081ea8953",
+      "agent_type": "architect-homestore",
+      "started_at": "2026-08-27T15:16:12.573Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-08-27T15:23:20.484Z",
+      "duration_ms": 427911
+    },
+    {
+      "agent_id": "acritic-homestore-5e95476b57354539",
+      "agent_type": "critic-homestore",
+      "started_at": "2026-08-27T15:40:32.212Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-08-27T15:46:01.639Z",
+      "duration_ms": 329427
+    },
+    {
+      "agent_id": "acritic-iter2-9820d6e644c990fd",
+      "agent_type": "critic-iter2",
+      "started_at": "2026-08-27T15:44:22.528Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-08-27T15:52:12.715Z",
+      "duration_ms": 470187
+    }
+  ],
+  "total_spawned": 4,
+  "total_completed": 36,
+  "total_failed": 0,
+  "last_updated": "2026-09-01T07:07:49.300Z"
+}

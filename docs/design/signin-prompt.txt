@@ -1,0 +1,17 @@
+Mobile app sign-in screen UI design, portrait 9:19.5 phone mockup, single screen, high fidelity.
+
+App: "홈 스토어" (Home Store) — a Korean household inventory app that remembers where things are stored at home. Family members share one household; they photograph an item, put it in a box or a room, and later search by name to find it.
+
+Design a warm, calm, trustworthy first screen. It must feel like a home, not a warehouse or a fintech app.
+
+Composition (top to bottom):
+- Upper 45%: an illustrative hero. A cutaway view of a cozy home interior — a wooden shelf with labeled storage boxes, a few everyday objects visible inside (a bag, folded blankets, small bottles), soft daylight from a window. Flat vector illustration with gentle shading, rounded shapes, no outlines. NOT isometric, NOT 3D render, NOT photographic.
+- Then a large Korean wordmark "홈 스토어" in a bold geometric sans, and one line of smaller muted Korean subtitle text below it.
+- Then a full-width primary button with generous corner radius, filled in deep indigo blue.
+- A thin horizontal divider with a short label in the middle.
+- Then an email text field and a full-width outlined secondary button.
+- Generous whitespace between all groups.
+
+Color palette, use exactly: background #F1F3F8, card/surface #FFFFFF, primary button #2547C4 with white label, body text #14161F, muted text #3E445A. The illustration may add warm accents — muted terracotta, oak wood tone, sage green — but the blue stays the only saturated UI color.
+
+Style: modern Korean mobile app, clean, generous spacing, soft rounded corners, subtle soft shadow under the illustration. Realistic Korean text rendering. No lorem ipsum, no English placeholder text, no watermark, no device bezel, no browser chrome, no extra panels.

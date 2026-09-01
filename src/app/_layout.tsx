@@ -1,18 +1,126 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { QueryClientProvider } from '@tanstack/react-query';
+import {
+  DarkTheme,
+  DefaultTheme,
+  Stack,
+  ThemeProvider,
+  usePathname,
+  useRouter,
+  useSegments,
+} from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { useMyHouseholds } from '@/features/household/api';
+import { HouseholdProvider } from '@/features/household/context';
+import { AuthProvider, useAuth } from '@/lib/auth';
+import { I18nProvider } from '@/lib/i18n';
+import { ThemeChoiceProvider } from '@/lib/theme-context';
+import { queryClient } from '@/lib/query';
+import { useTheme } from '@/lib/theme';
 
-SplashScreen.preventAutoHideAsync();
+/**
+ * 로그인 전에 도착한 딥링크를 기억해 둔다 (R14).
+ *
+ * ⚠ 이게 없으면 QR 을 찍었을 때 앱이 잠겨 있던 사람은 **로그인 후 홈으로 떨어진다.**
+ *   찍은 박스가 뭐였는지 잊고 다시 찍으러 가야 한다. QR 의 요점이 "열어보지 않고 안다"
+ *   인데 그 요점이 로그인 상태에 따라 무너지는 셈이다.
+ *
+ * 모듈 스코프에 두는 이유: 리다이렉트 과정에서 화면이 언마운트되므로 컴포넌트 state 로는
+ * 살아남지 못한다. 앱 인스턴스당 하나뿐인 값이라 모듈 변수가 맞다.
+ */
+let pendingDeepLink: string | null = null;
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+/** 로그인 전에도 붙잡아 둘 가치가 있는 경로인가 — 지금은 QR 착지점뿐이다 */
+function isResumable(path: string): boolean {
+  return /^\/c\/[^/]+$/.test(path);
+}
+
+/**
+ * 라우트 가드.
+ * 세션이 없으면 로그인으로, 세션은 있으나 가구가 없으면 온보딩으로 보낸다 (AC25/AC30).
+ * 로그인 전에 딥링크로 들어왔다면 그 목적지를 기억해 두었다가 준비된 뒤 이어서 보낸다.
+ */
+/** 상태바와 네비게이션 테마를 사용자의 테마 선택에 맞춘다 */
+function Chrome({ children }: { children: React.ReactNode }) {
+  const { isDark } = useTheme();
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
+    <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      {children}
     </ThemeProvider>
+  );
+}
+
+function Guard({ children }: { children: React.ReactNode }) {
+  const { session, loading } = useAuth();
+  const households = useMyHouseholds();
+  const { c } = useTheme();
+  const segments = useSegments();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const authed = !!session;
+  // enabled:false 일 때 isLoading 은 true 로 남는다. isPending+fetchStatus 로 실제 상태를 본다.
+  const householdsReady = !authed || households.isFetched;
+  const hasHousehold = (households.data?.length ?? 0) > 0;
+  const route = segments[0] ?? 'index';
+
+  useEffect(() => {
+    if (loading || !householdsReady) return;
+
+    if (!authed && route !== 'sign-in' && route !== 'auth-callback') {
+      // 로그인으로 밀어내기 전에 목적지를 붙잡아 둔다
+      if (isResumable(pathname)) pendingDeepLink = pathname;
+      router.replace('/sign-in');
+    } else if (authed && !hasHousehold && route !== 'onboarding') {
+      // 가구가 없으면 QR 을 해석할 수 없다. 목적지는 그대로 두고 온보딩부터 시킨다.
+      if (isResumable(pathname)) pendingDeepLink = pathname;
+      router.replace('/onboarding');
+    } else if (authed && hasHousehold && (route === 'sign-in' || route === 'onboarding')) {
+      const resume = pendingDeepLink;
+      pendingDeepLink = null; // 한 번만 쓴다 — 안 지우면 다음 로그인 때도 그 박스로 튄다
+      // typedRoutes 는 런타임에 만들어진 경로 문자열을 알 수 없다. isResumable 이
+      // 형태를 이미 검증했으므로 여기서만 좁혀 준다.
+      router.replace((resume ?? '/') as '/');
+    }
+  }, [authed, hasHousehold, householdsReady, loading, pathname, route, router]);
+
+  if (loading || !householdsReady) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: c.bg,
+        }}
+      >
+        <ActivityIndicator color={c.accent} />
+      </View>
+    );
+  }
+  return <>{children}</>;
+}
+
+export default function RootLayout() {
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <I18nProvider>
+      <ThemeChoiceProvider>
+      <AuthProvider>
+        <Chrome>
+          <HouseholdProvider>
+            <Guard>
+              <Stack screenOptions={{ headerShown: false }} />
+            </Guard>
+          </HouseholdProvider>
+        </Chrome>
+      </AuthProvider>
+      </ThemeChoiceProvider>
+      </I18nProvider>
+    </QueryClientProvider>
   );
 }

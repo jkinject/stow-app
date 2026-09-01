@@ -1,0 +1,331 @@
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Alert, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+
+import { Button, Empty, Field, Loading, Screen, SectionLabel } from '@/components/ui';
+import { useHousehold } from '@/features/household/context';
+import { useAudit } from '@/features/history/api';
+import { Fab } from '@/components/Fab';
+import { ItemCard } from '@/features/item/ItemCard';
+import { useThumbUrls } from '@/features/item/thumbs';
+import {
+  useContainers,
+  useCreateContainer,
+  useDeleteContainer,
+  useDeleteLocation,
+  useLocations,
+  useUpdateLocation,
+  useLooseItems,
+} from '@/features/storage/api';
+import { useT } from '@/lib/i18n';
+import { relTime } from '@/lib/time';
+import { useTheme, type, radius } from '@/lib/theme';
+
+export default function LocationDetail() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const locationId = String(id);
+  const { c } = useTheme();
+  const t = useT();
+  const router = useRouter();
+  const { activeId } = useHousehold();
+
+  const locations = useLocations(activeId);
+  const location = (locations.data ?? []).find((l) => l.id === locationId);
+
+  const containers = useContainers(activeId, locationId);
+  const loose = useLooseItems(locationId);
+  const audit = useAudit('locations', locationId);
+
+  // 박스와 낱개 물건 모두 찾기 탭과 같은 2열 격자로 통일한다
+  const win = useWindowDimensions();
+  const cardW = (win.width - 20 * 2 - 10) / 2;
+
+  // 박스에 안 들어간 낱개 물건도 박스 안 물건과 똑같이 보여야 한다
+  const thumbs = useThumbUrls();
+  useEffect(() => {
+    // 박스와 낱개 물건의 썸네일을 **한 번에** 서명한다. 두 번 나눠 부르면 요청이 두 배가 된다.
+    thumbs.ensure([
+      ...(containers.data ?? []).map((ct) => ct.thumb_path),
+      ...(loose.data ?? []).map((it) => it.thumb_path),
+    ]);
+  }, [containers.data, loose.data, thumbs]);
+  const createContainer = useCreateContainer(activeId ?? '', locationId);
+  const deleteContainer = useDeleteContainer(activeId ?? '', locationId);
+  const deleteLocation = useDeleteLocation(activeId ?? '');
+  const updateLocation = useUpdateLocation(locationId);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState('');
+
+  async function onAdd() {
+    const n = name.trim();
+    if (!n) return;
+    try {
+      await createContainer.mutateAsync(n);
+      setName('');
+      // 연속으로 박스를 만드는 경우가 많다 ("1번 박스"~"10번 박스"). 입력창을 닫지 않는다.
+    } catch (e) {
+      Alert.alert(t.location.boxAddFailed, e instanceof Error ? e.message : t.common.tryAgain);
+    }
+  }
+
+  function onContainerLongPress(cid: string, cname: string, itemCount: number) {
+    Alert.alert(cname, itemCount > 0 ? t.location.itemsInside(itemCount) : t.location.isEmpty, [
+      {
+        // ⚠ 예전엔 여기서 `Alert.prompt?.()` 를 불렀는데 **Alert.prompt 는 iOS 전용**이라
+        //   안드로이드에서는 옵셔널 체이닝에 걸려 조용히 아무 일도 하지 않았다.
+        //   편집은 박스 상세 화면 한 곳에서만 한다 — 두 곳에 두면 한쪽만 고쳐진다.
+        text: t.location.renameOrNote,
+        onPress: () => router.push(`/container/${cid}`),
+      },
+      {
+        text: t.common.delete,
+        style: 'destructive',
+        onPress: () =>
+          Alert.alert(
+            t.location.deleteBoxTitle,
+            itemCount > 0
+              ? t.location.deleteBoxWithItems(itemCount, location?.name ?? '')
+              : t.location.deleteBoxEmpty,
+            [
+              { text: t.common.cancel, style: 'cancel' },
+              {
+                text: t.common.delete,
+                style: 'destructive',
+                onPress: async () => {
+                  try {
+                    await deleteContainer.mutateAsync(cid);
+                    loose.refetch();
+                  } catch (e) {
+                    Alert.alert(t.location.deleteFailed, e instanceof Error ? e.message : t.common.tryAgain);
+                  }
+                },
+              },
+            ],
+          ),
+      },
+      { text: t.common.close, style: 'cancel' },
+    ]);
+  }
+
+  function onDeleteLocation() {
+    Alert.alert(t.location.deleteLocationTitle, t.location.deleteLocationBody, [
+      { text: t.common.cancel, style: 'cancel' },
+      {
+        text: t.common.delete,
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteLocation.mutateAsync(locationId);
+            router.back();
+          } catch (e) {
+            // 트리거가 몇 개 남았는지 알려준다 — 그 메시지를 그대로 보여준다
+            Alert.alert(t.location.deleteLocationBlocked, e instanceof Error ? e.message : t.common.tryAgain);
+          }
+        },
+      },
+    ]);
+  }
+
+  const cs = containers.data ?? [];
+  const ls = loose.data ?? [];
+
+  return (
+    <Screen
+      back
+      /* ＋ 는 앱 전체에서 **물건 등록** 한 가지 뜻이다.
+         박스 만들기는 "박스" 섹션 제목 옆에 남는다 — 구조를 만드는 일이라 성격이 다르다. */
+      float={
+        <Fab
+          onPress={() =>
+            router.push({
+              pathname: '/add/[target]',
+              params: { target: locationId, loose: '1' },
+            })
+          }
+        />
+      }
+    >
+      <View style={st.body}>
+        {/* 박스 상세와 같은 카드 형태.
+            ⚠ 장소에는 사진 컬럼이 없어(items·containers 에만 있다) 사진 자리는 비운다.
+            넣으려면 마이그레이션이 필요하다. */}
+        <View style={[st.card, { backgroundColor: c.card }]}>
+          <View style={st.cardTitleRow}>
+            <Text style={[st.cardTitle, { color: c.text }]} numberOfLines={3}>
+              {location?.name ?? ''}
+            </Text>
+            <Pressable onPress={() => setSettingsOpen((v) => !v)} hitSlop={12}>
+              <Text style={[st.gear, { color: c.accentText }]}>
+                {settingsOpen ? t.common.close : '⚙'}
+              </Text>
+            </Pressable>
+          </View>
+          {audit.data && (
+            <Text style={[st.audit, { color: c.textFaint }]}>
+              {t.item.editedBy(
+                audit.data.updater?.display_name ?? t.item.formerMember,
+                relTime(audit.data.updated_at, t),
+              )}
+            </Text>
+          )}
+        </View>
+        {settingsOpen && location?.name && (
+          <LocationSettings
+            initialName={location.name}
+            initialNote={location.note ?? ''}
+            busy={updateLocation.isPending}
+            onSave={async (patch) => {
+              try {
+                await updateLocation.mutateAsync(patch);
+                setSettingsOpen(false);
+              } catch (e) {
+                Alert.alert(t.item.saveFailed, e instanceof Error ? e.message : t.common.tryAgain);
+              }
+            }}
+            onDelete={onDeleteLocation}
+          />
+        )}
+
+        <SectionLabel
+          action={
+            <Pressable onPress={() => setAdding((v) => !v)} hitSlop={12}>
+              <Text style={[st.addBtn, { color: c.accentText }]}>{adding ? t.common.done : t.location.addBox}</Text>
+            </Pressable>
+          }
+        >
+          {t.location.boxSection(cs.length)}
+        </SectionLabel>
+        {adding && (
+          <View style={st.addBox}>
+            <Field
+              value={name}
+              onChangeText={setName}
+              placeholder={t.location.boxPlaceholder}
+              autoFocus
+              onSubmitEditing={onAdd}
+              returnKeyType="next"
+              blurOnSubmit={false}
+            />
+            <Button label={t.common.add} onPress={onAdd} busy={createContainer.isPending} />
+            <Text style={[st.hint, { color: c.textFaint }]}>
+              {t.location.boxAddHint}
+            </Text>
+          </View>
+        )}
+        {containers.isLoading ? (
+          <Loading />
+        ) : cs.length === 0 ? (
+          <Empty
+            text={t.location.noBoxes}
+            hint={t.location.noBoxesHint}
+          />
+        ) : (
+          <View style={st.list}>
+            {cs.map((ct) => (
+              <ItemCard
+                key={ct.id}
+                name={ct.name}
+                subtitle={ct.item_count > 0 ? t.places.itemCount(ct.item_count) : t.common.empty}
+                width={cardW}
+                thumb={thumbs.get(ct.thumb_path)}
+                onPress={() => router.push(`/container/${ct.id}`)}
+                onLongPress={() => onContainerLongPress(ct.id, ct.name, ct.item_count)}
+              />
+            ))}
+          </View>
+        )}
+
+        {ls.length > 0 && (
+          <>
+            <SectionLabel>{t.location.looseSection(ls.length)}</SectionLabel>
+            <View style={st.list}>
+              {ls.map((it) => (
+                <ItemCard
+                  key={it.id}
+                  name={it.name}
+                  quantity={it.quantity}
+                  width={cardW}
+                  thumb={thumbs.get(it.thumb_path)}
+                  onPress={() => router.push(`/item/${it.id}`)}
+                />
+              ))}
+            </View>
+          </>
+        )}
+
+      </View>
+    </Screen>
+  );
+}
+
+/**
+ * 장소 설정 — 이름·메모 수정과 삭제.
+ * ⚠ 이름 변경 훅(`useRenameLocation`)은 있었지만 **부르는 화면이 없었다.**
+ *   기능이 없다는 사용자 보고의 원인이 이것이다. 박스 설정과 같은 모양으로 맞춘다.
+ */
+function LocationSettings({
+  initialName,
+  initialNote,
+  busy,
+  onSave,
+  onDelete,
+}: {
+  initialName: string;
+  initialNote: string;
+  busy: boolean;
+  onSave: (patch: { name: string; note: string | null }) => void;
+  onDelete: () => void;
+}) {
+  const { c } = useTheme();
+  const t = useT();
+  // 초기값은 마운트 때 한 번만. 재조회에 맞춰 되돌리면 입력하던 게 지워진다.
+  const [name, setName] = useState(initialName);
+  const [note, setNote] = useState(initialNote);
+
+  const trimmed = name.trim();
+  const nameOk = trimmed.length > 0;
+  const changed = trimmed !== initialName || note.trim() !== initialNote.trim();
+
+  return (
+    <View style={[st.settings, { backgroundColor: c.card }]}>
+      <Text style={[st.fieldLabel, { color: c.textFaint }]}>{t.location.name}</Text>
+      <Field value={name} onChangeText={setName} placeholder={t.location.namePlaceholder} />
+      {!nameOk && <Text style={[st.err, { color: c.danger }]}>{t.item.nameRequired}</Text>}
+
+      <Text style={[st.fieldLabel, { color: c.textFaint }]}>{t.location.note}</Text>
+      <Field value={note} onChangeText={setNote} placeholder={t.location.notePlaceholder} multiline />
+
+      <Button
+        label={busy ? t.common.saving : t.common.save}
+        busy={busy}
+        disabled={!nameOk || !changed}
+        onPress={() => onSave({ name: trimmed, note: note.trim() === '' ? null : note.trim() })}
+      />
+      <View style={st.settingsDanger}>
+        <Button label={t.location.deleteLocation} onPress={onDelete} variant="danger" />
+      </View>
+    </View>
+  );
+}
+
+const st = StyleSheet.create({
+  body: { paddingHorizontal: 20, gap: 12 },
+  qr: { fontSize: type.small, fontWeight: '600' },
+  audit: { fontSize: type.caption },
+  card: { borderRadius: radius.md, padding: 16, gap: 5 },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  cardTitle: { flex: 1, fontSize: type.h2, fontWeight: '700', letterSpacing: -0.3, lineHeight: 27 },
+  headActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  gear: { fontSize: type.title, fontWeight: '600' },
+  settings: { borderRadius: radius.md, padding: 16, gap: 8 },
+  settingsDanger: { marginTop: 14 },
+  fieldLabel: { fontSize: type.tiny, fontWeight: '600', letterSpacing: 0.5 },
+  err: { fontSize: type.caption },
+  addBtn: { fontSize: type.body, fontWeight: '600' },
+  addBox: { gap: 10, paddingVertical: 4 },
+  hint: { fontSize: type.caption, textAlign: 'center' },
+  list: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  footer: { marginTop: 32 },
+});

@@ -1,0 +1,14 @@
+-- `account_deletion_blockers` 를 클라이언트가 부를 수 없게 잠근다.
+--
+-- ⚠ 이 함수는 SECURITY DEFINER 라 RLS 를 통과한다. 그런데 인자로 **아무 uuid 나**
+--   받고 호출자가 누구인지 보지 않는다. 즉 로그인도 안 한 사람이
+--       select * from account_deletion_blockers('<남의 uuid>')
+--   로 그 사람이 만든 물건·박스·장소·가구 수를 **전 가구에 걸쳐** 셀 수 있었다.
+--   내용은 안 나오지만 (a) 그 uuid 가 실제 사용자인지, (b) 얼마나 활동하는지가
+--   샌다. 다른 집 사람을 세는 데 쓸 이유가 없는 함수다.
+--
+-- 앱은 이 함수를 부르지 않는다 — `database.types.ts` 에 자동 생성된 타입만 있고
+-- 실제 호출부는 마이그레이션과 pgTAP 테스트뿐이다(둘 다 postgres 로 돈다).
+-- 그래서 그냥 회수하면 된다. 이 프로젝트에서 반복되는 그 패턴이다:
+-- **만들어 두고 아무도 안 부르는데 문은 열려 있는 코드.**
+revoke all on function public.account_deletion_blockers(uuid) from public, anon, authenticated;

@@ -1,0 +1,62 @@
+<!--
+  어디뒀지 (Stow) — 매직링크 로그인 메일.
+
+  ⚠ 메일 클라이언트는 브라우저가 아니다. 지킬 것:
+    · 스타일은 전부 **인라인**으로 (Gmail 은 <style> 을 자주 지운다)
+    · 레이아웃은 <table> 로 (flex/grid 는 Outlook 에서 무너진다)
+    · 웹폰트를 쓰지 않는다 — 안 오는 곳이 많고, 안 오면 제각각으로 보인다
+    · 이미지에 기대지 않는다 (기본으로 이미지를 막는 클라이언트가 많다)
+
+  ⚠ `{{ .ConfirmationURL }}` 은 `stow://auth-callback?code=...` 로 떨어진다.
+    앱이 그 code 를 세션으로 바꾼다(PKCE). 그래서 **앱이 깔린 기기에서 열어야** 한다 —
+    본문에서 그 점을 밝힌다. 안 그러면 PC 에서 눌러 보고 고장인 줄 안다.
+-->
+<table width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background:#f1f3f8;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;">
+  <tr>
+    <td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="max-width:440px;background:#ffffff;border-radius:16px;padding:36px 32px;">
+        <tr>
+          <td style="font-size:22px;font-weight:800;color:#14161f;letter-spacing:-0.5px;padding-bottom:6px;">
+            어디뒀지
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:15px;line-height:23px;color:#3e445a;padding-bottom:28px;">
+            아래 버튼을 누르면 로그인됩니다.
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding-bottom:24px;">
+            <a href="{{ .ConfirmationURL }}"
+               style="display:block;background:#2547c4;color:#ffffff;text-decoration:none;
+                      font-size:16px;font-weight:700;padding:16px 24px;border-radius:999px;">
+              로그인하기
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:13px;line-height:20px;color:#6b7185;padding-bottom:18px;">
+            ⚠ <strong>어디뒀지 앱이 설치된 기기</strong>에서 눌러 주세요.
+            PC 에서 열면 앱으로 이어지지 않습니다.
+          </td>
+        </tr>
+        <tr>
+          <td style="border-top:1px solid #e6e9f2;padding-top:18px;
+                     font-size:12px;line-height:19px;color:#8a90a3;">
+            이 링크는 한 번만 쓸 수 있고 1시간 뒤 만료됩니다.<br />
+            로그인을 요청한 적이 없다면 이 메일은 무시하셔도 됩니다.
+          </td>
+        </tr>
+      </table>
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:440px;">
+        <tr>
+          <td align="center" style="padding-top:16px;font-size:12px;color:#8a90a3;">
+            어디뒀지 · 집 안 물건이 어디 있는지 찾아주는 앱
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
