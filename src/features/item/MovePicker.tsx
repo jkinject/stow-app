@@ -20,13 +20,6 @@ const HEX6 = /^#[0-9a-fA-F]{6}$/;
 const SLOT = 36;
 const ICON = 20;
 const STACK_TILE = 30;
-/**
- * "지금 여기" 배지 자리의 **고정 폭.**
- *
- * ⚠ 배지가 있는 줄만 그만큼 넓어져서, 그 줄의 사진 더미가 왼쪽으로 밀렸다. 목록의
- *   오른쪽 끝이 들쭉날쭉해 보인다(실기기 확인). 배지가 없어도 자리는 잡아 둔다.
- */
-const BADGE_W = 58;
 
 
 /**
@@ -276,13 +269,13 @@ export function MovePicker({
                         {mine.length > 0 ? t.places.boxes(mine.length) : t.item.noBoxesYet}
                       </Text>
                     </View>
+                    {/* 접혀 있어도 물건이 지금 어느 장소에 있는지는 보여야 한다.
+                        ⚠ 사진 **앞**이다. 뒤에 두면 배지 없는 줄에도 자리를 비워 둬야
+                        사진 오른쪽 끝이 맞는데, 그러면 대부분의 줄에 빈 칸이 남는다. */}
+                    {holdsCurrent && !expanded && (
+                      <Text style={[st.here, { color: c.accentText }]}>{t.item.moveHere}</Text>
+                    )}
                     <ThumbStack paths={cover.loc.get(loc.id)} get={thumbs.get} size={STACK_TILE} />
-                    {/* 접혀 있어도 물건이 지금 어느 장소에 있는지는 보여야 한다 */}
-                    <View style={st.badge}>
-                      {holdsCurrent && !expanded && (
-                        <Text style={[st.here, { color: c.accentText }]}>{t.item.moveHere}</Text>
-                      )}
-                    </View>
                     <Text style={[st.chevron, { color: c.textFaint }]}>
                       {expanded ? '\u25BE' : '\u25B8'}
                     </Text>
@@ -444,10 +437,8 @@ function Target({
           </Text>
         )}
       </View>
+      {here && <Text style={[st.here, { color: c.accentText }]}>{t.item.moveHere}</Text>}
       <ThumbStack paths={paths} get={get} size={STACK_TILE} />
-      <View style={st.badge}>
-        {here && <Text style={[st.here, { color: c.accentText }]}>{t.item.moveHere}</Text>}
-      </View>
     </Pressable>
   );
 }
@@ -483,7 +474,6 @@ const st = StyleSheet.create({
   rowTitle: { fontSize: type.body, fontWeight: '600' },
   rowTitleStrong: { fontSize: type.subtitle, fontWeight: '700' },
   rowSub: { fontSize: type.caption },
-  badge: { width: BADGE_W, alignItems: 'flex-end' },
   here: { fontSize: type.caption, fontWeight: '700' },
   rescue: { paddingHorizontal: space.xl, gap: space.xs },
   addMore: { alignSelf: 'flex-start', paddingVertical: space.sm },
