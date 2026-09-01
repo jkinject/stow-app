@@ -98,9 +98,18 @@ TASK="${1:-assembleRelease}"
 echo "· gradlew $TASK"
 ./android/gradlew -p android "$TASK" --no-daemon
 
-OUT=$(find android/app/build/outputs \( -name '*.aab' -o -name '*.apk' \) -type f 2>/dev/null \
-      | sort -r | head -1)
+# ⚠ 방금 만든 것만 고른다. 예전에는 apk/aab 를 통째로 찾아 `sort -r | head -1` 했는데,
+#   `bundle/` 이 `apk/` 보다 뒤로 정렬돼서 **APK 를 빌드해도 예전 AAB 를 가리켰다.**
+#   엉뚱한 산출물을 업로드하게 되는 종류의 실수라 태스크에 맞춰 정확히 짚는다.
+case "$TASK" in
+  *undle*) OUTDIR=android/app/build/outputs/bundle/release; EXT=aab ;;
+  *)       OUTDIR=android/app/build/outputs/apk/release;    EXT=apk ;;
+esac
+OUT=$(find "$OUTDIR" -name "*.$EXT" -type f 2>/dev/null | head -1)
 if [ -n "$OUT" ]; then
   echo
   echo "✓ $OUT  ($(du -h "$OUT" | cut -f1))"
+else
+  echo "✗ 산출물을 찾지 못했습니다: $OUTDIR/*.$EXT" >&2
+  exit 1
 fi

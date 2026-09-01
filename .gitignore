@@ -51,3 +51,11 @@ example
 
 # 백업 덤프
 supabase/backups/
+
+# 도구가 만드는 상태 파일 — 계속 바뀌어서 diff 를 더럽힌다.
+# ⚠ `.omc/` 를 통째로 무시하면 안 된다. plans/ 와 specs/ 에는 이 앱의
+#   요구사항 스펙과 합의된 구현 계획이 들어 있다 — 그건 남긴다.
+.omc/state/
+.omc/prd.json
+.omc/project-memory.json
+.omc/plans/.omc/
