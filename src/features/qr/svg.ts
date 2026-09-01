@@ -45,6 +45,9 @@ export function qrSvg(payload: string): string {
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dim} ${dim}" ` +
     `shape-rendering="crispEdges" role="img" aria-label="QR">` +
+    // ⚠ 흑백은 **테마를 따르지 않는다.** 리더기는 밝은 바탕 위 어두운 모듈을 전제로
+    //   대비를 판정한다. 다크 모드라고 반전하면 스캔이 안 되는 기기가 생긴다.
+    //   여기 있는 #fff/#000 은 팔레트를 빠뜨린 게 아니라 규격이다.
     `<rect width="${dim}" height="${dim}" fill="#fff"/>` +
     `<path d="${d}" fill="#000"/>` +
     `</svg>`

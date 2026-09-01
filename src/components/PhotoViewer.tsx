@@ -285,5 +285,5 @@ const st = StyleSheet.create({
   },
   btn: { paddingHorizontal: 10, paddingVertical: 6 },
   btnText: { color: overlay.fg, fontSize: type.bodyStrong, fontWeight: '600' },
-  danger: { color: '#FF8A8A' },
+  danger: { color: overlay.danger },
 });
