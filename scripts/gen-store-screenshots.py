@@ -13,8 +13,16 @@ import os
 
 from PIL import Image, ImageDraw, ImageFont
 
-SP = os.path.dirname(os.path.abspath(__file__))
-OUT = '/Users/tim/Documents/projects/home-store/docs/store/screenshots'
+# ⚠ 기기 캡처가 들어 있는 폴더를 인자로 받는다. 스크립트 폴더 기준으로 두면
+#   저장소로 옮기는 순간 원본을 못 찾는다 — 실제로 그렇게 깨졌다.
+#   사용: python3 scripts/gen-store-screenshots.py <캡처가_있는_폴더>
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SP = sys.argv[1] if len(sys.argv) > 1 else None
+if not SP or not os.path.isdir(SP):
+    raise SystemExit('캡처 폴더를 인자로 주세요: python3 scripts/gen-store-screenshots.py <폴더>')
+OUT = os.path.join(ROOT, 'docs/store/screenshots')
 os.makedirs(OUT, exist_ok=True)
 
 W, H = 1080, 1920            # 9:16 — Play 권장 크기

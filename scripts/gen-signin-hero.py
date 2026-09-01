@@ -4,10 +4,17 @@ import os
 
 from PIL import Image
 
-SP = os.path.dirname(os.path.abspath(__file__))
-ROOT = '/Users/tim/Documents/projects/home-store'
+# ⚠ 원본 경로를 인자로 받는다. 예전엔 스크립트 폴더 기준이었는데, 스크립트를
+#   저장소로 옮기니 곧바로 깨졌다(scripts/hero_raw.png 을 찾았다).
+#   사용: python3 scripts/gen-signin-hero.py <잘라둔_히어로_원본.png>
+import sys
 
-im = Image.open(os.path.join(SP, 'hero_raw.png')).convert('RGB')
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SRC = sys.argv[1] if len(sys.argv) > 1 else None
+if not SRC or not os.path.exists(SRC):
+    raise SystemExit('원본 이미지 경로를 인자로 주세요: python3 scripts/gen-signin-hero.py <파일>')
+
+im = Image.open(SRC).convert('RGB')
 w, h = im.size
 tw = 720   # ⚠ 세로형이라 같은 폭이면 픽셀이 는다. 배경이라 720 이면 충분하다
 im2 = im.resize((tw, round(h * tw / w)), Image.LANCZOS)

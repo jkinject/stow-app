@@ -188,7 +188,12 @@ Privacy policy: https://jkinject.github.io/stow-app/privacy/en/
 | 4 | 가족이 함께 씁니다 | 초대 코드 |
 | 5 | 카테고리로 묶어서 | 카테고리 |
 
-다시 만들려면: 기기 스크린샷을 찍어 두고 `python3 scripts/gen-store-screenshots.py`
+다시 만들려면 (모두 원본 경로를 인자로 받습니다):
+```bash
+python3 scripts/gen-signin-hero.py       <히어로원본.png>   # 앱 안 배경 (base64 모듈)
+python3 scripts/gen-store-graphic.py     <히어로원본.png>   # 1024×500 그래픽 이미지
+python3 scripts/gen-store-screenshots.py <기기캡처_폴더>     # 1080×1920 스크린샷
+```
 
 > 물건이 많이 들어간 상태로 다시 찍으면 훨씬 좋아집니다. 지금은 물건이 1개뿐이라
 > 2번(찾기 격자)이 비어 보입니다. 집을 정리하며 20~30개쯤 넣은 뒤

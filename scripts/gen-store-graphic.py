@@ -9,7 +9,10 @@ import shutil
 
 from PIL import Image, ImageDraw, ImageFont
 
+# ⚠ 원본 경로는 인자로 받는다 (스크립트를 옮기면 상대경로가 곧바로 깨진다)
+import sys
 SP = os.path.dirname(os.path.abspath(__file__))
+SRC = sys.argv[1] if len(sys.argv) > 1 else None
 ROOT = '/Users/tim/Documents/projects/home-store'
 OUT = os.path.join(ROOT, 'docs/store')
 SHOTS = os.path.join(OUT, 'screenshots')
@@ -37,7 +40,9 @@ def font(size, bold=True):
 
 # ── 피처 그래픽 1024×500 ──────────────────────────────────────────
 W, H = 1024, 500
-hero = Image.open(os.path.join(SP, 'hero_raw.png')).convert('RGB')
+if not SRC or not os.path.exists(SRC):
+    raise SystemExit('사용: python3 scripts/gen-store-graphic.py <히어로_원본.png>')
+hero = Image.open(SRC).convert('RGB')
 
 # 오른쪽 절반에 그림, 왼쪽에 글. 그림은 폭에 맞춰 자른다.
 img_w = 470   # ⚠ 소스가 세로형으로 바뀌어 좁게 잡아야 선반이 온전히 들어간다
