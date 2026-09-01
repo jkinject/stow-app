@@ -19,31 +19,23 @@
 - [x] 업로드 키 서명 (서명 지문 대조 완료)
 - [x] `allowBackup=false` — 세션 토큰이 백업으로 새지 않음
 - [x] 불필요 권한 제거 (`RECORD_AUDIO`, `SYSTEM_ALERT_WINDOW`)
-- [x] 개인정보처리방침 페이지 (아래 URL)
+- [x] 개인정보처리방침 페이지 — GitHub Pages 활성화 완료 (`gh api ... /pages`)
+      - Play Console 입력용: `https://jkinject.github.io/stow-app/privacy/`
+      - 영문: `https://jkinject.github.io/stow-app/privacy/en/`
 - [x] 계정·데이터 삭제 기능 (앱 내 *더보기 → 탈퇴하기*) — Play 필수 요건
 - [x] 분석 SDK·광고 SDK 없음
 
 ## 사람이 해야 하는 것
 
-### 1. GitHub Pages 켜기
-저장소 → **Settings → Pages** → Source: `Deploy from a branch` → Branch: `main`, 폴더: `/docs` → Save.
-
-몇 분 뒤 아래 주소가 열립니다.
-
-| 용도 | URL |
-|---|---|
-| 개인정보처리방침 (Play Console 입력용) | `https://jkinject.github.io/stow-app/privacy/` |
-| 영문 | `https://jkinject.github.io/stow-app/privacy/en/` |
-
-### 2. Play Console 계정
+### 1. Play Console 계정
 - 개발자 등록비 **$25(1회)**
 - 개인 계정은 신원 확인이 필요하고, 며칠 걸릴 수 있습니다.
 
-### 3. 앱 만들기 → AAB 업로드
+### 2. 앱 만들기 → AAB 업로드
 - **Play 앱 서명 사용**을 켭니다(기본값). 그러면 지금 키는 *업로드 키* 로만 쓰이고,
   잃어버려도 구글에 재설정을 요청할 수 있습니다.
 
-### 4. 구글 OAuth 에 앱 서명 키 등록 ⚠️
+### 3. 구글 OAuth 에 앱 서명 키 등록 ⚠️
 Play 앱 서명을 켜면 **구글이 다시 서명**하므로, 스토어에서 받은 앱의 지문은
 위 업로드 키 지문과 **다릅니다.**
 
@@ -53,7 +45,7 @@ Play 앱 서명을 켜면 **구글이 다시 서명**하므로, 스토어에서 
 이 단계를 빠뜨리면 **스토어에서 받은 앱만 구글 로그인이 실패합니다.**
 직접 설치한 APK 는 멀쩡하기 때문에 원인을 찾기가 아주 어렵습니다.
 
-### 5. 데이터 보안(Data safety) 양식
+### 4. 데이터 보안(Data safety) 양식
 개인정보처리방침과 같은 내용으로 답하면 됩니다.
 
 | 질문 | 답 |
@@ -69,13 +61,13 @@ Play 앱 서명을 켜면 **구글이 다시 서명**하므로, 스토어에서 
 | 전송 중 암호화 | 예 |
 | 삭제 요청 가능 | 예 — 앱 내 탈퇴 |
 
-### 6. 스토어 등록 정보 (직접 준비)
+### 5. 스토어 등록 정보 (직접 준비)
 - 앱 아이콘 512×512 PNG — `assets/images/icon.png` 를 리사이즈
 - 그래픽 이미지 1024×500
 - 휴대전화 스크린샷 최소 2장 (권장 4~8장)
 - 짧은 설명 80자 / 자세한 설명 4000자
 
-### 7. 콘텐츠 등급 설문
+### 6. 콘텐츠 등급 설문
 전 연령. 폭력·성적 콘텐츠·도박 없음, 사용자 간 소통 없음(같은 가구 안에서만 데이터 공유).
 
 ## 남은 이슈
