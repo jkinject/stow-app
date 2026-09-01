@@ -89,8 +89,11 @@ docs/           GitHub Pages (개인정보처리방침) + 출시 문서
 
 ## 출시
 
-[docs/play-store-checklist.md](docs/play-store-checklist.md) 에 남은 일과
-데이터 보안 양식 답안을 정리해 뒀습니다.
+- **[docs/play-store-listing.md](docs/play-store-listing.md)** — Play Console 에
+  그대로 붙여넣는 스토어 문구·양식 답안. 글자 수 제한까지 맞춰 뒀습니다.
+- **[docs/play-store-checklist.md](docs/play-store-checklist.md)** — 무엇이 끝났고
+  무엇이 남았는지.
+- 그래픽 애셋은 `docs/store/` 에 있습니다 (아이콘 512, 그래픽 이미지 1024×500, 스크린샷 6장).
 
 **iOS 는 아직 못 냅니다.** Apple 심사 지침 4.8 이 소셜 로그인 앱에 "이메일을
 비공개로 유지할 수 있는 대안" 을 요구하는데, Sign in with Apple 이 없어 반려됩니다.
