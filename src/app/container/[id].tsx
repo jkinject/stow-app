@@ -263,7 +263,7 @@ export default function ContainerDetail() {
 }
 
 /**
- * 박스 설정 — 이름·메모 수정과 삭제.
+ * 박스 설정 — 이름 수정과 삭제. (메모 칸은 없다 — location/[id].tsx 의 주석 참고)
  *
  * ⚠ 원래 장소 화면에서 길게 눌러 `Alert.prompt` 로 이름을 바꾸게 되어 있었는데,
  *   **`Alert.prompt` 는 iOS 전용이다.** 옵셔널 체이닝(`Alert.prompt?.()`)으로 불렀기

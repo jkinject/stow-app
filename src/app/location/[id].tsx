@@ -76,7 +76,7 @@ export default function LocationDetail() {
         // ⚠ 예전엔 여기서 `Alert.prompt?.()` 를 불렀는데 **Alert.prompt 는 iOS 전용**이라
         //   안드로이드에서는 옵셔널 체이닝에 걸려 조용히 아무 일도 하지 않았다.
         //   편집은 박스 상세 화면 한 곳에서만 한다 — 두 곳에 두면 한쪽만 고쳐진다.
-        text: t.location.renameOrNote,
+        text: t.location.rename,
         onPress: () => router.push(`/container/${cid}`),
       },
       {
@@ -174,7 +174,6 @@ export default function LocationDetail() {
         {settingsOpen && location?.name && (
           <LocationSettings
             initialName={location.name}
-            initialNote={location.note ?? ''}
             busy={updateLocation.isPending}
             onSave={async (patch) => {
               try {
@@ -261,32 +260,34 @@ export default function LocationDetail() {
 }
 
 /**
- * 장소 설정 — 이름·메모 수정과 삭제.
+ * 장소 설정 — 이름 수정과 삭제.
+ *
+ * ⚠ 메모 칸은 뺐다(2026-09-01, 사용자 요청). 장소·박스에 메모를 쓰는 사람이 없었다 —
+ *   기억해 둘 것은 물건에 붙지 장소에 붙지 않는다. `locations.note` 컬럼과 기존에
+ *   적힌 값은 **남겨 둔다.** 지우는 건 되돌릴 수 없고, 되살릴 일이 생기면 컬럼이
+ *   그대로 있어야 한다. 물건 메모는 그대로 둔다 — 거긴 실제로 쓰인다.
  * ⚠ 이름 변경 훅(`useRenameLocation`)은 있었지만 **부르는 화면이 없었다.**
  *   기능이 없다는 사용자 보고의 원인이 이것이다. 박스 설정과 같은 모양으로 맞춘다.
  */
 function LocationSettings({
   initialName,
-  initialNote,
   busy,
   onSave,
   onDelete,
 }: {
   initialName: string;
-  initialNote: string;
   busy: boolean;
-  onSave: (patch: { name: string; note: string | null }) => void;
+  onSave: (patch: { name: string }) => void;
   onDelete: () => void;
 }) {
   const { c } = useTheme();
   const t = useT();
   // 초기값은 마운트 때 한 번만. 재조회에 맞춰 되돌리면 입력하던 게 지워진다.
   const [name, setName] = useState(initialName);
-  const [note, setNote] = useState(initialNote);
 
   const trimmed = name.trim();
   const nameOk = trimmed.length > 0;
-  const changed = trimmed !== initialName || note.trim() !== initialNote.trim();
+  const changed = trimmed !== initialName;
 
   return (
     <View style={[st.settings, { backgroundColor: c.card }]}>
@@ -294,14 +295,11 @@ function LocationSettings({
       <Field value={name} onChangeText={setName} placeholder={t.location.namePlaceholder} />
       {!nameOk && <Text style={[st.err, { color: c.danger }]}>{t.item.nameRequired}</Text>}
 
-      <Text style={[st.fieldLabel, { color: c.textFaint }]}>{t.location.note}</Text>
-      <Field value={note} onChangeText={setNote} placeholder={t.location.notePlaceholder} multiline />
-
       <Button
         label={busy ? t.common.saving : t.common.save}
         busy={busy}
         disabled={!nameOk || !changed}
-        onPress={() => onSave({ name: trimmed, note: note.trim() === '' ? null : note.trim() })}
+        onPress={() => onSave({ name: trimmed })}
       />
       <View style={st.settingsDanger}>
         <Button label={t.location.deleteLocation} onPress={onDelete} variant="danger" />

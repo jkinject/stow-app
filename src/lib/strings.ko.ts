@@ -152,7 +152,7 @@ export const KO = {
     noBoxes: '박스가 없습니다',
     noBoxesHint: '박스를 만들면 QR 코드가 자동으로 발급됩니다.\n박스 없이 물건만 둬도 됩니다.',
     looseSection: (n: number) => `박스 없이 이 장소에 · ${n}개`,
-    renameOrNote: '이름·메모 수정',
+    rename: '이름 수정',
     itemsInside: (n: number) => `물건 ${n}개가 들어 있습니다.`,
     isEmpty: '비어 있습니다.',
     deleteBoxTitle: '박스를 삭제할까요?',

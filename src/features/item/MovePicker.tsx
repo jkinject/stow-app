@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { Image, type ImageSource } from 'expo-image';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Empty, Field, Loading } from '@/components/ui';
+import { IMAGE_CACHE_POLICY, useThumbUrls } from '@/features/item/thumbs';
+import { useAllItems } from '@/features/search/api';
 import { useAllContainers, useCreateContainerIn, useLocations } from '@/features/storage/api';
 import { LocationSheet } from '@/features/storage/LocationSheet';
 import { useT } from '@/lib/i18n';
@@ -65,6 +68,42 @@ export function MovePicker({
   const loading = locations.isLoading || containers.isLoading;
 
   /**
+   * 장소·박스의 대표 사진.
+   *
+   * 이름만 있으면 "게스트룸" 과 "드레스룸" 이 글자로만 구분된다 — 이 앱에서 장소를
+   * 기억하는 방식은 이름이 아니라 그 안의 물건이다(사용자 보고).
+   *
+   * ⚠ 새 질의를 만들지 않는다. 찾기 탭이 이미 받아 둔 `useAllItems` 와 **같은 캐시
+   *   키**라 네트워크 비용이 0 이다. 목록 화면마다 제 질의를 파면 같은 데이터를
+   *   서너 번 받게 된다.
+   */
+  const items = useAllItems(householdId);
+  const thumbs = useThumbUrls();
+  const cover = useMemo(() => {
+    const loc = new Map<string, string>();
+    const box = new Map<string, string>();
+    for (const it of items.data ?? []) {
+      if (!it.thumb_path) continue;
+      if (!loc.has(it.location_id)) loc.set(it.location_id, it.thumb_path);
+      if (it.container_id && !box.has(it.container_id)) box.set(it.container_id, it.thumb_path);
+    }
+    for (const b of containers.data ?? []) {
+      if (!b.thumb_path) continue;
+      // 박스는 제 사진이 먼저다 — 안의 물건보다 박스 자체가 눈에 익다
+      box.set(b.id, b.thumb_path);
+      // 장소는 물건 사진이 하나도 없을 때 박스 사진으로 채운다. 박스에만 사진을
+      // 찍어 둔 장소(세탁실 선반들)가 실제로 있고, 그때 빈 칸으로 두면 사진이
+      // 있는데도 없는 것처럼 보인다.
+      if (!loc.has(b.location_id)) loc.set(b.location_id, b.thumb_path);
+    }
+    return { loc, box };
+  }, [items.data, containers.data]);
+
+  useEffect(() => {
+    thumbs.ensure([...cover.loc.values(), ...cover.box.values()]);
+  }, [cover, thumbs]);
+
+  /**
    * ⚠⚠ 여기가 신규 사용자 전원이 부딪히던 막다른 길이었다 (2026-09-01 발견).
    *
    *   찾기 탭에서 제일 눈에 띄는 + 를 누르면 → 카메라 → 사진 촬영 → 2단계에서
@@ -105,6 +144,7 @@ export function MovePicker({
    */
   const scrollRef = useRef<ScrollView | null>(null);
   const hereY = useRef<{ group?: number; row?: number }>({});
+  const viewH = useRef(0);
   const userMoved = useRef(false);
 
   useEffect(() => {
@@ -114,11 +154,25 @@ export function MovePicker({
     }
   }, [visible]);
 
+  /** 대충 잡은 한 줄 높이(사진 44 + 위아래 여백). 정확할 필요는 없다 — 판단용이다 */
+  const ROW_H = 72;
+
   function scrollToHere() {
     const { group, row } = hereY.current;
     if (userMoved.current || group === undefined || row === undefined) return;
-    // 위로 조금 남겨 둔다 — 딱 맞추면 잘린 것처럼 보인다
-    scrollRef.current?.scrollTo({ y: Math.max(0, group + row - 16), animated: false });
+
+    /**
+     * 되도록 **장소 머리부터** 보여 준다. 칸만 딱 맞춰 올리면 그 칸이 어느 장소에
+     * 속하는지가 화면 밖으로 밀려 나가, 정작 "어디로 옮길까" 를 판단할 수 없다.
+     * 박스가 많아 장소 머리부터로는 현재 칸이 화면 아래로 떨어질 때만 칸에 맞춘다.
+     */
+    const fromTop = group - 16; // 위로 조금 남긴다 — 딱 맞추면 잘린 것처럼 보인다
+    const rowBottom = group + row + ROW_H;
+    const fits = viewH.current > 0 && rowBottom - fromTop <= viewH.current;
+    scrollRef.current?.scrollTo({
+      y: Math.max(0, fits ? fromTop : group + row - 16),
+      animated: false,
+    });
   }
 
   /**
@@ -185,6 +239,10 @@ export function MovePicker({
             ref={scrollRef}
             contentContainerStyle={[st.body, { paddingBottom: insets.bottom + 32 }]}
             keyboardShouldPersistTaps="handled"
+            onLayout={(e) => {
+              viewH.current = e.nativeEvent.layout.height;
+              scrollToHere();
+            }}
             onContentSizeChange={scrollToHere}
             onScrollBeginDrag={() => {
               userMoved.current = true;
@@ -226,6 +284,7 @@ export function MovePicker({
                       pressed && { opacity: 0.6 },
                     ]}
                   >
+                    <Thumb source={thumbs.get(cover.loc.get(loc.id))} />
                     <View style={st.rowMain}>
                       <Text style={[st.rowTitleStrong, { color: c.text }]} numberOfLines={1}>
                         {loc.name}
@@ -267,6 +326,7 @@ export function MovePicker({
                         >
                           <Target
                             label={b.name}
+                            thumb={thumbs.get(cover.box.get(b.id))}
                             sub={b.item_count > 0 ? t.places.itemCount(b.item_count) : t.common.empty}
                             here={currentContainerId === b.id}
                             busy={busy}
@@ -339,6 +399,7 @@ export function MovePicker({
 function Target({
   label,
   sub,
+  thumb,
   here,
   busy,
   onPress,
@@ -346,6 +407,8 @@ function Target({
   label: string;
   /** 없으면 한 줄짜리 줄이 된다 (장소 직속 항목) */
   sub?: string;
+  /** ⚠ `{ uri, cacheKey }` 통째로 — 이유는 features/item/thumbs.ts 참고 */
+  thumb?: ImageSource;
   here: boolean;
   busy: boolean;
   onPress: () => void;
@@ -365,6 +428,9 @@ function Target({
         (pressed || here || busy) && { opacity: here ? 1 : 0.6 },
       ]}
     >
+      {/* ⚠ 조건부로 그리면 안 된다. "박스에 넣지 않고 이 장소에 두기" 줄만 사진이
+          없는데, 그 줄만 왼쪽으로 밀려서 목록의 글자 시작선이 어긋났다(실기기 확인). */}
+      <Thumb source={thumb} />
       <View style={st.rowMain}>
         <Text style={[st.rowTitle, { color: c.text }]} numberOfLines={1}>
           {label}
@@ -377,6 +443,30 @@ function Target({
       </View>
       {here && <Text style={[st.here, { color: c.accentText }]}>{t.item.moveHere}</Text>}
     </Pressable>
+  );
+}
+
+/**
+ * 줄 왼쪽의 작은 사진.
+ *
+ * ⚠ 사진이 없어도 **자리는 그대로 둔다.** 있는 줄만 왼쪽으로 밀리면 목록이
+ *   들쭉날쭉해져 훑어보기 어렵다.
+ */
+function Thumb({ source }: { source?: ImageSource }) {
+  const { c } = useTheme();
+  return (
+    <View style={[st.thumb, { backgroundColor: c.sunk }]}>
+      {!!source && (
+        <Image
+          source={source}
+          style={st.thumbImg}
+          contentFit="cover"
+          transition={120}
+          cachePolicy={IMAGE_CACHE_POLICY}
+          recyclingKey={source.cacheKey}
+        />
+      )}
+    </View>
   );
 }
 
@@ -417,5 +507,7 @@ const st = StyleSheet.create({
   newBox: { gap: 10, paddingVertical: 4 },
   hint: { fontSize: type.caption },
   chevron: { fontSize: type.body, fontWeight: '700' },
+  thumb: { width: 44, height: 44, borderRadius: radius.sm, overflow: 'hidden' },
+  thumbImg: { width: '100%', height: '100%' },
   addMoreText: { fontSize: type.body, fontWeight: '600' },
 });

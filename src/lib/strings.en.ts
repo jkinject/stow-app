@@ -136,7 +136,7 @@ export const EN: Dict = {
     noBoxes: 'No boxes',
     noBoxesHint: 'Each box gets a QR code automatically.\nItems can also sit here without a box.',
     looseSection: (n) => `Here without a box · ${n}`,
-    renameOrNote: 'Edit name & note',
+    rename: 'Edit name',
     itemsInside: (n) => `Holds ${n} item${n === 1 ? '' : 's'}.`,
     isEmpty: 'Empty.',
     deleteBoxTitle: 'Delete this box?',
