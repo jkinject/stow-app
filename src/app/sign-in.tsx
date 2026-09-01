@@ -13,10 +13,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
-import { IconMail } from '@/components/Icon';
+import { IconLock, IconMail } from '@/components/Icon';
 import { KeyboardSpacer } from '@/components/KeyboardSpacer';
 import { SIGNIN_HERO_URI } from '@/features/auth/heroImage';
-import { useAuth } from '@/lib/auth';
+import { authMessage, useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
 import { useTheme, type, radius } from '@/lib/theme';
 
@@ -57,17 +57,27 @@ const HERO_SCREEN_INPUT = 0.34;
 const FADE_PART = 0.62;
 
 export default function SignIn() {
-  const { signInWithGoogle, sendMagicLink } = useAuth();
+  const { signInWithGoogle, sendMagicLink, signInWithPassword, signUpWithPassword } = useAuth();
   const { c, isDark } = useTheme();
   const t = useT();
   const insets = useSafeAreaInsets();
   const win = useWindowDimensions();
 
   const [email, setEmail] = useState('');
-  const [busy, setBusy] = useState<'google' | 'magic' | null>(null);
-  const [sent, setSent] = useState(false);
+  const [pw, setPw] = useState('');
+  const [busy, setBusy] = useState<'google' | 'magic' | 'pw' | null>(null);
+  /** 매직링크를 보냈거나 가입 인증 메일을 보낸 상태 */
+  const [sent, setSent] = useState<null | 'magic' | 'confirm'>(null);
   /** 레퍼런스처럼 입력칸은 처음에 숨긴다 — 한 번 더 눌러야 나온다 */
   const [emailMode, setEmailMode] = useState(false);
+  /**
+   * ⚠ 로그인/가입을 **자동으로 판별하지 않는다.** Supabase 는 "비밀번호가 틀렸다" 와
+   *   "그런 계정이 없다" 를 같은 오류로 돌려준다(일부러 그렇다 — 구분해 주면 남의
+   *   이메일이 가입돼 있는지 캐낼 수 있다). 그래서 오류만 보고 가입으로 넘기면,
+   *   비밀번호를 오타 낸 사람에게 **쓰레기 계정을 만들어 주게 된다.**
+   *   사용자가 직접 고르게 한다.
+   */
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
 
   async function onGoogle() {
     setBusy('google');
@@ -75,6 +85,33 @@ export default function SignIn() {
       await signInWithGoogle();
     } catch (e) {
       Alert.alert(t.auth.googleFailed, e instanceof Error ? e.message : t.common.tryAgain);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function onPassword() {
+    if (!email.includes('@')) {
+      Alert.alert(t.auth.emailInvalid, t.auth.emailInvalidBody);
+      return;
+    }
+    if (pw.length < 8) {
+      Alert.alert(t.auth.signUpFailed, t.auth.passwordTooShort);
+      return;
+    }
+    setBusy('pw');
+    try {
+      if (mode === 'signup') {
+        const needsConfirm = await signUpWithPassword(email, pw);
+        if (needsConfirm) setSent('confirm');
+      } else {
+        await signInWithPassword(email, pw);
+      }
+    } catch (e) {
+      Alert.alert(
+        mode === 'signup' ? t.auth.signUpFailed : t.auth.signInFailed,
+        authMessage(e instanceof Error ? e.message : t.common.tryAgain, t),
+      );
     } finally {
       setBusy(null);
     }
@@ -88,7 +125,7 @@ export default function SignIn() {
     setBusy('magic');
     try {
       await sendMagicLink(email);
-      setSent(true);
+      setSent('magic');
     } catch (e) {
       Alert.alert(t.auth.sendFailed, e instanceof Error ? e.message : t.common.tryAgain);
     } finally {
@@ -146,11 +183,15 @@ export default function SignIn() {
 
           {sent ? (
             <View style={[s.sentBox, { backgroundColor: c.card }]}>
-              <Text style={[s.sentTitle, { color: c.text }]}>{t.auth.sentTitle}</Text>
-              <Text style={[s.sentBody, { color: c.textMuted }]}>{t.auth.sentBody(email)}</Text>
+              <Text style={[s.sentTitle, { color: c.text }]}>
+                {sent === 'confirm' ? t.auth.confirmTitle : t.auth.sentTitle}
+              </Text>
+              <Text style={[s.sentBody, { color: c.textMuted }]}>
+                {sent === 'confirm' ? t.auth.confirmBody(email) : t.auth.sentBody(email)}
+              </Text>
               <Pressable
                 onPress={() => {
-                  setSent(false);
+                  setSent(null);
                   setEmailMode(true);
                 }}
                 hitSlop={8}
@@ -174,19 +215,64 @@ export default function SignIn() {
                   keyboardType="email-address"
                   inputMode="email"
                   editable={busy === null}
-                  onSubmitEditing={() => void onMagic()}
-                  returnKeyType="send"
+                  returnKeyType="next"
                 />
               </View>
+
+              <View style={[s.inputWrap, { borderColor: c.border, backgroundColor: c.card }]}>
+                <IconLock color={c.textFaint} size={20} />
+                <TextInput
+                  style={[s.input, { color: c.text }]}
+                  placeholder={mode === 'signup' ? t.auth.passwordNew : t.auth.password}
+                  placeholderTextColor={c.textFaint}
+                  value={pw}
+                  onChangeText={setPw}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  secureTextEntry
+                  /* ⚠ 새 비밀번호와 기존 비밀번호를 구분해 줘야 기기 비밀번호 관리자가
+                     엉뚱하게 동작하지 않는다 */
+                  textContentType={mode === 'signup' ? 'newPassword' : 'password'}
+                  editable={busy === null}
+                  onSubmitEditing={() => void onPassword()}
+                  returnKeyType="go"
+                />
+              </View>
+
               <Pill
-                label={t.auth.magicLink}
-                onPress={onMagic}
-                busy={busy === 'magic'}
+                label={mode === 'signup' ? t.auth.signUp : t.auth.signIn}
+                onPress={onPassword}
+                busy={busy === 'pw'}
                 disabled={busy !== null}
                 filled
               />
+
+              <Pressable
+                onPress={() => setMode(mode === 'signup' ? 'signin' : 'signup')}
+                hitSlop={10}
+                style={s.textBtn}
+              >
+                <Text style={[s.textBtnLabel, { color: c.accentText }]}>
+                  {mode === 'signup' ? t.auth.toSignIn : t.auth.toSignUp}
+                </Text>
+              </Pressable>
+
+              {/* 비밀번호를 잊었거나 만들기 싫은 사람을 위한 길. 가입 화면에서는 숨긴다 */}
+              {mode === 'signin' && (
+                <Pressable
+                  onPress={onMagic}
+                  hitSlop={10}
+                  style={s.textBtn}
+                  disabled={busy !== null}
+                >
+                  <Text style={[s.textBtnLabel, { color: c.textMuted }]}>
+                    {busy === 'magic' ? t.common.loading : t.auth.orMagic}
+                  </Text>
+                </Pressable>
+              )}
+
               <Pressable onPress={() => setEmailMode(false)} hitSlop={10} style={s.textBtn}>
-                <Text style={[s.textBtnLabel, { color: c.textMuted }]}>{t.common.back}</Text>
+                <Text style={[s.textBtnLabel, { color: c.textFaint }]}>{t.common.back}</Text>
               </Pressable>
             </View>
           ) : (

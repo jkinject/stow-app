@@ -4,6 +4,7 @@ import { getQueryParams } from 'expo-auth-session/build/QueryParams';
 import * as WebBrowser from 'expo-web-browser';
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useT } from './i18n';
 import { supabase } from './supabase';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -25,8 +26,33 @@ type AuthState = {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   sendMagicLink: (email: string) => Promise<void>;
+  /** 이메일 + 비밀번호 로그인 */
+  signInWithPassword: (email: string, password: string) => Promise<void>;
+  /**
+   * 이메일 + 비밀번호 가입.
+   * @returns 메일 인증이 필요하면 true — 화면이 "메일함을 확인하세요" 로 바뀐다.
+   */
+  signUpWithPassword: (email: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
 };
+
+/**
+ * Supabase 가 돌려주는 오류 문구는 영어다. 사용자에게 그대로 보여주면 안 된다.
+ *
+ * ⚠ `Invalid login credentials` 는 **"비밀번호가 틀렸다" 와 "그런 계정이 없다" 를
+ *   구분하지 않는다.** 일부러 그렇게 설계돼 있다 — 구분해 주면 남의 이메일이
+ *   가입돼 있는지 캐낼 수 있기 때문이다. 그러니 우리 문구도 구분하면 안 된다.
+ */
+function authMessage(raw: string, t: ReturnType<typeof useT>): string {
+  const m = raw.toLowerCase();
+  if (m.includes('invalid login credentials')) return t.auth.badCredentials;
+  if (m.includes('email not confirmed')) return t.auth.notConfirmed;
+  if (m.includes('already registered') || m.includes('already been registered'))
+    return t.auth.alreadyRegistered;
+  if (m.includes('password') && m.includes('characters')) return t.auth.passwordTooShort;
+  if (m.includes('rate limit') || m.includes('too many')) return t.auth.tooMany;
+  return raw;
+}
 
 const AuthContext = createContext<AuthState | null>(null);
 
@@ -137,6 +163,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) throw error;
       },
 
+      async signInWithPassword(email: string, password: string) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (error) throw error;
+      },
+
+      async signUpWithPassword(email: string, password: string) {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          // 인증 메일의 링크도 앱으로 떨어져야 한다
+          options: { emailRedirectTo: redirectTo },
+        });
+        if (error) throw error;
+        /**
+         * ⚠ 운영에서는 `enable_confirmations = true` 라 **세션이 바로 나오지 않는다.**
+         *   남의 이메일로 가입하는 것을 막으려고 켜 둔 설정이다.
+         *   세션이 없으면 "메일함을 확인하세요" 로 안내해야 한다 — 이걸 빠뜨리면
+         *   가입 버튼을 눌렀는데 아무 일도 안 일어난 것처럼 보인다.
+         */
+        return !data.session;
+      },
+
       async signOut() {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
@@ -154,4 +205,4 @@ export function useAuth() {
   return ctx;
 }
 
-export { createSessionFromUrl, redirectTo };
+export { authMessage, createSessionFromUrl, redirectTo };

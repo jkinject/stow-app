@@ -137,6 +137,13 @@ export const IconQr = (p: P) => (
   </S>
 );
 
+export const IconLock = (p: P) => (
+  <S {...p}>
+    <Rect x="4" y="10.5" width="16" height="10" rx="2.5" />
+    <Path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
+  </S>
+);
+
 export const IconMail = (p: P) => (
   <S {...p}>
     <Rect x="2.5" y="5" width="19" height="14" rx="2.5" />

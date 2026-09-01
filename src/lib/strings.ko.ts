@@ -37,6 +37,25 @@ export const KO = {
     magicLink: '메일로 링크 받기',
     /** 첫 화면의 두 번째 버튼 — 누르면 그때 입력칸이 나온다 */
     emailCta: '이메일로 계속하기',
+    /* ── 이메일 + 비밀번호 ── */
+    password: '비밀번호',
+    passwordNew: '비밀번호 (8자 이상)',
+    signIn: '로그인',
+    signUp: '가입하기',
+    toSignUp: '계정이 없나요?  가입하기',
+    toSignIn: '이미 계정이 있나요?  로그인',
+    orMagic: '비밀번호 없이 메일 링크로 받기',
+    /** 가입 후 인증 메일을 보낸 상태 */
+    confirmTitle: '메일을 확인해 주세요',
+    confirmBody: (email: string) => `${email} 로 인증 링크를 보냈습니다.\n링크를 누르면 가입이 끝납니다.`,
+    /* ── 오류 (Supabase 영어 메시지를 우리 말로 ) ── */
+    badCredentials: '이메일 또는 비밀번호가 맞지 않습니다.',
+    notConfirmed: '아직 메일 인증이 끝나지 않았습니다. 받은편지함의 링크를 눌러 주세요.',
+    alreadyRegistered: '이미 가입된 이메일입니다. 로그인해 주세요.',
+    passwordTooShort: '비밀번호는 8자 이상이어야 합니다.',
+    tooMany: '요청이 너무 잦습니다. 잠시 뒤 다시 시도해 주세요.',
+    signInFailed: '로그인하지 못했습니다',
+    signUpFailed: '가입하지 못했습니다',
     sentTitle: '메일을 보냈습니다',
     sentBody: (email: string) => `${email} 로 온 링크를 눌러 로그인하세요.`,
     resend: '다른 주소로 다시 보내기',
