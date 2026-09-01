@@ -260,20 +260,29 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          dormant_since: string | null
           id: string
+          last_seen_at: string
           name: string
+          warned_at: string | null
         }
         Insert: {
           created_at?: string
           created_by: string
+          dormant_since?: string | null
           id?: string
+          last_seen_at?: string
           name: string
+          warned_at?: string | null
         }
         Update: {
           created_at?: string
           created_by?: string
+          dormant_since?: string | null
           id?: string
+          last_seen_at?: string
           name?: string
+          warned_at?: string | null
         }
         Relationships: [
           {
@@ -669,15 +678,7 @@ export type Database = {
           path?: string
           queued_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "storage_gc_household_id_fkey"
-            columns: ["household_id"]
-            isOneToOne: false
-            referencedRelation: "households"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
@@ -810,8 +811,11 @@ export type Database = {
         Returns: {
           created_at: string
           created_by: string
+          dormant_since: string | null
           id: string
+          last_seen_at: string
           name: string
+          warned_at: string | null
         }
         SetofOptions: {
           from: "*"
@@ -859,13 +863,17 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      assert_maintenance_caller: { Args: never; Returns: undefined }
       create_household: {
         Args: { p_name: string }
         Returns: {
           created_at: string
           created_by: string
+          dormant_since: string | null
           id: string
+          last_seen_at: string
           name: string
+          warned_at: string | null
         }
         SetofOptions: {
           from: "*"
@@ -875,9 +883,27 @@ export type Database = {
         }
       }
       delete_account: { Args: never; Returns: Json }
+      delete_dormant_households: { Args: { p_ids: string[] }; Returns: number }
+      dormant_households_to_delete: {
+        Args: never
+        Returns: {
+          household_id: string
+          paths: string[]
+        }[]
+      }
+      dormant_households_to_warn: {
+        Args: never
+        Returns: {
+          emails: string[]
+          household_id: string
+          household_name: string
+        }[]
+      }
       gen_invite_code: { Args: never; Returns: string }
       is_household_member: { Args: { hid: string }; Returns: boolean }
       is_household_owner: { Args: { hid: string }; Returns: boolean }
+      mark_dormant_households: { Args: never; Returns: number }
+      mark_household_warned: { Args: { p_ids: string[] }; Returns: number }
       purge_expired_soft_deletes: { Args: never; Returns: undefined }
       resolve_shopping_item: {
         Args: { p_id: string; p_new_quantity: number }
@@ -913,10 +939,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      run_household_lifecycle: { Args: never; Returns: undefined }
+      setting_int: {
+        Args: { p_default: number; p_key: string }
+        Returns: number
+      }
       shares_household_with: { Args: { uid: string }; Returns: boolean }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       sign_item_photos: { Args: { p_paths: string[] }; Returns: string[] }
+      touch_household: { Args: { p_household: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

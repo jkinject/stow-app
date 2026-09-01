@@ -43,6 +43,23 @@ export async function drainStorageGc(householdId: string): Promise<number> {
 }
 
 /**
+ * 이 집을 방금 썼다고 기록한다.
+ *
+ * ⚠⚠ 이게 없으면 **쓰고 있는 집이 휴면으로 판정돼 삭제된다.** 90일 동안 아무도
+ *   안 들어온 집을 지우는 기능(20260902000200)이 보는 값이 `last_seen_at` 하나뿐이다.
+ *   서버는 "누가 읽어 갔는지" 를 모르므로 앱이 말해 줘야 한다.
+ *
+ * 서버가 하루에 한 번만 실제로 쓴다 — 앱을 열 때마다 UPDATE 하면 같은 행을 하루에도
+ * 수십 번 갱신한다. 실패해도 조용히 넘긴다(다음에 열 때 다시 한다).
+ */
+export function useTouchHousehold(householdId: string | null) {
+  useEffect(() => {
+    if (!householdId) return;
+    void supabase.rpc('touch_household', { p_household: householdId }).then(() => {});
+  }, [householdId]);
+}
+
+/**
  * 앱을 켤 때 한 번 큐를 비운다.
  *
  * ⚠ 화면마다 부르지 않는다. 탭 레이아웃 한 곳에서만 부른다 — 여러 곳에서 부르면

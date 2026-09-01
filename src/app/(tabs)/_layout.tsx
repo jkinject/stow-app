@@ -3,7 +3,7 @@ import { Tabs } from 'expo-router';
 
 import { IconBoxes, IconCart, IconDots, IconSearch } from '@/components/Icon';
 import { useHousehold } from '@/features/household/context';
-import { useDrainStorageGc } from '@/features/storage/gc';
+import { useDrainStorageGc, useTouchHousehold } from '@/features/storage/gc';
 import { useT } from '@/lib/i18n';
 import { useTheme, type } from '@/lib/theme';
 
@@ -27,6 +27,11 @@ export default function TabsLayout() {
    *   앱이 살아 있는 동안 유지되므로, "앱을 켤 때 한 번" 에 가장 가까운 자리다.
    */
   const { activeId } = useHousehold();
+  /**
+   * ⚠ 이 한 줄이 없으면 **쓰고 있는 집이 90일 뒤 휴면으로 판정돼 삭제된다.**
+   *   서버는 조회를 기록하지 않으므로 "누가 왔다" 를 앱이 말해 줘야 한다.
+   */
+  useTouchHousehold(activeId);
   useDrainStorageGc(activeId);
   return (
     <Tabs
