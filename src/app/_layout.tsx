@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
+import { ToastProvider } from '@/components/Toast';
 import { useMyHouseholds } from '@/features/household/api';
 import { HouseholdProvider } from '@/features/household/context';
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -112,11 +113,15 @@ export default function RootLayout() {
       <ThemeChoiceProvider>
       <AuthProvider>
         <Chrome>
-          <HouseholdProvider>
-            <Guard>
-              <Stack screenOptions={{ headerShown: false }} />
-            </Guard>
-          </HouseholdProvider>
+          {/* ⚠ Chrome 안쪽이어야 한다 — 알림이 테마 색을 쓴다.
+              Stack 바깥쪽이어야 한다 — 화면이 바뀌어도 알림은 떠 있어야 한다. */}
+          <ToastProvider>
+            <HouseholdProvider>
+              <Guard>
+                <Stack screenOptions={{ headerShown: false }} />
+              </Guard>
+            </HouseholdProvider>
+          </ToastProvider>
         </Chrome>
       </AuthProvider>
       </ThemeChoiceProvider>

@@ -153,6 +153,15 @@ export function useUpdateItem(itemId: string) {
        *   mutationFn 은 observer 와 무관하게 끝까지 실행되므로 여기 두면 반드시 돈다.
        */
       const item = data as ItemDetail;
+      /**
+       * ⚠ 갱신된 행을 **캐시에 직접 써 넣는다.** invalidate 만으로는 부족하다 —
+       *   그건 "낡았다" 고 표시할 뿐이고, 화면이 닫힌 뒤에는 다시 읽어 오지도 않는다
+       *   (활성 observer 가 없으니까). 그 상태로 같은 물건을 다시 열면 **옛 값이
+       *   먼저 그려진다.** 다른 물건을 보고 오면 그 사이 재조회가 끝나 새 값이
+       *   보이는데, 그래서 "가끔만 반영되는" 것처럼 보였다(사용자 보고 2026-09-02).
+       *   응답에 이미 갱신된 행이 통째로 들어 있으므로 한 번 더 읽을 이유가 없다.
+       */
+      qc.setQueryData(itemKeys.detail(item.id), item);
       invalidateItemViews(qc, item.id);
       return item;
     },

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconChevron } from '@/components/Icon';
 import { KeyboardSpacer } from '@/components/KeyboardSpacer';
+import { useToast } from '@/components/Toast';
 import { Button, Field, Loading, Screen } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { useCategoryList } from '@/features/category/api';
@@ -43,6 +44,7 @@ export default function ItemDetailScreen() {
   const { c } = useTheme();
   const t = useT();
   const router = useRouter();
+  const toast = useToast();
   const { activeId } = useHousehold();
 
   const item = useItem(itemId);
@@ -308,10 +310,16 @@ export default function ItemDetailScreen() {
         currentLocationId={row.location_id}
         busy={move.isPending}
         onClose={() => setMoving(false)}
-        onPick={async (target: MoveTarget) => {
+        onPick={async (target: MoveTarget, label: string) => {
           try {
             await move.mutateAsync(target);
             setMoving(false);
+            /**
+             * ⚠ 성공은 Alert 이 아니라 토스트로 알린다. 이동은 잦은 동작이라 확인을
+             *   누르게 하면 잘된 일에 손을 한 번 더 쓰게 만든다. 실패는 그대로
+             *   Alert 이다 — 사라지는 알림은 놓칠 수 있다.
+             */
+            toast(t.item.movedTo(label));
           } catch (e) {
             Alert.alert(t.item.moveFailed, e instanceof Error ? e.message : t.common.tryAgain);
           }
@@ -324,8 +332,10 @@ export default function ItemDetailScreen() {
 /**
  * 항상 편집 가능한 한 줄.
  *
- * ⚠ 초기값은 마운트 때 한 번만 잡고, `value` prop 이 바뀌어도 되돌리지 않는다.
- *   저장하면 재조회가 오는데 그때 폼을 덮어쓰면 입력 중이던 내용이 사라진다.
+ * ⚠ `value` prop 이 바뀌면 **받아들인다 — 단, 지금 건드리고 있지 않을 때만.**
+ *   무조건 덮어쓰면 입력 중이던 내용이 재조회에 지워지고, 무조건 무시하면 다른
+ *   기기(또는 방금 내가 한 저장)의 결과가 화면에 영영 안 나타난다. 그래서
+ *   **포커스가 없고 아직 저장 안 된 수정도 없을 때만** 새 값을 따라간다.
  *
  * ⚠⚠ 저장 시점이 **두 개**다. 포커스를 벗어날 때, 그리고 **화면을 떠날 때.**
  *   전에는 포커스를 벗어날 때뿐이었다. 그런데 메모는 여러 줄이라 키보드에 '완료'
@@ -363,6 +373,18 @@ function AutoField({
   const t = useT();
   const [draft, setDraft] = useState(value);
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle');
+
+  const focused = useRef(false);
+  const seen = useRef(value);
+  useEffect(() => {
+    const prev = seen.current;
+    if (value === prev) return;
+    seen.current = value;
+    if (focused.current) return; // 지금 타이핑 중이면 건드리지 않는다
+    // 아직 저장 안 된 수정이 있으면 그대로 둔다. 함수형 갱신이라 draft 를 의존성에
+    // 넣지 않아도 되고, 그래서 이 effect 는 value 가 바뀔 때만 돈다.
+    setDraft((d) => (d.trim() === prev.trim() ? value : d));
+  }, [value]);
 
   const commit = useCallback(async () => {
     const next = draft.trim();
@@ -407,7 +429,13 @@ function AutoField({
       <Field
         value={draft}
         onChangeText={setDraft}
-        onBlur={() => void commit()}
+        onFocus={() => {
+          focused.current = true;
+        }}
+        onBlur={() => {
+          focused.current = false;
+          void commit();
+        }}
         placeholder={placeholder}
         multiline={multiline}
         keyboardType={keyboardType}

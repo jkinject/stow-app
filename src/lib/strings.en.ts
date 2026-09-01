@@ -174,6 +174,7 @@ export const EN: Dict = {
     moving: 'Moving…',
     moveFailed: "Couldn't move it",
     moveTitle: 'Move it where?',
+    movedTo: (path: string) => `Moved to ${path}.`,
     addBoxHere: '+ New box here',
     noBoxesYet: 'No boxes',
     addBoxHint: 'The item goes straight into it.',

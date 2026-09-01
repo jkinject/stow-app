@@ -61,7 +61,13 @@ export function MovePicker({
   currentContainerId: string | null;
   currentLocationId: string;
   busy: boolean;
-  onPick: (t: MoveTarget) => void;
+  /**
+   * `label` 은 방금 고른 곳의 **보이는 이름**("신발장 › 왼쪽 신발장").
+   *
+   * ⚠ 부르는 쪽에서 다시 만들지 않게 여기서 넘긴다. 이 화면이 그 이름을 이미 그렸고,
+   *   부르는 쪽은 이동 직후라 아직 옛 위치를 들고 있어 스스로 만들 수 없다.
+   */
+  onPick: (t: MoveTarget, label: string) => void;
   onClose: () => void;
 }) {
   const { c } = useTheme();
@@ -177,14 +183,14 @@ export function MovePicker({
   const [boxName, setBoxName] = useState('');
   const createBox = useCreateContainerIn(householdId);
 
-  async function onAddBox(locationId: string) {
+  async function onAddBox(locationId: string, locName: string) {
     const n = boxName.trim();
     if (!n || createBox.isPending) return;
     try {
       const row = await createBox.mutateAsync({ locationId, name: n });
       setBoxName('');
       setBoxFor(null);
-      onPick({ containerId: row.id });
+      onPick({ containerId: row.id }, `${locName} \u203a ${row.name}`);
     } catch (e) {
       Alert.alert(t.location.boxAddFailed, e instanceof Error ? e.message : t.common.tryAgain);
     }
@@ -294,7 +300,7 @@ export function MovePicker({
                           get={thumbs.get}
                           here={hereLoose}
                           busy={busy}
-                          onPress={() => onPick({ locationId: loc.id })}
+                          onPress={() => onPick({ locationId: loc.id }, `${loc.name}${t.item.loose}`)}
                         />
                       </View>
 
@@ -316,7 +322,7 @@ export function MovePicker({
                             sub={b.item_count > 0 ? t.places.itemCount(b.item_count) : t.common.empty}
                             here={currentContainerId === b.id}
                             busy={busy}
-                            onPress={() => onPick({ containerId: b.id })}
+                            onPress={() => onPick({ containerId: b.id }, `${loc.name} \u203a ${b.name}`)}
                           />
                         </View>
                       ))}
@@ -331,12 +337,12 @@ export function MovePicker({
                               onChangeText={setBoxName}
                               placeholder={t.location.boxPlaceholder}
                               autoFocus
-                              onSubmitEditing={() => onAddBox(loc.id)}
+                              onSubmitEditing={() => onAddBox(loc.id, loc.name)}
                               returnKeyType="done"
                             />
                             <Button
                               label={t.common.add}
-                              onPress={() => onAddBox(loc.id)}
+                              onPress={() => onAddBox(loc.id, loc.name)}
                               busy={createBox.isPending}
                             />
                             <Text style={[st.hint, { color: c.textFaint }]}>

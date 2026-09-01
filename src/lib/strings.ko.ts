@@ -6,6 +6,23 @@
  * 함수형 항목은 수·이름이 문장에 끼어드는 자리다. 한국어와 영어는 어순과 복수형이
  * 달라서 문자열 이어붙이기로는 자연스럽게 만들 수 없다 — 언어별로 문장을 통째로 쓴다.
  */
+/**
+ * 한글 조사 '로/으로' 고르기.
+ *
+ * 받침이 없거나 받침이 'ㄹ' 이면 '로', 그 밖에는 '으로'("신발장로" 가 아니라
+ * "신발장으로"). 장소·박스 이름은 사용자가 짓는 값이라 문구에 조사를 박아 둘 수 없다.
+ *
+ * ⚠ 한글이 아닌 글자로 끝나면(숫자·영문 이름도 있다) '(으)로' 로 둔다. 영문 이름의
+ *   읽는 소리까지 맞추려면 규칙이 훨씬 커지는데, 그 값어치가 없다.
+ */
+function withRo(word: string): string {
+  const last = word.trim().slice(-1);
+  const code = last.charCodeAt(0);
+  if (code < 0xac00 || code > 0xd7a3) return `'${word}'(으)로`;
+  const jong = (code - 0xac00) % 28;
+  return `'${word}'${jong === 0 || jong === 8 ? '로' : '으로'}`;
+}
+
 export const KO = {
   common: {
     cancel: '취소',
@@ -191,6 +208,12 @@ export const KO = {
     moving: '옮기는 중…',
     moveFailed: '옮기지 못했습니다',
     moveTitle: '어디로 옮길까요?',
+    /**
+     * ⚠ 조사는 받침에 따라 달라진다. "신발장로" 가 아니라 "신발장으로" 다.
+     *   `withRo()` 가 마지막 글자를 보고 골라 준다 — 장소 이름은 사용자가 짓는
+     *   값이라 문구에 조사를 박아 둘 수 없다.
+     */
+    movedTo: (path: string) => `${withRo(path)} 옮겼습니다.`,
     addBoxHere: '+ 여기에 박스 만들기',
     noBoxesYet: '박스 없음',
     addBoxHint: '만들면 이 물건이 바로 그 박스로 들어갑니다.',
