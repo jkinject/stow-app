@@ -115,6 +115,20 @@ export const IconBoxes = (p: P) => (
   </S>
 );
 
+/**
+ * 박스 하나(뚜껑 + 몸통 + 손잡이).
+ *
+ * ⚠ `IconBoxes`(가로 막대 두 줄)와 헷갈리지 말 것. 그건 **보관 장소** 를 뜻하는
+ *   하단 탭 아이콘이다. 장소와 박스가 한 목록에 같이 나오므로 서로 달라야 한다.
+ */
+export const IconBox = (p: P) => (
+  <S {...p}>
+    <Rect x="3" y="4" width="18" height="5" rx="1.5" />
+    <Path d="M5 9v9a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 18V9" />
+    <Path d="M10 13h4" />
+  </S>
+);
+
 export const IconCart = (p: P) => (
   <S {...p}>
     <Path d="M3 4h2l2.2 10.4a2 2 0 0 0 2 1.6h7.4a2 2 0 0 0 2-1.5L20 7H6" />

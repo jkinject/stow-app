@@ -2,6 +2,7 @@ import { Image, type ImageSource } from 'expo-image';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { IconImage } from '@/components/Icon';
 import { ThumbStack } from '@/components/ThumbStack';
 import { IMAGE_CACHE_POLICY } from '@/features/item/thumbs';
 import { useTheme, type, radius, space, tracking } from '@/lib/theme';
@@ -13,7 +14,9 @@ import { useTheme, type, radius, space, tracking } from '@/lib/theme';
  * 제각각이라 사진이 필요하다는 요청이 왔다(2026-08-30). 각자 만들면 한쪽만 고쳐지는
  * 날이 반드시 온다 — 이 프로젝트에서 이미 세 번 겪었다.
  *
- * 사진이 없을 때 첫 글자로 자리를 채우는 이유: 빈 칸을 두면 목록이 들쭉날쭉해 보인다.
+ * 사진이 없으면 **아이콘**으로 자리를 채운다. 빈 칸을 두면 목록이 들쭉날쭉해 보이고,
+ * 예전처럼 이름의 첫 글자를 넣으면 회색 글자 타일이 줄줄이 서서 오히려 틀에 찍어낸
+ * 것처럼 보인다(2026-09-02 사용자 보고).
  */
 export function ThumbRow({
   title,
@@ -36,20 +39,18 @@ export function ThumbRow({
   /** ⚠ `{ uri, cacheKey }` 통째로 — 자세한 이유는 features/item/thumbs.ts 참고 */
   thumb?: ImageSource;
   /**
-   * 사진 **여러 장**을 겹쳐 보여 줄 때. 넘기면 `thumb` 대신 이것이 그려진다.
+   * 사진 **여러 장**을 겹쳐 **줄 오른쪽에** 보여 줄 때.
+   *
+   * ⚠ 왼쪽이 아니다. 왼쪽에 세 장을 겹쳐 놓으니 줄의 시작이 뭉개져 보였다
+   *   (사용자 보고 2026-09-02). 왼쪽은 그 줄이 **무엇인지**(장소냐 박스냐) 말하는
+   *   자리이므로 아이콘이 맡고, 안에 든 것들은 오른쪽에 딸려 붙는다.
+   *   `stack` 을 넘기면 왼쪽 칸은 `fallback` 아이콘으로 채워진다.
    *
    * ⚠ 물건에는 쓰지 않는다. 물건 사진은 그 물건의 진짜 사진이라 한 장이 맞다.
-   *   장소·박스처럼 **제 사진이 없어 안의 것을 빌려 오는** 줄에만 쓴다 — 한 장만
-   *   놓으면 그게 대표 사진처럼 읽힌다(ThumbStack 주석 참고).
+   *   장소·박스처럼 **제 사진이 없어 안의 것을 빌려 오는** 줄에만 쓴다.
    */
   stack?: { paths?: string[]; get: (p?: string | null) => ImageSource | undefined };
-  /**
-   * 사진이 없을 때 자리에 넣을 것. 기본은 **제목 첫 글자**다.
-   *
-   * ⚠ 첫 글자가 늘 옳지는 않다. 장소 목록처럼 사진 없는 줄이 대부분이면
-   *   "게 냉 드 세 실 안 카 컴 현" 같은 회색 글자 타일이 줄줄이 서서 오히려
-   *   틀에 찍어낸 것처럼 보인다(실기기에서 확인). 그럴 땐 조용한 아이콘을 넘긴다.
-   */
+  /** 사진이 없을 때 자리에 넣을 것. 기본은 사진 아이콘 — 쓰는 곳에서 바꿀 수 있다 */
   fallback?: ReactNode;
   onPress?: () => void;
   onLongPress?: () => void;
@@ -65,24 +66,20 @@ export function ThumbRow({
         pressed && onPress ? { opacity: 0.7 } : null,
       ]}
     >
-      {stack ? (
-        <ThumbStack paths={stack.paths} get={stack.get} size={THUMB} fallback={fallback} />
-      ) : (
-        <View style={[st.thumb, { backgroundColor: c.sunk }]}>
-          {thumb ? (
-            <Image
-              source={thumb}
-              style={st.thumbImg}
-              contentFit="cover"
-              transition={120}
-              cachePolicy={IMAGE_CACHE_POLICY}
-              recyclingKey={thumb.cacheKey}
-            />
-          ) : (
-            (fallback ?? <Text style={[st.thumbFallback, { color: c.textFaint }]}>{title.slice(0, 1)}</Text>)
-          )}
-        </View>
-      )}
+      <View style={[st.thumb, { backgroundColor: c.sunk }]}>
+        {!stack && thumb ? (
+          <Image
+            source={thumb}
+            style={st.thumbImg}
+            contentFit="cover"
+            transition={120}
+            cachePolicy={IMAGE_CACHE_POLICY}
+            recyclingKey={thumb.cacheKey}
+          />
+        ) : (
+          (fallback ?? <IconImage color={c.textFaint} size={22} />)
+        )}
+      </View>
 
       <View style={st.main}>
         <Text style={[st.title, { color: c.text }]} numberOfLines={1}>
@@ -100,6 +97,7 @@ export function ThumbRow({
         ) : null}
       </View>
 
+      {!!stack && <ThumbStack paths={stack.paths} get={stack.get} size={THUMB} />}
       {meta}
     </Pressable>
   );
@@ -125,7 +123,6 @@ const st = StyleSheet.create({
     justifyContent: 'center',
   },
   thumbImg: { width: '100%', height: '100%' },
-  thumbFallback: { fontSize: type.title, fontWeight: '600' },
   main: { flex: 1, gap: space.xs },
   title: { fontSize: type.bodyStrong, fontWeight: '700', letterSpacing: tracking.snug },
   subtitle: { fontSize: type.small },

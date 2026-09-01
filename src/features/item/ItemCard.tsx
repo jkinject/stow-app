@@ -1,6 +1,7 @@
 import { Image, type ImageSource } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { IconImage } from '@/components/Icon';
 import { useT } from '@/lib/i18n';
 import { useTheme, type, radius, overlay, space, tracking } from '@/lib/theme';
 
@@ -28,7 +29,7 @@ export function ItemCard({
 }: {
   name: string;
   subtitle?: string;
-  /** 분류 이름 — 위치 경로와 별개 줄로 작게 (AC-C9) */
+  /** 분류 이름 — 사진 **왼쪽 위 배지**로 (수량 배지와 짝) */
   category?: string | null;
   /**
    * ⚠ **선택값이다.** 넘기지 않으면 재고 개념이 없는 카드다(박스 목록이 그렇다).
@@ -73,8 +74,13 @@ export function ItemCard({
             recyclingKey={thumb.cacheKey}
           />
         ) : (
-          // 사진 없이 등록한 물건도 격자에서 자리를 지켜야 한다
-          <Text style={[st.photoFallback, { color: c.textFaint }]}>{name.slice(0, 2)}</Text>
+          /**
+           * ⚠ 이름의 앞 두 글자를 크게 박아 두었었다. 그러면 격자에 "목배 스타 식물"
+           *   같은 글자 타일이 줄줄이 서서, 사진이 있는 카드와 없는 카드가 아예 다른
+           *   물건처럼 보였다(사용자 보고 2026-09-02). 이름은 바로 아래 줄에 이미
+           *   있으므로 같은 말을 두 번 하는 셈이기도 하다. 조용한 아이콘이 맞다.
+           */
+          <IconImage color={c.textFaint} size={28} />
         )}
         {/* 수량 0 은 **살 것**을 뜻한다 — 배지로 눈에 띄게 하고 사진을 흐리게 해서
             "여긴 지금 없다" 가 격자에서 바로 읽히게 한다 */}
@@ -87,6 +93,16 @@ export function ItemCard({
             <Text style={st.qtyText}>{t.common.qty(quantity ?? 0)}</Text>
           </View>
         ) : null}
+
+        {/* 분류는 사진 **왼쪽 위**. 예전엔 카드 아래 셋째 줄이었는데, 이름·위치
+            아래에 회색 글씨가 한 줄 더 붙으니 카드가 글자로 빽빽해 보였다.
+            수량 배지와 짝을 이루는 자리라 눈이 먼저 가고 자리도 안 먹는다.
+            ⚠ 재고 없음 가림막 **뒤에** 그린다 — 가림막에 덮이면 안 된다. */}
+        {category ? (
+          <View style={st.catBadge}>
+            <Text style={st.catText} numberOfLines={1}>{category}</Text>
+          </View>
+        ) : null}
       </View>
       <View style={st.body}>
         <Text style={[st.name, { color: c.text }]} numberOfLines={1}>
@@ -95,11 +111,6 @@ export function ItemCard({
         {subtitle ? (
           <Text style={[st.subtitle, { color: c.textMuted }]} numberOfLines={1}>
             {subtitle}
-          </Text>
-        ) : null}
-        {category ? (
-          <Text style={[st.category, { color: c.textFaint }]} numberOfLines={1}>
-            {category}
           </Text>
         ) : null}
       </View>
@@ -116,7 +127,6 @@ const st = StyleSheet.create({
   card: { borderRadius: radius.md, overflow: 'hidden' },
   photo: { width: '100%', alignItems: 'center', justifyContent: 'center' },
   photoImg: { width: '100%', height: '100%' },
-  photoFallback: { fontSize: type.display, fontWeight: '700' },
   qtyBadge: {
     position: 'absolute',
     right: 6,
@@ -127,6 +137,17 @@ const st = StyleSheet.create({
     paddingVertical: space.xs,
   },
   qtyText: { color: overlay.fg, fontSize: type.tiny, fontWeight: '700' },
+  catBadge: {
+    position: 'absolute',
+    left: 6,
+    top: 6,
+    maxWidth: '70%',
+    backgroundColor: overlay.chip,
+    borderRadius: radius.full,
+    paddingHorizontal: space.sm,
+    paddingVertical: space.xs,
+  },
+  catText: { color: overlay.faint, fontSize: type.tiny, fontWeight: '600' },
   /**
    * 다 떨어진 물건은 격자에서 **멀리서도** 구분돼야 한다.
    * 구석의 작은 배지로는 훑어볼 때 놓친다 — 사진을 짙게 덮고 가운데 크게 쓴다.
@@ -150,5 +171,4 @@ const st = StyleSheet.create({
   body: { paddingHorizontal: space.md, paddingTop: space.sm, paddingBottom: space.md, gap: space.xs },
   name: { fontSize: type.body, fontWeight: '700', letterSpacing: tracking.snug },
   subtitle: { fontSize: type.tiny },
-  category: { fontSize: type.tiny },
 });

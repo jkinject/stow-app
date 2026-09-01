@@ -141,9 +141,21 @@ export function useUpdateItem(itemId: string) {
         )
         .single();
       if (error) throw error;
-      return data as ItemDetail;
+      /**
+       * ⚠⚠ 무효화를 `onSuccess` 가 아니라 **여기서** 한다.
+       *
+       *   `useMutation` 의 onSuccess 는 그 컴포넌트의 observer 에 매여 있다. 화면을
+       *   떠나며 저장하는 경로(물건 상세의 메모 — item/[id].tsx 의 AutoField 주석
+       *   참고)에서는 응답이 **언마운트 뒤에** 도착해서 onSuccess 가 통째로 건너뛰어진다.
+       *   그러면 DB 는 바뀌었는데 캐시는 옛 값 그대로다 — 저장했는데 안 된 것처럼
+       *   보이는, 아무것도 안 된 것보다 나쁜 상태다(2026-09-02 실기기에서 확인).
+       *
+       *   mutationFn 은 observer 와 무관하게 끝까지 실행되므로 여기 두면 반드시 돈다.
+       */
+      const item = data as ItemDetail;
+      invalidateItemViews(qc, item.id);
+      return item;
     },
-    onSuccess: (item) => invalidateItemViews(qc, item.id),
   });
 }
 

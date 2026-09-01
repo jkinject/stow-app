@@ -1,10 +1,10 @@
 import { Image } from 'expo-image';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { IconChevron, IconGear } from '@/components/Icon';
+import { IconChevron } from '@/components/Icon';
 import { KeyboardSpacer } from '@/components/KeyboardSpacer';
 import { Button, Field, Loading, Screen } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
@@ -326,7 +326,17 @@ export default function ItemDetailScreen() {
  *
  * ⚠ 초기값은 마운트 때 한 번만 잡고, `value` prop 이 바뀌어도 되돌리지 않는다.
  *   저장하면 재조회가 오는데 그때 폼을 덮어쓰면 입력 중이던 내용이 사라진다.
- *   저장은 **포커스를 벗어날 때, 값이 실제로 바뀐 경우에만** 한 번 일어난다.
+ *
+ * ⚠⚠ 저장 시점이 **두 개**다. 포커스를 벗어날 때, 그리고 **화면을 떠날 때.**
+ *   전에는 포커스를 벗어날 때뿐이었다. 그런데 메모는 여러 줄이라 키보드에 '완료'
+ *   가 없다 — 다 쓰고 뒤로가기를 누르는 것이 자연스러운 흐름인데, 그러면 포커스를
+ *   벗어나는 순간이 오지 않고 **입력한 내용이 조용히 사라졌다**(사용자 보고
+ *   2026-09-02: "메모 입력하고 뒤로가기 누르니깐 저장이 안되던데").
+ *
+ *   화면이 사라진 **뒤**(언마운트)에 저장하면 안 된다. react-query 의 onSuccess 는
+ *   컴포넌트에 매여 있어서, 그때는 DB 만 바뀌고 목록 캐시가 갱신되지 않는다 —
+ *   저장은 됐는데 목록엔 옛 값이 보이는, 더 나쁜 상태가 된다. 그래서 아직 살아 있는
+ *   **포커스를 잃는 시점**(useFocusEffect 의 cleanup)에 저장한다.
  */
 function AutoField({
   label,
@@ -372,6 +382,20 @@ function AutoField({
       Alert.alert(t.item.savedFailed, e instanceof Error ? e.message : t.common.tryAgain);
     }
   }, [draft, value, required, onSave, t]);
+
+  /**
+   * 화면을 떠날 때 한 번 더. `commit` 은 매 입력마다 새로 만들어지므로 ref 로
+   * **가장 최근 것**을 붙잡아 둔다 — 옛 클로저를 부르면 옛 draft 를 저장한다.
+   */
+  const commitRef = useRef(commit);
+  useEffect(() => {
+    commitRef.current = commit;
+  }, [commit]);
+  useFocusEffect(
+    useCallback(() => () => {
+      void commitRef.current();
+    }, []),
+  );
 
   return (
     <View style={st.field}>
@@ -442,17 +466,9 @@ function CategoryPicker({
           </Text>
           <IconChevron color={c.textFaint} />
         </Pressable>
-        <Pressable
-          onPress={() => router.push('/categories')}
-          hitSlop={8}
-          style={({ pressed }) => [
-            st.manageBtn,
-            { borderColor: c.borderStrong },
-            pressed && { opacity: 0.6 },
-          ]}
-        >
-          <IconGear color={c.textMuted} size={18} />
-        </Pressable>
+        {/* ⚠ 여기 있던 ⚙(카테고리 관리) 버튼을 뺐다 (2026-09-02 사용자 요청).
+            아래 시트 맨 끝에 같은 입구가 있어 길이 두 개였다. 자주 쓰는 값도 아닌데
+            줄 오른쪽을 차지해 이름이 좁아졌다. */}
       </View>
 
       {open && (
@@ -601,13 +617,6 @@ const st = StyleSheet.create({
     gap: space.sm,
   },
   selectText: { flex: 1, fontSize: type.bodyStrong },
-  manageBtn: {
-    borderWidth: 1,
-    borderRadius: radius.sm,
-    paddingHorizontal: space.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   backdrop: { flex: 1, backgroundColor: overlay.scrim, justifyContent: 'flex-end' },
   sheet: { borderTopWidth: 1, borderTopLeftRadius: 18, borderTopRightRadius: 18, paddingTop: space.lg },
   sheetScroll: { maxHeight: 320 },

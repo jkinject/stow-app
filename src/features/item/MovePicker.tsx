@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { IconBox, IconBoxes } from '@/components/Icon';
 import { ThumbStack } from '@/components/ThumbStack';
 import { Button, Empty, Field, Loading } from '@/components/ui';
 import { useThumbUrls } from '@/features/item/thumbs';
@@ -14,6 +15,18 @@ import { useTheme, type, radius, space } from '@/lib/theme';
 export type MoveTarget = { containerId: string } | { locationId: string };
 
 const HEX6 = /^#[0-9a-fA-F]{6}$/;
+
+/** 왼쪽 아이콘 칸과 그 안의 아이콘. 사진 더미는 이보다 작다 — 부속이니까 */
+const SLOT = 36;
+const ICON = 20;
+const STACK_TILE = 30;
+/**
+ * "지금 여기" 배지 자리의 **고정 폭.**
+ *
+ * ⚠ 배지가 있는 줄만 그만큼 넓어져서, 그 줄의 사진 더미가 왼쪽으로 밀렸다. 목록의
+ *   오른쪽 끝이 들쭉날쭉해 보인다(실기기 확인). 배지가 없어도 자리는 잡아 둔다.
+ */
+const BADGE_W = 58;
 
 
 /**
@@ -251,7 +264,10 @@ export function MovePicker({
                       pressed && { opacity: 0.6 },
                     ]}
                   >
-                    <ThumbStack paths={cover.loc.get(loc.id)} get={thumbs.get} />
+                    {/* 왼쪽은 "이게 무엇인지"(장소) 를 말하는 자리. 안에 든 것들은
+                        오른쪽에 딸려 붙는다 — 왼쪽에 사진 세 장을 겹치니 줄의
+                        시작이 뭉개져 보였다(사용자 보고). */}
+                    <Slot><IconBoxes color={c.textFaint} size={ICON} /></Slot>
                     <View style={st.rowMain}>
                       <Text style={[st.rowTitleStrong, { color: c.text }]} numberOfLines={1}>
                         {loc.name}
@@ -260,10 +276,13 @@ export function MovePicker({
                         {mine.length > 0 ? t.places.boxes(mine.length) : t.item.noBoxesYet}
                       </Text>
                     </View>
+                    <ThumbStack paths={cover.loc.get(loc.id)} get={thumbs.get} size={STACK_TILE} />
                     {/* 접혀 있어도 물건이 지금 어느 장소에 있는지는 보여야 한다 */}
-                    {holdsCurrent && !expanded && (
-                      <Text style={[st.here, { color: c.accentText }]}>{t.item.moveHere}</Text>
-                    )}
+                    <View style={st.badge}>
+                      {holdsCurrent && !expanded && (
+                        <Text style={[st.here, { color: c.accentText }]}>{t.item.moveHere}</Text>
+                      )}
+                    </View>
                     <Text style={[st.chevron, { color: c.textFaint }]}>
                       {expanded ? '\u25BE' : '\u25B8'}
                     </Text>
@@ -273,9 +292,12 @@ export function MovePicker({
                     <>
                       {/* 장소 직속 — 신발장 우산, 냉장고 우유처럼 박스에 안 넣는 물건 */}
                       <View style={st.indent}>
+                        {/* ⚠ 여기엔 사진 더미를 달지 않는다. 이 줄은 담는 곳이 아니라
+                            **동작**("그냥 두기")이고, 이름이 길어서 오른쪽에 더미까지
+                            붙이면 글자가 잘린다. */}
                         <Target
                           label={t.item.moveToLocation}
-                          paths={cover.loose.get(loc.id)}
+                          icon={<IconBoxes color={c.textFaint} size={ICON} />}
                           get={thumbs.get}
                           here={hereLoose}
                           busy={busy}
@@ -295,6 +317,7 @@ export function MovePicker({
                         >
                           <Target
                             label={b.name}
+                            icon={<IconBox color={c.textFaint} size={ICON} />}
                             paths={cover.box.get(b.id)}
                             get={thumbs.get}
                             sub={b.item_count > 0 ? t.places.itemCount(b.item_count) : t.common.empty}
@@ -366,9 +389,16 @@ export function MovePicker({
   );
 }
 
+/** 줄 왼쪽의 아이콘 칸. 크기가 고정이라 모든 줄의 글자가 같은 x 에서 시작한다 */
+function Slot({ children }: { children: React.ReactNode }) {
+  const { c } = useTheme();
+  return <View style={[st.slot, { backgroundColor: c.sunk }]}>{children}</View>;
+}
+
 function Target({
   label,
   sub,
+  icon,
   paths,
   get,
   here,
@@ -378,6 +408,8 @@ function Target({
   label: string;
   /** 없으면 한 줄짜리 줄이 된다 (장소 직속 항목) */
   sub?: string;
+  /** 왼쪽 칸 — 그 줄이 무엇인지(장소냐 박스냐) */
+  icon: React.ReactNode;
   paths?: string[];
   get: ReturnType<typeof useThumbUrls>['get'];
   here: boolean;
@@ -399,9 +431,9 @@ function Target({
         (pressed || here || busy) && { opacity: here ? 1 : 0.6 },
       ]}
     >
-      {/* ⚠ 조건부로 그리면 안 된다. 사진 없는 줄만 왼쪽으로 밀려서 목록의 글자
-          시작선이 어긋났다(실기기 확인). 자리는 항상 차지한다. */}
-      <ThumbStack paths={paths} get={get} />
+      {/* ⚠ 왼쪽 자리는 항상 차지한다. 비워 두면 그 줄만 글자가 왼쪽으로 밀려서
+          목록의 시작선이 어긋난다(실기기 확인). */}
+      <Slot>{icon}</Slot>
       <View style={st.rowMain}>
         <Text style={[st.rowTitle, { color: c.text }]} numberOfLines={1}>
           {label}
@@ -412,7 +444,10 @@ function Target({
           </Text>
         )}
       </View>
-      {here && <Text style={[st.here, { color: c.accentText }]}>{t.item.moveHere}</Text>}
+      <ThumbStack paths={paths} get={get} size={STACK_TILE} />
+      <View style={st.badge}>
+        {here && <Text style={[st.here, { color: c.accentText }]}>{t.item.moveHere}</Text>}
+      </View>
     </Pressable>
   );
 }
@@ -448,11 +483,19 @@ const st = StyleSheet.create({
   rowTitle: { fontSize: type.body, fontWeight: '600' },
   rowTitleStrong: { fontSize: type.subtitle, fontWeight: '700' },
   rowSub: { fontSize: type.caption },
+  badge: { width: BADGE_W, alignItems: 'flex-end' },
   here: { fontSize: type.caption, fontWeight: '700' },
   rescue: { paddingHorizontal: space.xl, gap: space.xs },
   addMore: { alignSelf: 'flex-start', paddingVertical: space.sm },
   newBox: { gap: space.md, paddingVertical: space.xs },
   hint: { fontSize: type.caption },
   chevron: { fontSize: type.body, fontWeight: '700' },
+  slot: {
+    width: SLOT,
+    height: SLOT,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   addMoreText: { fontSize: type.body, fontWeight: '600' },
 });
