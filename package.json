@@ -23,6 +23,7 @@
     "expo-image-manipulator": "~57.0.14",
     "expo-image-picker": "~57.0.14",
     "expo-linking": "~57.0.8",
+    "expo-localization": "~57.0.1",
     "expo-print": "~57.0.1",
     "expo-router": "~57.0.17",
     "expo-sharing": "~57.0.16",
