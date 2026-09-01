@@ -56,7 +56,18 @@ export function useSetPhoto(owner: PhotoOwner, id: string, householdId: string |
         .from(owner)
         .update({ photo_path: photoPath, thumb_path: thumbPath })
         .eq('id', id);
-      if (error) throw error;
+      if (error) {
+        /**
+         * ⚠ 파일은 이미 올라갔는데 행이 그것을 가리키지 못했다. 그냥 던지면 **아무도
+         *   못 찾는 파일 두 개가 스토리지에 영원히 남는다** — 지울 실마리가 어디에도
+         *   없다(경로를 아는 건 방금 실패한 이 호출뿐이다). 여기서 치운다.
+         *
+         *   정리에 실패하면 무시한다. 원래 오류를 이 오류로 덮으면 사용자는 진짜
+         *   원인을 못 본다.
+         */
+        await deletePhotoObjects([photoPath, thumbPath]).catch(() => {});
+        throw error;
+      }
 
       // 행이 새 경로를 가리킨 뒤에 옛 파일을 정리한다
       await deletePhotoObjects([old.photo_path, old.thumb_path]);

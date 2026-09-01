@@ -653,6 +653,32 @@ export type Database = {
           },
         ]
       }
+      storage_gc: {
+        Row: {
+          household_id: string
+          path: string
+          queued_at: string
+        }
+        Insert: {
+          household_id: string
+          path: string
+          queued_at?: string
+        }
+        Update: {
+          household_id?: string
+          path?: string
+          queued_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storage_gc_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       container_summary: {

@@ -2,6 +2,8 @@ import { Tabs } from 'expo-router';
 
 
 import { IconBoxes, IconCart, IconDots, IconSearch } from '@/components/Icon';
+import { useHousehold } from '@/features/household/context';
+import { useDrainStorageGc } from '@/features/storage/gc';
 import { useT } from '@/lib/i18n';
 import { useTheme, type } from '@/lib/theme';
 
@@ -17,6 +19,15 @@ import { useTheme, type } from '@/lib/theme';
 export default function TabsLayout() {
   const { c } = useTheme();
   const t = useT();
+  /**
+   * 하드 삭제된 물건의 사진 파일을 치운다.
+   *
+   * ⚠ **여기 한 곳에서만** 부른다. 화면마다 부르면 같은 배치를 동시에 지우려 들어
+   *   요청만 늘고 얻는 것이 없다. 탭 레이아웃은 로그인·가구 확정 뒤 한 번 마운트되고
+   *   앱이 살아 있는 동안 유지되므로, "앱을 켤 때 한 번" 에 가장 가까운 자리다.
+   */
+  const { activeId } = useHousehold();
+  useDrainStorageGc(activeId);
   return (
     <Tabs
       screenOptions={{
