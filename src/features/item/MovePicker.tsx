@@ -1,4 +1,4 @@
-import { Image, type ImageSource } from 'expo-image';
+import { Image } from 'expo-image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,6 +14,19 @@ import { useTheme, type, radius } from '@/lib/theme';
 export type MoveTarget = { containerId: string } | { locationId: string };
 
 const HEX6 = /^#[0-9a-fA-F]{6}$/;
+
+/** 겹쳐 보여 줄 사진 수. 셋이면 "여러 개" 로 읽히고, 넷부터는 줄이 너무 넓어진다 */
+const STACK_MAX = 3;
+const TILE = 40;
+/**
+ * 다음 장이 밀려나는 간격.
+ *
+ * ⚠ TILE 의 절반(20)으로 뒀더니 각 사진이 **반씩만** 보여 뭐가 뭔지 알아볼 수
+ *   없었다(실기기 확인). 60% 는 보여야 사진 구실을 한다. 대신 자리 폭이 늘어나
+ *   "박스에 넣지 않고 이 장소에 두기" 같은 긴 이름이 잘리지 않는지 함께 봐야 한다.
+ */
+const TILE_STEP = 24;
+const STACK_W = TILE + TILE_STEP * (STACK_MAX - 1);
 
 /**
  * 강조색에 투명도를 붙여 **옅게 깔 배경**을 만든다.
@@ -68,39 +81,64 @@ export function MovePicker({
   const loading = locations.isLoading || containers.isLoading;
 
   /**
-   * 장소·박스의 대표 사진.
+   * 장소·박스 줄에 보여 줄 **사진 여러 장.**
    *
-   * 이름만 있으면 "게스트룸" 과 "드레스룸" 이 글자로만 구분된다 — 이 앱에서 장소를
-   * 기억하는 방식은 이름이 아니라 그 안의 물건이다(사용자 보고).
+   * ⚠ 한 장만 보여 주면 안 된다. 장소에는 제 사진이 없어서 안의 것을 빌려 오는데,
+   *   한 장만 놓으면 그게 그 장소의 **대표 사진처럼** 읽힌다 (사용자 보고).
+   *   겹쳐서 여러 장 보여 주면 "안에 이런 것들이 있다" 로 읽힌다.
+   *   박스도 마찬가지다 — 제 사진이 없을 때 물건 한 장을 박으면 그 물건이 박스를
+   *   대표하는 것처럼 보인다.
+   *
+   * 고르는 순서:
+   *   · 장소 → **박스 사진 먼저**, 모자라면 물건 사진. 장소를 찾을 때 사람은 박스를
+   *     보고 알아본다 — 물건은 박스 안에 들어가 있어 밖에서 보이지 않는다.
+   *   · 박스 → 제 사진이 있으면 **그 한 장만.** 그건 진짜 대표 사진이라 겹칠 이유가
+   *     없다. 없으면 안에 든 물건들.
+   *   · 장소 직속 줄 → 박스에 안 들어간 물건들.
    *
    * ⚠ 새 질의를 만들지 않는다. 찾기 탭이 이미 받아 둔 `useAllItems` 와 **같은 캐시
-   *   키**라 네트워크 비용이 0 이다. 목록 화면마다 제 질의를 파면 같은 데이터를
-   *   서너 번 받게 된다.
+   *   키**라 네트워크 비용이 0 이다.
    */
   const items = useAllItems(householdId);
   const thumbs = useThumbUrls();
   const cover = useMemo(() => {
-    const loc = new Map<string, string>();
-    const box = new Map<string, string>();
-    for (const it of items.data ?? []) {
-      if (!it.thumb_path) continue;
-      if (!loc.has(it.location_id)) loc.set(it.location_id, it.thumb_path);
-      if (it.container_id && !box.has(it.container_id)) box.set(it.container_id, it.thumb_path);
-    }
+    const loc = new Map<string, string[]>();
+    const box = new Map<string, string[]>();
+    const loose = new Map<string, string[]>();
+    const push = (m: Map<string, string[]>, k: string, v: string) => {
+      const a = m.get(k);
+      if (!a) m.set(k, [v]);
+      else if (a.length < STACK_MAX && !a.includes(v)) a.push(v);
+    };
+
+    // 1) 장소는 박스 사진부터
+    const ownPhoto = new Set<string>();
     for (const b of containers.data ?? []) {
       if (!b.thumb_path) continue;
-      // 박스는 제 사진이 먼저다 — 안의 물건보다 박스 자체가 눈에 익다
-      box.set(b.id, b.thumb_path);
-      // 장소는 물건 사진이 하나도 없을 때 박스 사진으로 채운다. 박스에만 사진을
-      // 찍어 둔 장소(세탁실 선반들)가 실제로 있고, 그때 빈 칸으로 두면 사진이
-      // 있는데도 없는 것처럼 보인다.
-      if (!loc.has(b.location_id)) loc.set(b.location_id, b.thumb_path);
+      ownPhoto.add(b.id);
+      box.set(b.id, [b.thumb_path]); // 제 사진 — 이 박스는 여기서 확정이다
+      push(loc, b.location_id, b.thumb_path);
     }
-    return { loc, box };
+    // 2) 모자란 자리는 물건 사진으로
+    for (const it of items.data ?? []) {
+      if (!it.thumb_path) continue;
+      push(loc, it.location_id, it.thumb_path);
+      if (it.container_id) {
+        // 제 사진이 있는 박스는 건드리지 않는다 (위에서 확정)
+        if (!ownPhoto.has(it.container_id)) push(box, it.container_id, it.thumb_path);
+      } else {
+        push(loose, it.location_id, it.thumb_path);
+      }
+    }
+    return { loc, box, loose };
   }, [items.data, containers.data]);
 
   useEffect(() => {
-    thumbs.ensure([...cover.loc.values(), ...cover.box.values()]);
+    thumbs.ensure([
+      ...[...cover.loc.values()].flat(),
+      ...[...cover.box.values()].flat(),
+      ...[...cover.loose.values()].flat(),
+    ]);
   }, [cover, thumbs]);
 
   /**
@@ -154,8 +192,8 @@ export function MovePicker({
     }
   }, [visible]);
 
-  /** 대충 잡은 한 줄 높이(사진 44 + 위아래 여백). 정확할 필요는 없다 — 판단용이다 */
-  const ROW_H = 72;
+  /** 대충 잡은 한 줄 높이(사진 40 + 위아래 여백). 정확할 필요는 없다 — 판단용이다 */
+  const ROW_H = 66;
 
   function scrollToHere() {
     const { group, row } = hereY.current;
@@ -284,7 +322,7 @@ export function MovePicker({
                       pressed && { opacity: 0.6 },
                     ]}
                   >
-                    <Thumb source={thumbs.get(cover.loc.get(loc.id))} />
+                    <ThumbStack paths={cover.loc.get(loc.id)} thumbs={thumbs} />
                     <View style={st.rowMain}>
                       <Text style={[st.rowTitleStrong, { color: c.text }]} numberOfLines={1}>
                         {loc.name}
@@ -308,6 +346,8 @@ export function MovePicker({
                       <View style={st.indent}>
                         <Target
                           label={t.item.moveToLocation}
+                          paths={cover.loose.get(loc.id)}
+                          thumbs={thumbs}
                           here={hereLoose}
                           busy={busy}
                           onPress={() => onPick({ locationId: loc.id })}
@@ -326,7 +366,8 @@ export function MovePicker({
                         >
                           <Target
                             label={b.name}
-                            thumb={thumbs.get(cover.box.get(b.id))}
+                            paths={cover.box.get(b.id)}
+                            thumbs={thumbs}
                             sub={b.item_count > 0 ? t.places.itemCount(b.item_count) : t.common.empty}
                             here={currentContainerId === b.id}
                             busy={busy}
@@ -399,7 +440,8 @@ export function MovePicker({
 function Target({
   label,
   sub,
-  thumb,
+  paths,
+  thumbs,
   here,
   busy,
   onPress,
@@ -407,8 +449,8 @@ function Target({
   label: string;
   /** 없으면 한 줄짜리 줄이 된다 (장소 직속 항목) */
   sub?: string;
-  /** ⚠ `{ uri, cacheKey }` 통째로 — 이유는 features/item/thumbs.ts 참고 */
-  thumb?: ImageSource;
+  paths?: string[];
+  thumbs: ReturnType<typeof useThumbUrls>;
   here: boolean;
   busy: boolean;
   onPress: () => void;
@@ -428,9 +470,9 @@ function Target({
         (pressed || here || busy) && { opacity: here ? 1 : 0.6 },
       ]}
     >
-      {/* ⚠ 조건부로 그리면 안 된다. "박스에 넣지 않고 이 장소에 두기" 줄만 사진이
-          없는데, 그 줄만 왼쪽으로 밀려서 목록의 글자 시작선이 어긋났다(실기기 확인). */}
-      <Thumb source={thumb} />
+      {/* ⚠ 조건부로 그리면 안 된다. 사진 없는 줄만 왼쪽으로 밀려서 목록의 글자
+          시작선이 어긋났다(실기기 확인). 자리는 항상 차지한다. */}
+      <ThumbStack paths={paths} thumbs={thumbs} />
       <View style={st.rowMain}>
         <Text style={[st.rowTitle, { color: c.text }]} numberOfLines={1}>
           {label}
@@ -447,24 +489,50 @@ function Target({
 }
 
 /**
- * 줄 왼쪽의 작은 사진.
+ * 줄 왼쪽의 사진 더미. 최대 세 장을 조금씩 겹쳐 놓는다.
  *
- * ⚠ 사진이 없어도 **자리는 그대로 둔다.** 있는 줄만 왼쪽으로 밀리면 목록이
- *   들쭉날쭉해져 훑어보기 어렵다.
+ * ⚠ 자리 폭은 **장수와 무관하게 고정**이다. 한 장짜리 줄과 세 장짜리 줄의 글자
+ *   시작선이 달라지면 목록을 훑어볼 수 없다.
+ * ⚠ 타일마다 화면 바탕색 테두리를 두른다. 안 두르면 겹친 사진끼리 경계가 없어
+ *   한 장의 이상한 콜라주로 보인다.
  */
-function Thumb({ source }: { source?: ImageSource }) {
+function ThumbStack({
+  paths,
+  thumbs,
+}: {
+  paths?: string[];
+  thumbs: ReturnType<typeof useThumbUrls>;
+}) {
   const { c } = useTheme();
+  const list = (paths ?? []).slice(0, STACK_MAX);
   return (
-    <View style={[st.thumb, { backgroundColor: c.sunk }]}>
-      {!!source && (
-        <Image
-          source={source}
-          style={st.thumbImg}
-          contentFit="cover"
-          transition={120}
-          cachePolicy={IMAGE_CACHE_POLICY}
-          recyclingKey={source.cacheKey}
-        />
+    <View style={st.stack}>
+      {list.length === 0 ? (
+        <View style={[st.tile, { left: 0, backgroundColor: c.sunk, borderColor: c.bg }]} />
+      ) : (
+        list.map((p, i) => {
+          const src = thumbs.get(p);
+          return (
+            <View
+              key={p}
+              style={[
+                st.tile,
+                { left: i * TILE_STEP, backgroundColor: c.sunk, borderColor: c.bg, zIndex: STACK_MAX - i },
+              ]}
+            >
+              {!!src && (
+                <Image
+                  source={src}
+                  style={st.tileImg}
+                  contentFit="cover"
+                  transition={120}
+                  cachePolicy={IMAGE_CACHE_POLICY}
+                  recyclingKey={src.cacheKey}
+                />
+              )}
+            </View>
+          );
+        })
       )}
     </View>
   );
@@ -507,7 +575,15 @@ const st = StyleSheet.create({
   newBox: { gap: 10, paddingVertical: 4 },
   hint: { fontSize: type.caption },
   chevron: { fontSize: type.body, fontWeight: '700' },
-  thumb: { width: 44, height: 44, borderRadius: radius.sm, overflow: 'hidden' },
-  thumbImg: { width: '100%', height: '100%' },
+  stack: { width: STACK_W, height: TILE, justifyContent: 'center' },
+  tile: {
+    position: 'absolute',
+    width: TILE,
+    height: TILE,
+    borderRadius: radius.sm,
+    borderWidth: 2,
+    overflow: 'hidden',
+  },
+  tileImg: { width: '100%', height: '100%' },
   addMoreText: { fontSize: type.body, fontWeight: '600' },
 });
