@@ -60,6 +60,8 @@ export function LocationSheet({
   const create = useCreateLocation(householdId ?? '');
 
   const [name, setName] = useState('');
+  /** 이미 있는 이름을 적었을 때 입력칸 아래에 뜨는 문구 */
+  const [dupe, setDupe] = useState<string | null>(null);
   /** 아직 저장하지 않고 담아 둔 것들. 고른 순서를 지키려고 배열로 둔다 */
   const [picked, setPicked] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -71,8 +73,21 @@ export function LocationSheet({
   );
   const pickedSet = useMemo(() => new Set(picked), [picked]);
 
-  /** 제안 칩은 **늘 전부 보여준다.** 빼면 줄이 재배치된다(위 주석 참고) */
-  const chips = t.locSheet.suggestions;
+  /**
+   * 제안 칩 — **이미 만들어 둔 이름은 아예 빼고** 보여 준다 (2026-09-02 사용자 요청).
+   *
+   * 예전에는 전부 보여 주고 이미 있는 것만 회색으로 죽였다. 고를 수 없는 것을
+   * 자리만 차지하게 둘 이유가 없다. 하나도 남지 않으면 이 구역 자체를 감추고
+   * 직접 입력칸만 남긴다.
+   *
+   * ⚠ "칩을 빼면 줄이 재배치된다" 는 옛 경고는 **누를 때 빠지는 경우** 이야기다
+   *   (안방을 눌러 뺐더니 줄이 밀려 다음 탭이 거실에 맞았다). 여기서 빠지는 기준은
+   *   DB 목록이고, 시트가 열려 있는 동안에는 바뀌지 않는다 — 저장하면 시트가 닫힌다.
+   */
+  const chips = useMemo(
+    () => t.locSheet.suggestions.filter((sug) => !taken.has(sug)),
+    [t.locSheet.suggestions, taken],
+  );
   /** 제안에 없는 이름으로 직접 담은 것 */
   const customPicked = picked.filter((p) => !chips.includes(p));
 
@@ -84,8 +99,23 @@ export function LocationSheet({
   function stageTyped() {
     const n = name.trim();
     if (!n) return;
-    // 이미 있거나 이미 담은 이름이면 조용히 넘긴다 — 경고창을 띄울 일이 아니다
-    if (!taken.has(n) && !pickedSet.has(n)) setPicked((prev) => [...prev, n]);
+    /**
+     * ⚠ 예전에는 중복이면 **조용히 넘겼다.** 화면 아래에 '이미 있는 곳' 목록이
+     *   있어서 왜 안 담기는지 알아볼 수 있었기 때문이다. 그 목록을 뺐으니 이제는
+     *   말해 줘야 한다 — 안 그러면 눌러도 아무 일이 없는 고장으로 보인다.
+     *   경고창은 과하다. 잘못한 일이 아니라 알려 주기만 하면 되는 일이다.
+     *
+     * ⚠ 토스트로 알리려다 실패했다 — 이 화면이 `Modal` 이라 알림이 뒤에 깔려
+     *   **보이지 않는다**(실기기 확인, components/Toast.tsx 주석 참고).
+     *   입력칸 바로 아래에 두어야 눈에 들어온다. 적은 이름은 지우지 않는다 —
+     *   고쳐 쓰라고 남겨 둔다.
+     */
+    if (taken.has(n)) {
+      setDupe(n);
+      return;
+    }
+    setDupe(null);
+    if (!pickedSet.has(n)) setPicked((prev) => [...prev, n]);
     setName('');
   }
 
@@ -171,46 +201,42 @@ export function LocationSheet({
           contentContainerStyle={[st.body, { paddingBottom: insets.bottom + 32 }]}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={st.block}>
-            <Text style={[st.label, { color: c.textFaint }]}>{t.locSheet.suggestHint}</Text>
-            <View style={st.chips}>
-              {chips.map((s) => {
-                const already = taken.has(s);
-                const on = pickedSet.has(s);
-                return (
-                  <Pressable
-                    key={s}
-                    onPress={() => toggle(s)}
-                    disabled={already || saving}
-                    style={({ pressed }) => [
-                      st.chip,
-                      { borderColor: c.borderStrong, backgroundColor: c.card },
-                      /* ⚠ 폭에 영향을 주는 것(글자·borderWidth·padding)은 건드리지 않는다 */
-                      on && { borderColor: c.accent, backgroundColor: c.accent },
-                      already && { borderColor: c.border, backgroundColor: c.sunk },
-                      pressed && !already && { opacity: 0.6 },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        st.chipText,
-                        { color: on ? c.onAccent : already ? c.textFaint : c.text },
+          {chips.length > 0 && (
+            <View style={st.block}>
+              <Text style={[st.label, { color: c.textFaint }]}>{t.locSheet.suggestHint}</Text>
+              <View style={st.chips}>
+                {chips.map((sug) => {
+                  const on = pickedSet.has(sug);
+                  return (
+                    <Pressable
+                      key={sug}
+                      onPress={() => toggle(sug)}
+                      disabled={saving}
+                      style={({ pressed }) => [
+                        st.chip,
+                        { borderColor: c.borderStrong, backgroundColor: c.card },
+                        /* ⚠ 폭에 영향을 주는 것(글자·borderWidth·padding)은 건드리지 않는다 */
+                        on && { borderColor: c.accent, backgroundColor: c.accent },
+                        pressed && { opacity: 0.6 },
                       ]}
                     >
-                      {s}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+                      <Text style={[st.chipText, { color: on ? c.onAccent : c.text }]}>{sug}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
-          </View>
+          )}
 
           <View style={st.block}>
             <Text style={[st.label, { color: c.textFaint }]}>{t.locSheet.manualHint}</Text>
             <View style={st.manual}>
               <Field
                 value={name}
-                onChangeText={setName}
+                onChangeText={(v) => {
+                  setName(v);
+                  setDupe(null); // 고쳐 쓰기 시작하면 지적을 거둔다
+                }}
                 placeholder={t.locSheet.placeholder}
                 onSubmitEditing={stageTyped}
                 returnKeyType="done"
@@ -226,6 +252,11 @@ export function LocationSheet({
                 />
               </View>
             </View>
+            {/* ⚠ 입력칸 **바로 아래**다. 토스트로 알리려 했다가 이 화면이 Modal 이라
+                가려져 보이지 않는 것을 실기기에서 확인했다. */}
+            {dupe !== null && (
+              <Text style={[st.dupe, { color: c.danger }]}>{t.locSheet.alreadyExists(dupe)}</Text>
+            )}
           </View>
 
           {/* 직접 담은 것은 제안 칩에 없으므로 여기 보여주고, 눌러서 뺄 수 있게 한다 */}
@@ -255,22 +286,11 @@ export function LocationSheet({
             </View>
           )}
 
-          {/* 이미 만들어 둔 곳 — 여기서 할 수 있는 게 없으니 조용히 보여만 준다 */}
-          {(locations.data ?? []).length > 0 && (
-            <View style={st.block}>
-              <Text style={[st.label, { color: c.textFaint }]}>{t.locSheet.existing}</Text>
-              <View style={st.chips}>
-                {(locations.data ?? []).map((l) => (
-                  <View
-                    key={l.id}
-                    style={[st.chip, { borderColor: c.border, backgroundColor: c.sunk }]}
-                  >
-                    <Text style={[st.chipText, { color: c.textFaint }]}>{l.name}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
+          {/* ⚠ 여기 있던 '이미 있는 곳' 목록을 뺐다 (2026-09-02 사용자 요청).
+              "등록하러 들어왔다는 건 없으니깐 이 메뉴에 진입했겠지" — 맞는 말이다.
+              이제 제안 칩은 이미 만들어진 이름을 **아예 빼고** 보여 주므로 그 목록이
+              말하던 것도 남지 않는다. 대신 직접 입력이 중복일 때는 입력칸 아래에서
+              알려 준다 — 조용히 삼키면 눌러도 아무 일이 없는 고장으로 보인다. */}
         </ScrollView>
       </View>
     </Modal>
@@ -295,6 +315,8 @@ const st = StyleSheet.create({
   body: { paddingHorizontal: space.xl, paddingTop: space.xl, gap: space.xxl },
   block: { gap: space.md },
   label: { fontSize: type.caption },
+  /** 이미 있는 이름을 적었을 때 입력칸 아래에 붙는 지적 */
+  dupe: { fontSize: type.caption },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   chip: {
     borderWidth: 1,
