@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
 import { parseQrPayload } from '@/features/qr/payload';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, overlay } from '@/lib/theme';
+import { useTheme, type, radius, overlay, space } from '@/lib/theme';
 
 /**
  * QR 스캔 (AC12 · AC13 · AC14).
@@ -124,10 +124,10 @@ const RETICLE = 240;
 
 const st = StyleSheet.create({
   root: { flex: 1 },
-  pad: { paddingHorizontal: 24, gap: 10 },
+  pad: { paddingHorizontal: space.xxl, gap: space.md },
   denyTitle: { fontSize: type.title, fontWeight: '700' },
   denyHint: { fontSize: type.body, lineHeight: 22 },
-  denyActions: { gap: 10, marginTop: 24 },
+  denyActions: { gap: space.md, marginTop: space.xxl },
   overlay: {
     position: 'absolute',
     top: 0,
@@ -145,11 +145,11 @@ const st = StyleSheet.create({
     borderRadius: radius.lg,
   },
   guide: {
-    marginTop: 20,
+    marginTop: space.xl,
     color: overlay.fg,
     fontSize: type.body,
     textAlign: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: space.huge,
     textShadowColor: overlay.shadow,
     textShadowRadius: 6,
   },

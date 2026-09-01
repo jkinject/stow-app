@@ -19,7 +19,7 @@ import {
 } from '@/features/storage/api';
 import { useT } from '@/lib/i18n';
 import { relTime } from '@/lib/time';
-import { useTheme, type, radius } from '@/lib/theme';
+import { useTheme, type, radius, space, tracking } from '@/lib/theme';
 
 export default function LocationDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -309,21 +309,21 @@ function LocationSettings({
 }
 
 const st = StyleSheet.create({
-  body: { paddingHorizontal: 20, gap: 12 },
+  body: { paddingHorizontal: space.xl, gap: space.md },
   qr: { fontSize: type.small, fontWeight: '600' },
   audit: { fontSize: type.caption },
-  card: { borderRadius: radius.md, padding: 16, gap: 5 },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  cardTitle: { flex: 1, fontSize: type.h2, fontWeight: '700', letterSpacing: -0.3, lineHeight: 27 },
-  headActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  card: { borderRadius: radius.md, padding: space.lg, gap: space.xs },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
+  cardTitle: { flex: 1, fontSize: type.h2, fontWeight: '700', letterSpacing: tracking.tight, lineHeight: 27 },
+  headActions: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
   gear: { fontSize: type.title, fontWeight: '600' },
-  settings: { borderRadius: radius.md, padding: 16, gap: 8 },
-  settingsDanger: { marginTop: 14 },
-  fieldLabel: { fontSize: type.tiny, fontWeight: '600', letterSpacing: 0.5 },
+  settings: { borderRadius: radius.md, padding: space.lg, gap: space.sm },
+  settingsDanger: { marginTop: space.lg },
+  fieldLabel: { fontSize: type.tiny, fontWeight: '600', letterSpacing: tracking.wide },
   err: { fontSize: type.caption },
   addBtn: { fontSize: type.body, fontWeight: '600' },
-  addBox: { gap: 10, paddingVertical: 4 },
+  addBox: { gap: space.md, paddingVertical: space.xs },
   hint: { fontSize: type.caption, textAlign: 'center' },
-  list: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  footer: { marginTop: 32 },
+  list: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
+  footer: { marginTop: space.huge },
 });

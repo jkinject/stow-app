@@ -15,7 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius } from '@/lib/theme';
+import { useTheme, type, radius, space, tracking } from '@/lib/theme';
 
 /**
  * 공용 UI.
@@ -267,16 +267,16 @@ export function SectionLabel({ children, action }: { children: ReactNode; action
 
 const s = StyleSheet.create({
   screen: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, gap: 6 },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 },
-  backBtn: { alignSelf: 'flex-start', paddingVertical: 4 },
+  header: { paddingHorizontal: space.xl, paddingTop: space.sm, paddingBottom: space.md, gap: space.sm },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: space.md },
+  backBtn: { alignSelf: 'flex-start', paddingVertical: space.xs },
   backText: { fontSize: type.body, fontWeight: '500' },
-  h1: { fontSize: type.h1, fontWeight: '700', letterSpacing: -0.5, flexShrink: 1 },
+  h1: { fontSize: type.h1, fontWeight: '700', letterSpacing: tracking.tighter, flexShrink: 1 },
   /** 제목 바로 아래 — header 의 gap(6) 이 간격을 만든다 */
   h1sub: { fontSize: type.small },
-  btn: { borderWidth: 1, paddingVertical: 14, borderRadius: radius.sm, alignItems: 'center' },
+  btn: { borderWidth: 1, paddingVertical: space.lg, borderRadius: radius.sm, alignItems: 'center' },
   btnText: { fontSize: type.bodyStrong, fontWeight: '600' },
-  field: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 13, fontSize: type.bodyStrong },
+  field: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: space.lg, paddingVertical: space.md, fontSize: type.bodyStrong },
   /**
    * ⚠ `flex: 1` 을 여기 박으면 안 된다. 부모가 **세로** 컬럼일 때
    *   입력칸이 세로로 늘어나 카드가 부풀어 오른다(카테고리 관리 화면에서 실제로 겪었다).
@@ -284,23 +284,23 @@ const s = StyleSheet.create({
    */
   fieldWrap: { justifyContent: 'center' },
   // ✕ 자리를 비워 둔다 — 안 그러면 긴 글자가 버튼 밑으로 들어간다
-  fieldWithClear: { paddingRight: 42 },
+  fieldWithClear: { paddingRight: space.giant },
   clearBtn: { position: 'absolute', right: 10 },
   clearCircle: { width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   clearMark: { fontSize: type.tiny, fontWeight: '700', lineHeight: 14 },
   row: {
     borderRadius: radius.sm,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: space.md,
   },
-  rowMain: { flex: 1, gap: 3 },
+  rowMain: { flex: 1, gap: space.xs },
   rowTitle: { fontSize: type.bodyStrong, fontWeight: '600' },
   rowSub: { fontSize: type.small },
   rowMeta: { fontSize: type.small, fontVariant: ['tabular-nums'] },
-  empty: { paddingVertical: 40, alignItems: 'center', gap: 6 },
+  empty: { paddingVertical: space.giant, alignItems: 'center', gap: space.sm },
   emptyText: { fontSize: type.body },
   emptyHint: { fontSize: type.small, textAlign: 'center' },
   sectionRow: {
@@ -309,7 +309,7 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
   },
   /**
-   * ⚠ 예전엔 `textTransform: 'uppercase'` 와 `letterSpacing: 0.6` 이 있었다.
+   * ⚠ 예전엔 `textTransform: 'uppercase'` 와 `letterSpacing: tracking.wide` 이 있었다.
    *   둘 다 **라틴 문자 습관**이다. 한글에는 대문자가 없어서 uppercase 는 아무 일도
    *   하지 않고, 자간만 벌어져 "보 관 장 소" 처럼 어색하게 읽힌다.
    *   작은 회색 대문자 라벨은 그 자체로 템플릿 같은 인상을 준다 — 그냥 제목으로 쓴다.
@@ -317,6 +317,6 @@ const s = StyleSheet.create({
   sectionLabel: {
     fontSize: type.small,
     fontWeight: '600',
-    marginTop: 8,
+    marginTop: space.sm,
   },
 });

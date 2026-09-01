@@ -8,7 +8,7 @@ import { useHousehold } from '@/features/household/context';
 import { useThumbUrls } from '@/features/item/thumbs';
 import { useRemoveFromShopping, useShoppingList } from '@/features/shopping/api';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius } from '@/lib/theme';
+import { useTheme, type, radius, space } from '@/lib/theme';
 
 /**
  * 살 것 (AC16 · AC18).
@@ -158,13 +158,13 @@ function ShoppingCard({
 }
 
 const st = StyleSheet.create({
-  body: { paddingHorizontal: 20, gap: 10 },
-  card: { gap: 6 },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 64 },
-  actionBtn: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 7 },
+  body: { paddingHorizontal: space.xl, gap: space.md },
+  card: { gap: space.sm },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingLeft: space.max },
+  actionBtn: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: space.lg, paddingVertical: space.sm },
   actionText: { fontSize: type.small, fontWeight: '600' },
-  removeBtn: { paddingHorizontal: 8, paddingVertical: 7 },
+  removeBtn: { paddingHorizontal: space.sm, paddingVertical: space.sm },
   noLink: { fontSize: type.tiny, flex: 1, lineHeight: 16 },
   zero: { fontSize: type.small, fontWeight: '700' },
-  footNote: { fontSize: type.caption, textAlign: 'center', paddingTop: 18, lineHeight: 18 },
+  footNote: { fontSize: type.caption, textAlign: 'center', paddingTop: space.xl, lineHeight: 18 },
 });

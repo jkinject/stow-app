@@ -11,7 +11,7 @@ import { useAllItems } from '@/features/search/api';
 import { useLocations } from '@/features/storage/api';
 import { LocationSheet } from '@/features/storage/LocationSheet';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius } from '@/lib/theme';
+import { useTheme, type, radius, space } from '@/lib/theme';
 
 /**
  * 보관 장소 — 정리 작업용 탭.
@@ -137,11 +137,11 @@ export default function PlacesTab() {
 }
 
 const st = StyleSheet.create({
-  body: { paddingHorizontal: 20, gap: 12 },
+  body: { paddingHorizontal: space.xl, gap: space.md },
   addBtn: { fontSize: type.body, fontWeight: '600' },
-  switcher: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  chip: { borderWidth: 1, borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 7 },
+  switcher: { flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' },
+  chip: { borderWidth: 1, borderRadius: radius.full, paddingHorizontal: space.lg, paddingVertical: space.sm },
   chipText: { fontSize: type.label },
   hint: { fontSize: type.caption },
-  list: { gap: 8 },
+  list: { gap: space.sm },
 });

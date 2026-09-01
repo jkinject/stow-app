@@ -1,7 +1,7 @@
 import { Modal, Pressable, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useTheme, type, overlay } from '@/lib/theme';
+import { useTheme, type, overlay, space, tracking } from '@/lib/theme';
 
 /**
  * 아래에서 올라와 값 하나를 고르는 시트.
@@ -75,21 +75,21 @@ export function ChoiceSheet({
 
 const st = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: overlay.scrim, justifyContent: 'flex-end' },
-  sheet: { borderTopWidth: 1, borderTopLeftRadius: 18, borderTopRightRadius: 18, paddingTop: 14 },
+  sheet: { borderTopWidth: 1, borderTopLeftRadius: 18, borderTopRightRadius: 18, paddingTop: space.lg },
   title: {
     fontSize: type.tiny,
     fontWeight: '700',
-    letterSpacing: 0.6,
+    letterSpacing: tracking.wide,
     textTransform: 'uppercase',
-    paddingHorizontal: 20,
-    paddingBottom: 10,
+    paddingHorizontal: space.xl,
+    paddingBottom: space.md,
   },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.lg,
   },
   optionText: { fontSize: type.bodyStrong, fontWeight: '500' },
   check: { fontSize: type.subtitle, fontWeight: '800' },

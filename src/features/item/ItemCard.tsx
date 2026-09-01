@@ -2,7 +2,7 @@ import { Image, type ImageSource } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, overlay } from '@/lib/theme';
+import { useTheme, type, radius, overlay, space, tracking } from '@/lib/theme';
 
 import { PHOTO_ASPECT } from './photo';
 import { IMAGE_CACHE_POLICY } from './thumbs';
@@ -123,8 +123,8 @@ const st = StyleSheet.create({
     top: 6,
     backgroundColor: overlay.chip,
     borderRadius: radius.full,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: space.sm,
+    paddingVertical: space.xs,
   },
   qtyText: { color: overlay.fg, fontSize: type.tiny, fontWeight: '700' },
   /**
@@ -145,10 +145,10 @@ const st = StyleSheet.create({
     color: overlay.fg,
     fontSize: type.title,
     fontWeight: '800',
-    letterSpacing: -0.3,
+    letterSpacing: tracking.tight,
   },
-  body: { paddingHorizontal: 11, paddingTop: 9, paddingBottom: 11, gap: 3 },
-  name: { fontSize: type.body, fontWeight: '700', letterSpacing: -0.2 },
+  body: { paddingHorizontal: space.md, paddingTop: space.sm, paddingBottom: space.md, gap: space.xs },
+  name: { fontSize: type.body, fontWeight: '700', letterSpacing: tracking.snug },
   subtitle: { fontSize: type.tiny },
   category: { fontSize: type.tiny },
 });

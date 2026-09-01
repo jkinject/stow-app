@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Field } from '@/components/ui';
 import { confirmDestructive } from '@/lib/confirm';
 import { useT } from '@/lib/i18n';
-import { radius, type, useTheme } from '@/lib/theme';
+import { radius, type, useTheme, space } from '@/lib/theme';
 
 import { useCreateLocation, useLocations } from './api';
 
@@ -284,25 +284,25 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.lg,
     borderBottomWidth: 1,
-    gap: 12,
+    gap: space.md,
   },
   title: { fontSize: type.bodyStrong, fontWeight: '700', flex: 1, textAlign: 'center' },
   close: { fontSize: type.body },
   save: { fontSize: type.body, fontWeight: '700' },
-  body: { paddingHorizontal: 20, paddingTop: 18, gap: 24 },
-  block: { gap: 10 },
+  body: { paddingHorizontal: space.xl, paddingTop: space.xl, gap: space.xxl },
+  block: { gap: space.md },
   label: { fontSize: type.caption },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   chip: {
     borderWidth: 1,
     borderRadius: radius.full,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
   },
   chipText: { fontSize: type.body, fontWeight: '600' },
-  manual: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  manual: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start' },
   addBtn: { width: 84 },
 });

@@ -9,7 +9,7 @@ import { useAllItems } from '@/features/search/api';
 import { useAllContainers, useCreateContainerIn, useLocations } from '@/features/storage/api';
 import { LocationSheet } from '@/features/storage/LocationSheet';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius } from '@/lib/theme';
+import { useTheme, type, radius, space } from '@/lib/theme';
 
 export type MoveTarget = { containerId: string } | { locationId: string };
 
@@ -544,35 +544,35 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.lg,
     borderBottomWidth: 1,
   },
   title: { fontSize: type.title, fontWeight: '700' },
   close: { fontSize: type.body, fontWeight: '600' },
-  body: { paddingHorizontal: 20, paddingTop: 14, gap: 18 },
-  group: { gap: 8 },
-  indent: { paddingLeft: 20 },
+  body: { paddingHorizontal: space.xl, paddingTop: space.lg, gap: space.xl },
+  group: { gap: space.sm },
+  indent: { paddingLeft: space.xl },
   row: {
     borderRadius: radius.sm,
     // ⚠ 강조할 때만 borderWidth 를 주면 그 줄만 2px 커져 목록이 흔들린다.
     //   자리를 항상 잡아 두고 **색만** 바꾼다.
     borderWidth: 1,
     borderColor: 'transparent',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: space.md,
   },
-  rowMain: { flex: 1, gap: 2 },
+  rowMain: { flex: 1, gap: space.xs },
   rowTitle: { fontSize: type.body, fontWeight: '600' },
   rowTitleStrong: { fontSize: type.subtitle, fontWeight: '700' },
   rowSub: { fontSize: type.caption },
   here: { fontSize: type.caption, fontWeight: '700' },
-  rescue: { paddingHorizontal: 20, gap: 4 },
-  addMore: { alignSelf: 'flex-start', paddingVertical: 8 },
-  newBox: { gap: 10, paddingVertical: 4 },
+  rescue: { paddingHorizontal: space.xl, gap: space.xs },
+  addMore: { alignSelf: 'flex-start', paddingVertical: space.sm },
+  newBox: { gap: space.md, paddingVertical: space.xs },
   hint: { fontSize: type.caption },
   chevron: { fontSize: type.body, fontWeight: '700' },
   stack: { width: STACK_W, height: TILE, justifyContent: 'center' },

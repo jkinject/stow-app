@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { confirmDestructive } from '@/lib/confirm';
 import { useT } from '@/lib/i18n';
-import { overlay, radius, type } from '@/lib/theme';
+import { overlay, radius, type, space } from '@/lib/theme';
 
 import { useCameraZoom, ZoomBar } from './CameraZoom';
 import { PHOTO_ASPECT, PHOTO_ASPECT_PAIR } from './photo';
@@ -280,15 +280,15 @@ const st = StyleSheet.create({
     bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: space.sm,
   },
   waitingText: { color: overlay.fg, fontSize: type.small },
   retry: {
     borderWidth: 1,
     borderColor: overlay.hairline,
     borderRadius: radius.sm,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.md,
   },
   retryText: { color: overlay.fg, fontSize: type.label, fontWeight: '600' },
   top: {
@@ -298,7 +298,7 @@ const st = StyleSheet.create({
     right: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: space.md,
   },
   action: { color: overlay.fg, fontSize: type.h2, fontWeight: '600', width: 40 },
   actionSpacer: { width: 40 },
@@ -320,9 +320,9 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingTop: 18,
+    paddingTop: space.xl,
   },
-  side: { alignItems: 'center', gap: 3, width: 76 },
+  side: { alignItems: 'center', gap: space.xs, width: 76 },
   sideIcon: { color: overlay.fg, fontSize: type.h1, lineHeight: 28 },
   sideLabel: { color: overlay.faint, fontSize: type.caption },
   shutter: {

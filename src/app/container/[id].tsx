@@ -24,7 +24,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/lib/i18n';
 import { relTime } from '@/lib/time';
-import { useTheme, type, radius, overlay } from '@/lib/theme';
+import { useTheme, type, radius, overlay, space, tracking } from '@/lib/theme';
 
 /** 컨테이너 한 건 조회. 목록을 거치지 않고 직접 가져온다 */
 function useContainer(containerId: string) {
@@ -314,13 +314,13 @@ function BoxSettings({
 /** 상대 시각. 화면마다 다른 표현을 쓰지 않도록 사전을 통한다 */
 
 const st = StyleSheet.create({
-  body: { paddingHorizontal: 20, gap: 12 },
+  body: { paddingHorizontal: space.xl, gap: space.md },
   path: { fontSize: type.small },
-  list: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  list: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
   gear: { fontSize: type.title, fontWeight: '600' },
   audit: { fontSize: type.caption },
-  card: { borderRadius: radius.md, padding: 14, gap: 14 },
-  cardTop: { flexDirection: 'row', gap: 14, alignItems: 'center' },
+  card: { borderRadius: radius.md, padding: space.lg, gap: space.lg },
+  cardTop: { flexDirection: 'row', gap: space.lg, alignItems: 'center' },
   thumb: {
     width: 96,
     height: 128,   // 96 / (3/4) — 저장 비율과 같게
@@ -331,16 +331,16 @@ const st = StyleSheet.create({
   },
   thumbImg: { width: '100%', height: '100%' },
   thumbAdd: { fontSize: type.display, fontWeight: '400' },
-  cardMain: { flex: 1, gap: 5, justifyContent: 'center' },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  cardTitle: { flex: 1, fontSize: type.h2, fontWeight: '700', letterSpacing: -0.3, lineHeight: 27 },
+  cardMain: { flex: 1, gap: space.xs, justifyContent: 'center' },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
+  cardTitle: { flex: 1, fontSize: type.h2, fontWeight: '700', letterSpacing: tracking.tight, lineHeight: 27 },
   photoEdit: {
     position: 'absolute',
     right: 10,
     bottom: 10,
     backgroundColor: overlay.chip,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
     borderRadius: radius.full,
   },
   photoEditText: { color: overlay.fg, fontSize: type.caption, fontWeight: '600' },
@@ -353,8 +353,8 @@ const st = StyleSheet.create({
     justifyContent: 'center',
   },
   photoAddText: { fontSize: type.body, fontWeight: '600' },
-  settings: { borderRadius: radius.md, padding: 16, gap: 8 },
-  settingsDanger: { marginTop: 14 },
-  fieldLabel: { fontSize: type.tiny, fontWeight: '600', letterSpacing: 0.5 },
+  settings: { borderRadius: radius.md, padding: space.lg, gap: space.sm },
+  settingsDanger: { marginTop: space.lg },
+  fieldLabel: { fontSize: type.tiny, fontWeight: '600', letterSpacing: tracking.wide },
   err: { fontSize: type.caption },
 });

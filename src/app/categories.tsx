@@ -14,7 +14,7 @@ import {
 } from '@/features/category/api';
 import { useHousehold } from '@/features/household/context';
 import { useT } from '@/lib/i18n';
-import { radius, type, useTheme } from '@/lib/theme';
+import { radius, type, useTheme, space } from '@/lib/theme';
 
 /**
  * 카테고리 관리 (AC-C1~C6).
@@ -153,19 +153,19 @@ function CategoryRow({ row, onDelete }: { row: Category; onDelete: () => void })
 
 const st = StyleSheet.create({
   flex: { flex: 1 },
-  body: { paddingHorizontal: 20, gap: 10, flex: 1 },
-  addRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  body: { paddingHorizontal: space.xl, gap: space.md, flex: 1 },
+  addRow: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start' },
   addBtn: { width: 84 },
-  list: { gap: 8 },
+  list: { gap: space.sm },
   row: {
     borderRadius: radius.sm,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: space.md,
+    paddingVertical: space.md,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: space.md,
   },
-  rowMain: { flex: 1, gap: 4 },
-  count: { fontSize: type.caption, paddingLeft: 2 },
-  del: { padding: 6 },
+  rowMain: { flex: 1, gap: space.xs },
+  count: { fontSize: type.caption, paddingLeft: space.xs },
+  del: { padding: space.sm },
 });

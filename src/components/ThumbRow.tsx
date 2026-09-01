@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { IMAGE_CACHE_POLICY } from '@/features/item/thumbs';
-import { useTheme, type, radius } from '@/lib/theme';
+import { useTheme, type, radius, space, tracking } from '@/lib/theme';
 
 /**
  * 썸네일 + 제목 + 부제 + 우측 정보로 이루어진 목록 행.
@@ -94,10 +94,10 @@ export function ThumbRow({
 const st = StyleSheet.create({
   row: {
     borderRadius: radius.sm,
-    padding: 10,
+    padding: space.md,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: space.md,
   },
   thumb: {
     width: 52,
@@ -109,8 +109,8 @@ const st = StyleSheet.create({
   },
   thumbImg: { width: '100%', height: '100%' },
   thumbFallback: { fontSize: type.title, fontWeight: '600' },
-  main: { flex: 1, gap: 2 },
-  title: { fontSize: type.bodyStrong, fontWeight: '700', letterSpacing: -0.2 },
+  main: { flex: 1, gap: space.xs },
+  title: { fontSize: type.bodyStrong, fontWeight: '700', letterSpacing: tracking.snug },
   subtitle: { fontSize: type.small },
   caption: { fontSize: type.caption },
 });

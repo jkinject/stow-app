@@ -8,7 +8,7 @@ import { useHousehold } from '@/features/household/context';
 import { A4_PT, buildLabelSheetHtml, PER_PAGE, type LabelInput } from '@/features/qr/labels';
 import { useAllContainers, useLocations } from '@/features/storage/api';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius } from '@/lib/theme';
+import { useTheme, type, radius, space } from '@/lib/theme';
 
 /**
  * A4 라벨 시트 만들기 (AC11).
@@ -176,18 +176,18 @@ export default function Labels() {
 }
 
 const st = StyleSheet.create({
-  body: { paddingHorizontal: 20, gap: 10, flex: 1 },
+  body: { paddingHorizontal: space.xl, gap: space.md, flex: 1 },
   intro: { fontSize: type.label, lineHeight: 20 },
-  bulk: { flexDirection: 'row', gap: 18 },
+  bulk: { flexDirection: 'row', gap: space.xl },
   bulkText: { fontSize: type.label, fontWeight: '600' },
   scroll: { flexGrow: 0, flexShrink: 1 },
-  scrollInner: { gap: 8, paddingBottom: 8 },
+  scrollInner: { gap: space.sm, paddingBottom: space.sm },
   row: {
     borderRadius: radius.sm,
-    padding: 12,
+    padding: space.md,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: space.md,
   },
   check: {
     width: 24,
@@ -198,9 +198,9 @@ const st = StyleSheet.create({
     justifyContent: 'center',
   },
   checkMark: { fontSize: type.body, fontWeight: '800' },
-  rowMain: { flex: 1, gap: 2 },
+  rowMain: { flex: 1, gap: space.xs },
   name: { fontSize: type.bodyStrong, fontWeight: '600' },
   loc: { fontSize: type.caption },
-  footer: { borderTopWidth: 1, paddingTop: 14, gap: 10, marginTop: 4 },
+  footer: { borderTopWidth: 1, paddingTop: space.lg, gap: space.md, marginTop: space.xs },
   tally: { fontSize: type.small, textAlign: 'center' },
 });

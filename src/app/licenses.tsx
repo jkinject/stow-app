@@ -79,10 +79,10 @@ export default function LicensesScreen() {
 }
 
 const st = StyleSheet.create({
-  list: { paddingHorizontal: space.xl, paddingBottom: 40, gap: 6 },
+  list: { paddingHorizontal: space.xl, paddingBottom: space.giant, gap: space.sm },
   intro: { fontSize: type.small, lineHeight: 20, paddingBottom: space.md },
-  group: { fontSize: type.small, fontWeight: '700', paddingTop: space.lg, paddingBottom: 4 },
-  row: { borderRadius: radius.sm, paddingHorizontal: 12, paddingVertical: 10, gap: 3 },
+  group: { fontSize: type.small, fontWeight: '700', paddingTop: space.lg, paddingBottom: space.xs },
+  row: { borderRadius: radius.sm, paddingHorizontal: space.md, paddingVertical: space.md, gap: space.xs },
   pressed: { opacity: 0.6 },
   name: { fontSize: type.label, fontWeight: '600' },
   version: { fontSize: type.tiny, fontWeight: '400' },

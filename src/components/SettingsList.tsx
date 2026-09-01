@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { IconChevron } from './Icon';
-import { useTheme, type, radius } from '@/lib/theme';
+import { useTheme, type, radius, space } from '@/lib/theme';
 
 /**
  * 설정 화면의 묶음 카드와 줄.
@@ -63,7 +63,7 @@ export function SettingsRow({
 
 const st = StyleSheet.create({
   group: { borderRadius: radius.md, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 15 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.lg, paddingHorizontal: space.lg, paddingVertical: space.lg },
   icon: { width: 22, alignItems: 'center' },
   label: { flex: 1, fontSize: type.bodyStrong, fontWeight: '500' },
   value: { fontSize: type.body },

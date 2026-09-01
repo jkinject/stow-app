@@ -5,7 +5,7 @@ import { Empty, Loading, Screen } from '@/components/ui';
 import { useItemHistory, type ItemEvent } from '@/features/history/api';
 import { useItem } from '@/features/item/api';
 import { useT } from '@/lib/i18n';
-import { radius, type, useTheme } from '@/lib/theme';
+import { radius, type, useTheme, space } from '@/lib/theme';
 import { relTime } from '@/lib/time';
 
 /**
@@ -72,18 +72,18 @@ function EventRow({ ev }: { ev: ItemEvent }) {
 }
 
 const st = StyleSheet.create({
-  body: { paddingHorizontal: 20, paddingBottom: 32 },
-  list: { gap: 8 },
+  body: { paddingHorizontal: space.xl, paddingBottom: space.huge },
+  list: { gap: space.sm },
   event: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: space.md,
     borderRadius: radius.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
   },
   dot: { width: 6, height: 6, borderRadius: 3 },
-  eventMain: { flex: 1, gap: 3 },
+  eventMain: { flex: 1, gap: space.xs },
   eventType: { fontSize: type.body, fontWeight: '600' },
   eventMeta: { fontSize: type.caption },
 });

@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IMAGE_CACHE_POLICY } from '@/features/item/thumbs';
 import { confirmDestructive } from '@/lib/confirm';
 import { useT } from '@/lib/i18n';
-import { overlay, type } from '@/lib/theme';
+import { overlay, type, space } from '@/lib/theme';
 
 /**
  * 사진 크게 보기.
@@ -280,10 +280,10 @@ const st = StyleSheet.create({
     bottom: 0,
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 28,
-    paddingTop: 18,
+    gap: space.xxxl,
+    paddingTop: space.xl,
   },
-  btn: { paddingHorizontal: 10, paddingVertical: 6 },
+  btn: { paddingHorizontal: space.md, paddingVertical: space.sm },
   btnText: { color: overlay.fg, fontSize: type.bodyStrong, fontWeight: '600' },
   danger: { color: overlay.danger },
 });

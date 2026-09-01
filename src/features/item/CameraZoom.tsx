@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, type GestureResponderEvent } from 'react-native';
 
-import { type, radius, overlay } from '@/lib/theme';
+import { type, radius, overlay, space } from '@/lib/theme';
 import { useT } from '@/lib/i18n';
 
 /**
@@ -100,10 +100,10 @@ const st = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: space.sm,
     backgroundColor: overlay.scrim,
     borderRadius: radius.full,
-    padding: 4,
+    padding: space.xs,
   },
   btn: {
     width: 38,
@@ -114,6 +114,6 @@ const st = StyleSheet.create({
   },
   off: { opacity: 0.35 },
   btnText: { color: overlay.fg, fontSize: type.title, fontWeight: '700', lineHeight: 24 },
-  level: { paddingHorizontal: 10, minWidth: 76, alignItems: 'center' },
+  level: { paddingHorizontal: space.md, minWidth: 76, alignItems: 'center' },
   levelText: { color: overlay.fg, fontSize: type.caption, fontWeight: '600', fontVariant: ['tabular-nums'] },
 });

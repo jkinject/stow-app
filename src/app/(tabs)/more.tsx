@@ -28,7 +28,7 @@ import { useAuth } from '@/lib/auth';
 import { useI18n, type Lang } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { useThemeChoice, type ThemeChoice } from '@/lib/theme-context';
-import { useTheme, type, radius } from '@/lib/theme';
+import { useTheme, type, radius, space, tracking } from '@/lib/theme';
 
 /**
  * 화면에 보여줄 버전 한 줄과, 눌렀을 때 복사할 진단 정보.
@@ -298,8 +298,8 @@ export default function MoreTab() {
 }
 
 const st = StyleSheet.create({
-  body: { paddingHorizontal: 20, gap: 18 },
-  profile: { borderRadius: radius.md, padding: 18, flexDirection: 'row', gap: 14 },
+  body: { paddingHorizontal: space.xl, gap: space.xl },
+  profile: { borderRadius: radius.md, padding: space.xl, flexDirection: 'row', gap: space.lg },
   avatar: {
     width: 56,
     height: 56,
@@ -308,7 +308,7 @@ const st = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: { fontSize: type.h2, fontWeight: '700' },
-  profileMain: { flex: 1, gap: 3, justifyContent: 'center' },
-  name: { fontSize: type.title, fontWeight: '700', letterSpacing: -0.3 },
+  profileMain: { flex: 1, gap: space.xs, justifyContent: 'center' },
+  name: { fontSize: type.title, fontWeight: '700', letterSpacing: tracking.tight },
   sub: { fontSize: type.small },
 });

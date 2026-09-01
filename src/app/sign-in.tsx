@@ -18,7 +18,7 @@ import { KeyboardSpacer } from '@/components/KeyboardSpacer';
 import { SIGNIN_HERO_URI } from '@/features/auth/heroImage';
 import { authMessage, useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius } from '@/lib/theme';
+import { useTheme, type, radius, space, tracking } from '@/lib/theme';
 
 /**
  * 로그인 — 앱을 처음 여는 사람이 보는 **유일한** 화면이다.
@@ -343,15 +343,15 @@ const s = StyleSheet.create({
   heroDim: { opacity: 0.9 },
   fade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
 
-  content: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: 24, gap: 28 },
-  headings: { gap: 10 },
-  title: { fontSize: type.display, fontWeight: '800', letterSpacing: -1 },
+  content: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: space.xxl, gap: space.xxxl },
+  headings: { gap: space.md },
+  title: { fontSize: type.display, fontWeight: '800', letterSpacing: tracking.tightest },
   sub: { fontSize: type.bodyStrong, lineHeight: 23 },
 
-  actions: { gap: 12 },
+  actions: { gap: space.md },
   /** 알약 — 레퍼런스 셋 다 완전히 둥근 버튼을 쓴다 */
   pill: {
-    paddingVertical: 17,
+    paddingVertical: space.lg,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
@@ -359,21 +359,21 @@ const s = StyleSheet.create({
   pillText: { fontSize: type.bodyStrong, fontWeight: '700' },
   pressed: { opacity: 0.72 },
 
-  textBtn: { alignSelf: 'center', paddingVertical: 10, paddingHorizontal: 16 },
+  textBtn: { alignSelf: 'center', paddingVertical: space.md, paddingHorizontal: space.lg },
   textBtnLabel: { fontSize: type.body, fontWeight: '600' },
 
   inputWrap: {
     borderWidth: 1,
     borderRadius: radius.full,
-    paddingHorizontal: 20,
+    paddingHorizontal: space.xl,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: space.md,
   },
-  input: { flex: 1, paddingVertical: 16, fontSize: type.bodyStrong },
+  input: { flex: 1, paddingVertical: space.lg, fontSize: type.bodyStrong },
 
-  sentBox: { gap: 8, padding: 18, borderRadius: radius.lg },
+  sentBox: { gap: space.sm, padding: space.xl, borderRadius: radius.lg },
   sentTitle: { fontSize: type.subtitle, fontWeight: '700' },
   sentBody: { fontSize: type.label, lineHeight: 20 },
-  link: { fontSize: type.label, fontWeight: '600', marginTop: 4 },
+  link: { fontSize: type.label, fontWeight: '600', marginTop: space.xs },
 });

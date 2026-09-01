@@ -6,7 +6,7 @@ import { Button, Loading, Screen } from '@/components/ui';
 import { parseQrPayload } from '@/features/qr/payload';
 import { useContainerByToken } from '@/features/storage/api';
 import { useT } from '@/lib/i18n';
-import { useTheme, type } from '@/lib/theme';
+import { useTheme, type, space } from '@/lib/theme';
 
 /**
  * QR 딥링크 착지점 — `stow://c/{token}` (AC12 · AC14).
@@ -122,10 +122,10 @@ function Fail({ title, hint, onRetry }: { title: string; hint: string; onRetry?:
 }
 
 const st = StyleSheet.create({
-  center: { paddingHorizontal: 24, paddingTop: 60, alignItems: 'center', gap: 10 },
+  center: { paddingHorizontal: space.xxl, paddingTop: space.max, alignItems: 'center', gap: space.md },
   name: { fontSize: type.title, fontWeight: '700' },
   ms: { fontSize: type.caption, fontVariant: ['tabular-nums'] },
   failTitle: { fontSize: type.title, fontWeight: '700', textAlign: 'center' },
   failHint: { fontSize: type.body, lineHeight: 22, textAlign: 'center' },
-  actions: { alignSelf: 'stretch', gap: 10, marginTop: 24 },
+  actions: { alignSelf: 'stretch', gap: space.md, marginTop: space.xxl },
 });

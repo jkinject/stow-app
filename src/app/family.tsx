@@ -18,7 +18,7 @@ import {
 import { useHousehold } from '@/features/household/context';
 import { useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
-import { radius, space, type, useTheme } from '@/lib/theme';
+import { radius, space, type, useTheme, tracking } from '@/lib/theme';
 
 /**
  * 가족 관리.
@@ -459,8 +459,8 @@ const st = StyleSheet.create({
 
   house: { borderRadius: radius.md, padding: space.lg, gap: space.sm },
   houseName: { fontSize: type.title, fontWeight: '700' },
-  houseMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  label: { fontSize: type.tiny, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase' },
+  houseMeta: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  label: { fontSize: type.tiny, fontWeight: '700', letterSpacing: tracking.wide, textTransform: 'uppercase' },
 
   member: {
     flexDirection: 'row',
@@ -477,25 +477,25 @@ const st = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: { fontSize: type.bodyStrong, fontWeight: '700' },
-  memberMain: { flex: 1, gap: 2 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  memberMain: { flex: 1, gap: space.xs },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   memberName: { fontSize: type.bodyStrong, fontWeight: '600', flexShrink: 1 },
   me: { fontSize: type.caption },
   badge: {
     borderWidth: 1,
     borderRadius: radius.full,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingHorizontal: space.md,
+    paddingVertical: space.xs,
   },
   badgeText: { fontSize: type.tiny, fontWeight: '700' },
-  dots: { paddingHorizontal: 2 },
+  dots: { paddingHorizontal: space.xs },
   dotsText: { fontSize: type.h2, fontWeight: '700', lineHeight: 22 },
 
   newBtn: { minWidth: 118 },
   invite: { borderRadius: radius.md, padding: space.lg, gap: space.md },
-  code: { fontSize: type.h2, fontWeight: '700', letterSpacing: 4 },
+  code: { fontSize: type.h2, fontWeight: '700', letterSpacing: tracking.code },
   inviteFoot: { flexDirection: 'row', alignItems: 'center', gap: space.xxl },
-  linkBtn: { paddingVertical: 2 },
+  linkBtn: { paddingVertical: space.xs },
   link: { fontSize: type.label, fontWeight: '600' },
 
   hint: { fontSize: type.caption },

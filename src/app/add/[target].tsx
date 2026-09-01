@@ -16,7 +16,7 @@ import { PHOTO_ASPECT, preparePhoto, type PreparedPhoto } from '@/features/item/
 import { QUEUE_LIMIT, useRegisterQueue, type DraftItem } from '@/features/item/queue';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, overlay } from '@/lib/theme';
+import { useTheme, type, radius, overlay, space, tracking } from '@/lib/theme';
 
 /**
  * 물건 등록 — **2단계** (2026-08-30 사용자 요청).
@@ -267,7 +267,7 @@ function FormStep({
           화면 하단이 아니라 내용 바로 뒤에 붙는다 — 그래서 키보드에 잘렸다. */}
       <ScrollView
         style={st.fill}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24, gap: 12 }}
+        contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: space.xxl, gap: space.md }}
         keyboardShouldPersistTaps="handled"
       >
         {/* 찍은 사진. 누르면 1단계로 돌아가 다시 찍는다 */}
@@ -337,7 +337,7 @@ function FormStep({
       <View
         style={[
           st.footer,
-          { borderTopColor: c.border, backgroundColor: c.bg, paddingBottom: 14 },
+          { borderTopColor: c.border, backgroundColor: c.bg, paddingBottom: space.lg },
         ]}
       >
         <Button
@@ -407,7 +407,7 @@ const st = StyleSheet.create({
     right: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: space.md,
   },
   camAction: { color: overlay.fg, fontSize: type.h2, fontWeight: '600', width: 40 },
   camActionSpacer: { width: 40 },
@@ -432,9 +432,9 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingTop: 18,
+    paddingTop: space.xl,
   },
-  camSideBtn: { alignItems: 'center', gap: 3, width: 76 },
+  camSideBtn: { alignItems: 'center', gap: space.xs, width: 76 },
   camSideIcon: { color: overlay.fg, fontSize: type.h1, lineHeight: 28 },
   camSideLabel: { color: overlay.faint, fontSize: type.caption },
   shutter: {
@@ -452,8 +452,8 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.md,
   },
   topAction: { fontSize: type.body, fontWeight: '600', width: 40 },
   topTitle: { fontSize: type.subtitle, fontWeight: '700' },
@@ -464,8 +464,8 @@ const st = StyleSheet.create({
     bottom: 10,
     backgroundColor: overlay.chip,
     borderRadius: radius.full,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
   },
   previewBadgeText: { color: overlay.fg, fontSize: type.caption, fontWeight: '600' },
   previewEmpty: {
@@ -479,16 +479,16 @@ const st = StyleSheet.create({
   previewEmptyText: { fontSize: type.label, fontWeight: '600' },
   destRow: {
     borderRadius: radius.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: space.md,
   },
-  destMain: { flex: 1, gap: 2 },
-  destLabel: { fontSize: type.tiny, fontWeight: '600', letterSpacing: 0.5 },
+  destMain: { flex: 1, gap: space.xs },
+  destLabel: { fontSize: type.tiny, fontWeight: '600', letterSpacing: tracking.wide },
   destValue: { fontSize: type.body, fontWeight: '600' },
   destPick: { fontSize: type.small, fontWeight: '700' },
   nameField: { fontSize: type.subtitle },
-  footer: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 20, paddingTop: 14 },
+  footer: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: space.xl, paddingTop: space.lg },
 });

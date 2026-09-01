@@ -25,7 +25,7 @@ import { filterItems, useSearchIndex, type Indexed } from '@/features/search/api
 import { useLocations } from '@/features/storage/api';
 import { LocationSheet } from '@/features/storage/LocationSheet';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, overlay } from '@/lib/theme';
+import { useTheme, type, radius, overlay, space } from '@/lib/theme';
 
 /**
  * 찾기 — 앱의 첫 화면 (2026-08-30 UI 개편).
@@ -374,7 +374,7 @@ function formatWhen(ts: number, t: ReturnType<typeof useT>): string {
 const st = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
-  head: { flexDirection: 'row', gap: 8, paddingHorizontal: PADDING, paddingTop: 8 },
+  head: { flexDirection: 'row', gap: space.sm, paddingHorizontal: PADDING, paddingTop: space.sm },
   /**
    * ⚠ 여기에 `flex: 1` 을 두면 안 된다. `Field` 는 ✕ 버튼을 얹으려고 TextInput 을
    *   **세로 컬럼** View 로 감싼다. 그래서 이 스타일의 flex 는 가로가 아니라
@@ -385,7 +385,7 @@ const st = StyleSheet.create({
   scanBtn: {
     borderWidth: 1,
     borderRadius: radius.sm,
-    paddingHorizontal: 16,
+    paddingHorizontal: space.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -393,23 +393,23 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: PADDING,
-    paddingVertical: 8,
+    paddingVertical: space.sm,
   },
   metaText: { fontSize: type.caption, fontVariant: ['tabular-nums'] },
   banner: {
     marginHorizontal: PADDING,
-    marginBottom: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    marginBottom: space.sm,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
     borderRadius: radius.sm,
     borderWidth: 1,
   },
   bannerText: { fontSize: type.small },
-  starterWrap: { paddingBottom: 16, marginHorizontal: -PADDING },
-  more: { fontSize: type.caption, textAlign: 'center', paddingVertical: 16 },
+  starterWrap: { paddingBottom: space.lg, marginHorizontal: -PADDING },
+  more: { fontSize: type.caption, textAlign: 'center', paddingVertical: space.lg },
   filterScroll: { flexGrow: 0, flexShrink: 0 },
-  filterRow: { paddingHorizontal: PADDING, gap: 7, paddingTop: 4, alignItems: 'center' },
-  filterChip: { borderWidth: 1, borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 7 },
+  filterRow: { paddingHorizontal: PADDING, gap: space.sm, paddingTop: space.xs, alignItems: 'center' },
+  filterChip: { borderWidth: 1, borderRadius: radius.full, paddingHorizontal: space.lg, paddingVertical: space.sm },
   filterText: { fontSize: type.small, fontWeight: '600' },
   fab: {
     position: 'absolute',

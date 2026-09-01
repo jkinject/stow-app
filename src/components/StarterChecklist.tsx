@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui';
 import { useT } from '@/lib/i18n';
-import { radius, type, useTheme } from '@/lib/theme';
+import { radius, type, useTheme, space, tracking } from '@/lib/theme';
 
 /**
  * 첫 실행 안내 (2026-09-01 사용자 요청: "앱 깔고 처음 로그인 딱 했을때 뭘 해야하는지 막막함").
@@ -190,18 +190,18 @@ function Step({
 
 const st = StyleSheet.create({
   card: {
-    marginHorizontal: 20,
+    marginHorizontal: space.xl,
     borderRadius: radius.md,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
-    gap: 14,
+    paddingHorizontal: space.lg,
+    paddingTop: space.lg,
+    paddingBottom: space.sm,
+    gap: space.lg,
   },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { fontSize: type.subtitle, fontWeight: '700', letterSpacing: -0.3 },
+  title: { fontSize: type.subtitle, fontWeight: '700', letterSpacing: tracking.tight },
   progress: { fontSize: type.caption, fontWeight: '600' },
-  steps: { gap: 14 },
-  step: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  steps: { gap: space.lg },
+  step: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   bullet: {
     width: 24,
     height: 24,
@@ -211,13 +211,13 @@ const st = StyleSheet.create({
     justifyContent: 'center',
   },
   bulletText: { fontSize: type.caption, fontWeight: '700' },
-  stepMain: { flex: 1, gap: 2 },
+  stepMain: { flex: 1, gap: space.xs },
   stepLabel: { fontSize: type.body, fontWeight: '600' },
   struck: { textDecorationLine: 'line-through' },
   stepHint: { fontSize: type.caption },
   open: { fontSize: type.label, fontWeight: '700' },
-  finish: { gap: 12, paddingBottom: 8 },
+  finish: { gap: space.md, paddingBottom: space.sm },
   finishHint: { fontSize: type.small, lineHeight: 20 },
-  hide: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 12 },
+  hide: { alignSelf: 'center', paddingVertical: space.sm, paddingHorizontal: space.md },
   hideText: { fontSize: type.caption },
 });

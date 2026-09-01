@@ -12,7 +12,7 @@ import {
 import { useAcceptInvite, useCreateHousehold } from '@/features/household/api';
 import { takePendingInviteCode, useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius } from '@/lib/theme';
+import { useTheme, type, radius, space, tracking } from '@/lib/theme';
 
 type Mode = 'choose' | 'create' | 'join';
 
@@ -128,31 +128,31 @@ export default function Onboarding() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, justifyContent: 'center', paddingHorizontal: 28, gap: 12 },
-  title: { fontSize: type.h1, fontWeight: '700', letterSpacing: -0.6 },
-  sub: { fontSize: type.body, marginBottom: 10 },
+  root: { flex: 1, justifyContent: 'center', paddingHorizontal: space.xxxl, gap: space.md },
+  title: { fontSize: type.h1, fontWeight: '700', letterSpacing: tracking.tighter },
+  sub: { fontSize: type.body, marginBottom: space.md },
   input: {
     borderWidth: 1,
     borderRadius: radius.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
     fontSize: type.bodyStrong,
   },
-  codeInput: { fontSize: type.title, letterSpacing: 3, textAlign: 'center', fontVariant: ['tabular-nums'] },
+  codeInput: { fontSize: type.title, letterSpacing: tracking.code, textAlign: 'center', fontVariant: ['tabular-nums'] },
   primary: {
-    paddingVertical: 15,
+    paddingVertical: space.lg,
     borderRadius: radius.sm,
     alignItems: 'center',
   },
   primaryText: { fontSize: type.bodyStrong, fontWeight: '600' },
   secondary: {
     borderWidth: 1,
-    paddingVertical: 15,
+    paddingVertical: space.lg,
     borderRadius: radius.sm,
     alignItems: 'center',
   },
   secondaryText: { fontSize: type.bodyStrong, fontWeight: '500' },
-  link: { fontSize: type.label, textAlign: 'center', paddingVertical: 8 },
+  link: { fontSize: type.label, textAlign: 'center', paddingVertical: space.sm },
   signOut: { position: 'absolute', bottom: 40, alignSelf: 'center' },
   signOutText: { fontSize: type.small },
 });
