@@ -49,6 +49,13 @@ import { useTheme, type, radius, space } from '@/lib/theme';
 //   넘쳐서 한 줄에 하나씩 떨어진다 — 박스·장소 상세에서 실제로 그랬다.
 const GAP = space.md;
 const PADDING = space.lg;
+/**
+ * 화면 위쪽에 **고정된 줄들 사이**의 간격 (검색줄 · 장소 필터 · 목록).
+ *
+ * ⚠ 한 값을 위아래가 함께 쓴다. 전에는 위 4 · 아래 16 이라 필터 줄이 아래로 쏠려
+ *   보였다 — 스케일 안의 값이어도 짝이 안 맞으면 어긋나 보인다(사용자 지적).
+ */
+const GUTTER = space.lg;
 /** 한 번에 더 그릴 개수. 2열이므로 짝수여야 마지막 줄이 어긋나지 않는다 */
 const PAGE = 24;
 
@@ -253,7 +260,7 @@ export default function FindTab() {
   return (
     <View style={[st.root, { backgroundColor: c.bg, paddingTop: insets.top }]}>
       {/* 검색창과 스캔은 항상 맨 위에 고정된다 — 이 화면의 두 시작점이다 */}
-      <View style={[st.head, !showFilters && st.headAlone]}>
+      <View style={st.head}>
         <Field
           value={q}
           onChangeText={onQuery}
@@ -472,12 +479,18 @@ function formatWhen(ts: number, t: ReturnType<typeof useT>): string {
 const st = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
-  head: { flexDirection: 'row', gap: space.sm, paddingHorizontal: PADDING, paddingTop: space.sm },
   /**
-   * ⚠ 장소 필터가 없을 때만 붙는다. 목록 바로 위에 있는 것이 여백을 주는 규칙이라,
-   *   필터가 없으면 검색줄이 그 역할을 이어받는다.
+   * ⚠ 아래 여백을 **늘 준다.** 다음에 오는 것이 필터든 목록이든 간격은 같아야 한다.
+   *   전에는 필터가 있을 때만 4(space.xs)였는데, 필터 아래(16)와 짝이 안 맞아
+   *   위아래가 어긋나 보였다(2026-09-02 사용자 지적, 실측 4dp vs 16dp).
    */
-  headAlone: { paddingBottom: space.lg },
+  head: {
+    flexDirection: 'row',
+    gap: space.sm,
+    paddingHorizontal: PADDING,
+    paddingTop: space.sm,
+    paddingBottom: GUTTER,
+  },
   /**
    * ⚠ 여기에 `flex: 1` 을 두면 안 된다. `Field` 는 ✕ 버튼을 얹으려고 TextInput 을
    *   **세로 컬럼** View 로 감싼다. 그래서 이 스타일의 flex 는 가로가 아니라
@@ -492,12 +505,17 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  /** ⚠ 좌우 여백을 주지 않는다 — 목록 안에 있어 격자의 여백을 그대로 쓴다 */
+  /**
+   * ⚠ 좌우 여백을 주지 않는다 — 목록 안에 있어 격자의 여백을 그대로 쓴다.
+   * ⚠ 아래 여백은 `GUTTER` 에서 격자의 `GAP` 을 뺀 값이다. 이 줄은 목록의 첫 항목이라
+   *   **격자 간격이 뒤에 자동으로 붙는다** — GUTTER 를 그대로 주면 16+12=28 이 되어
+   *   위 두 칸(16)보다 벌어진다(실측으로 20dp 였다).
+   */
   meta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.sm,
-    paddingBottom: space.sm,
+    paddingBottom: GUTTER - GAP,
   },
   /**
    * ⚠ 위 장소 필터와 **같은 어휘**(테두리 있는 알약)로 그린다. 파란 글씨만 두었더니
@@ -528,9 +546,12 @@ const st = StyleSheet.create({
   bannerText: { fontSize: type.small },
   starterWrap: { paddingBottom: space.lg, marginHorizontal: -PADDING },
   more: { fontSize: type.caption, textAlign: 'center', paddingVertical: space.lg },
-  /** ⚠ 아래 여백은 **스크롤과 무관해야** 한다 — 위 contentContainerStyle 주석 참고 */
-  filterScroll: { flexGrow: 0, flexShrink: 0, marginBottom: space.lg },
-  filterRow: { paddingHorizontal: PADDING, gap: space.sm, paddingTop: space.xs, alignItems: 'center' },
+  /**
+   * ⚠ 아래 여백은 **스크롤과 무관해야** 한다 — 위 contentContainerStyle 주석 참고.
+   * ⚠ 값은 `GUTTER` 하나를 위아래가 함께 쓴다. 두 곳에 따로 적으면 한쪽만 고쳐진다.
+   */
+  filterScroll: { flexGrow: 0, flexShrink: 0, marginBottom: GUTTER },
+  filterRow: { paddingHorizontal: PADDING, gap: space.sm, alignItems: 'center' },
   filterChip: { borderWidth: 1, borderRadius: radius.full, paddingHorizontal: space.lg, paddingVertical: space.sm },
   filterText: { fontSize: type.small, fontWeight: '600' },
 });
