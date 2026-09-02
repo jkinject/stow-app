@@ -80,7 +80,10 @@
     "verify:qr": "node scripts/verify-qr-print.js",
     "android:release": "./scripts/release-apk.sh",
     "licenses": "node scripts/gen-licenses.js",
-    "android:aab": "./scripts/build-android.sh bundleRelease"
+    "android:aab": "./scripts/build-android.sh bundleRelease",
+    "play:status": "node scripts/play.mjs status",
+    "play:upload": "node scripts/play.mjs upload",
+    "play:promote": "node scripts/play.mjs promote"
   },
   "private": true
 }

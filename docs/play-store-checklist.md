@@ -88,3 +88,73 @@ Play 앱 서명을 켜면 **구글이 다시 서명**하므로, 스토어에서 
 
 **둘 다 잃으면 업로드 키를 재설정해야 합니다** (Play 앱 서명을 쓰면 가능하지만 번거롭습니다).
 비밀번호 관리자나 암호화된 백업에 **파일과 비밀번호를 함께** 보관해 두세요.
+
+---
+
+## 업로드 자동화 (Play Developer API)
+
+`scripts/play.mjs` 가 로컬 AAB 를 Play 에 직접 올린다. 중간 서버를 거치지 않고,
+Expo 계정도 필요 없다.
+
+```bash
+npm run play:status                                  # 트랙별 현재 버전
+npm run play:upload -- --track internal              # 내부 테스트에 올리기
+npm run play:upload -- --track production \
+  --notes-ko "물건 이동 화면을 고쳤습니다." \
+  --notes-en "Improved the move screen."
+npm run play:promote -- --from internal --to production
+```
+
+### 처음 한 번만: 서비스 계정 준비
+
+⚠ **이 세 단계는 사람이 해야 한다.** Play Console 은 웹 UI 로만 초대할 수 있다.
+
+**1) GCP 프로젝트를 정하고 API 를 켠다**
+
+어느 프로젝트든 되지만, 서비스 계정을 만든 **그 프로젝트에서** API 를 켜야 한다.
+법인 프로젝트에 둘지 이 앱 전용 프로젝트를 새로 팔지는 정해야 할 문제다.
+
+```bash
+gcloud config set project <프로젝트ID>
+gcloud services enable androidpublisher.googleapis.com
+```
+
+**2) 서비스 계정과 키를 만든다**
+
+```bash
+gcloud iam service-accounts create stow-play \
+  --display-name="Stow Play 업로드"
+
+# ⚠ 키 파일은 **저장소 밖**에 둔다. 업로드 키스토어와 같은 자리.
+gcloud iam service-accounts keys create ~/keystores/play-service-account.json \
+  --iam-account=stow-play@<프로젝트ID>.iam.gserviceaccount.com
+chmod 600 ~/keystores/play-service-account.json
+
+printf 'GOOGLE_PLAY_SERVICE_ACCOUNT=~/keystores/play-service-account.json\n' \
+  >> .env.production.local
+```
+
+⚠ 이 JSON 하나면 **앱을 스토어에 배포할 수 있다.** 키스토어와 같은 급으로 다룰 것.
+   GCP 쪽에는 아무 역할(role)도 줄 필요가 없다 — 권한은 Play Console 이 준다.
+
+**3) Play Console 에 초대한다** (웹 UI, 대체 경로 없음)
+
+<https://play.google.com/console> → **사용자 및 권한** → **사용자 초대**
+→ 위 서비스 계정 이메일(`stow-play@...gserviceaccount.com`) 입력
+→ 앱 선택 후 권한:
+
+| 권한 | 필요한 이유 |
+|---|---|
+| 앱 정보 보기 | `play:status` |
+| 프로덕션·테스트 트랙에 배포 관리 | 업로드·승격 |
+| 스토어 등록정보 관리 *(선택)* | 나중에 문구·스크린샷도 스크립트로 |
+
+초대 직후에는 권한 전파에 **몇 분** 걸린다. 바로 401/403 이 나면 잠시 뒤 다시 해 볼 것.
+
+### 확인
+
+```bash
+npm run play:status
+```
+
+트랙 목록이 나오면 준비 끝이다. 실패하면 스크립트가 무엇이 빠졌는지 말해 준다.
