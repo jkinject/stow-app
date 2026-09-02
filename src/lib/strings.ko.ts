@@ -617,6 +617,30 @@ export const KO = {
     pickNone: '분류 없음',
     empty: '없음',
     goManage: '카테고리를 먼저 만들어 주세요',
+    /* ── 2026-09-03 개편: 색·아이콘·설명·순서 ── */
+    searchPlaceholder: '카테고리 검색',
+    countAll: (n: number) => `전체 ${n}개 카테고리`,
+    reorder: '정렬 편집',
+    reorderDone: '완료',
+    moveUp: '위로',
+    moveDown: '아래로',
+    edit: '수정',
+    /** 검색 결과가 없을 때 — 목록 자체가 빈 것과 다르다 */
+    noMatch: (q: string) => `"${q}" 와 맞는 카테고리가 없습니다`,
+    /** 편집 시트 */
+    newTitle: '카테고리 추가',
+    editTitle: '카테고리 수정',
+    nameLabel: '이름',
+    descLabel: '설명',
+    descPlaceholder: '예: 드라이버, 망치, 렌치 등',
+    colorLabel: '색',
+    iconLabel: '아이콘',
+    saveFailed: '저장하지 못했습니다',
+    /** 하단 팁 카드 — 닫으면 다시 안 뜬다 */
+    tipTitle: '카테고리 관리 팁',
+    tipBody: '카테고리를 추가하거나 순서를 변경하여\n물품을 더 효율적으로 관리할 수 있습니다.',
+    tipClose: '팁 닫기',
+
   },
   time: {
     justNow: '방금',

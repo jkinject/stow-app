@@ -248,6 +248,7 @@ export default function FindTab() {
         name={item.name}
         subtitle={item.path}
         category={item.category?.name ?? null}
+        categoryColor={item.category?.color ?? null}
         quantity={item.quantity}
         width={cardW}
         thumb={thumbs.get(item.thumb_path)}

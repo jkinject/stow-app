@@ -31,7 +31,7 @@ export type ItemRow = {
    *   그래서 박스·장소 화면에는 카테고리가 영영 안 떴다(2026-09-02 사용자 지적).
    *   찾기 탭(`features/search/api.ts`)과 **같은 모양**이어야 같은 카드에 넣을 수 있다.
    */
-  category: { name: string | null } | null;
+  category: { name: string | null; color: string | null } | null;
   quantity: number;
   container_id: string | null;
   location_id: string;
@@ -204,7 +204,7 @@ export function useContainerItems(containerId: string) {
       const { data, error } = await supabase
         .from('items')
         .select(
-          'id, name, quantity, container_id, location_id, thumb_path, category:categories!items_category_id_fkey(name)',
+          'id, name, quantity, container_id, location_id, thumb_path, category:categories!items_category_id_fkey(name, color)',
         )
         .eq('container_id', containerId)
         .is('deleted_at', null)
@@ -224,7 +224,7 @@ export function useLooseItems(locationId: string) {
       const { data, error } = await supabase
         .from('items')
         .select(
-          'id, name, quantity, container_id, location_id, thumb_path, category:categories!items_category_id_fkey(name)',
+          'id, name, quantity, container_id, location_id, thumb_path, category:categories!items_category_id_fkey(name, color)',
         )
         .eq('location_id', locationId)
         .is('container_id', null)

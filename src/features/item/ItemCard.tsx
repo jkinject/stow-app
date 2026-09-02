@@ -21,6 +21,7 @@ export function ItemCard({
   name,
   subtitle,
   category,
+  categoryColor,
   quantity,
   width,
   thumb,
@@ -31,6 +32,13 @@ export function ItemCard({
   subtitle?: string;
   /** 분류 이름 — 사진 **왼쪽 위 배지**로 (수량 배지와 짝) */
   category?: string | null;
+  /**
+   * 분류 색 `#RRGGBB`.
+   *
+   * ⚠ 없으면 예전처럼 반투명 검정을 쓴다. 사진 위라서 **테마 팔레트를 쓰지 않는다** —
+   *   밑에 깔린 게 이미지라 바탕이 밝을지 어두울지 알 수 없다(overlay 주석과 같은 이유).
+   */
+  categoryColor?: string | null;
   /**
    * ⚠ **선택값이다.** 넘기지 않으면 재고 개념이 없는 카드다(박스 목록이 그렇다).
    *   예전에 박스 카드가 `quantity={0}` 을 넘겨서 "재고 없음" 이 떴다 — 박스는
@@ -99,8 +107,13 @@ export function ItemCard({
             수량 배지와 짝을 이루는 자리라 눈이 먼저 가고 자리도 안 먹는다.
             ⚠ 재고 없음 가림막 **뒤에** 그린다 — 가림막에 덮이면 안 된다. */}
         {category ? (
-          <View style={st.catBadge}>
-            <Text style={st.catText} numberOfLines={1}>{category}</Text>
+          <View style={[st.catBadge, categoryColor ? { backgroundColor: categoryColor } : null]}>
+            <Text
+              style={[st.catText, categoryColor ? { color: overlay.fg } : null]}
+              numberOfLines={1}
+            >
+              {category}
+            </Text>
           </View>
         ) : null}
       </View>

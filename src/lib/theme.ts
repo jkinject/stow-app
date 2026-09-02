@@ -289,6 +289,22 @@ export const tracking = {
  *   라이트/다크와 무관하게 항상 같은 대비가 필요하다. 그래서 팔레트에 넣지 않고
  *   따로 둔다 — 테마를 따라가야 하는 색과 섞이면 다음에 누가 반드시 헷갈린다.
  */
+/**
+ * 색에 투명도를 붙여 **옅게 깔 배경**을 만든다.
+ *
+ * ⚠ 6자리 `#RRGGBB` 에만 붙일 수 있다. 8자리(`#RRGGBBAA`)나 `rgba()` 에 붙이면
+ *   `#RRGGBBAA` + `AA` 가 되어 **깨진 색**이 나오고, RN 은 조용히 검정으로 떨어뜨린다.
+ *   그래서 형식을 검사하고, 아니면 `fallback` 을 쓴다 — 강조가 사라지는 것보다
+ *   알아볼 수 없는 줄이 그려지는 쪽이 나쁘다.
+ *
+ * ⚠ 여기 두는 이유: 예전에는 MovePicker 안에만 있었는데, 카테고리 색 배지에서 같은
+ *   것이 또 필요해졌다. 두 곳에 적으면 한쪽만 고쳐진다.
+ */
+const HEX6 = /^#[0-9a-fA-F]{6}$/;
+export function tinted(color: string, alpha: string, fallback: string): string {
+  return HEX6.test(color) ? color + alpha : fallback;
+}
+
 export const overlay = {
   fg: '#fff',
   bg: '#000',

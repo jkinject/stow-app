@@ -254,6 +254,7 @@ export default function LocationDetail() {
                   key={it.id}
                   name={it.name}
                   category={it.category?.name ?? null}
+                categoryColor={it.category?.color ?? null}
                   quantity={it.quantity}
                   width={cardW}
                   thumb={thumbs.get(it.thumb_path)}

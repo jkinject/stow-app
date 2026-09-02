@@ -14,7 +14,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+
 import { IconChevron, IconTrash } from '@/components/Icon';
+import { safeIcon, type IconName } from '@/features/category/icons';
 import { KeyboardSpacer } from '@/components/KeyboardSpacer';
 import { useToast } from '@/components/Toast';
 import { Button, Field, Loading, Screen, titleText } from '@/components/ui';
@@ -267,6 +270,8 @@ export default function ItemDetailScreen() {
             householdId={activeId}
             currentId={row.category_id}
             currentName={row.category?.name ?? null}
+            currentColor={row.category?.color ?? null}
+            currentIcon={row.category?.icon ? safeIcon(row.category.icon) : null}
             onPick={(id) => update.mutateAsync({ category_id: id })}
           />
 
@@ -709,11 +714,15 @@ function CategoryPicker({
   householdId,
   currentId,
   currentName,
+  currentColor,
+  currentIcon,
   onPick,
 }: {
   householdId: string | null;
   currentId: string | null;
   currentName: string | null;
+  currentColor: string | null;
+  currentIcon: IconName | null;
   onPick: (id: string | null) => Promise<unknown>;
 }) {
   const { c } = useTheme();
@@ -768,6 +777,10 @@ function CategoryPicker({
                   }}
                   style={({ pressed }) => [st.option, pressed && { opacity: 0.6 }]}
                 >
+                  {/* ⚠ 타일 자리는 **항상 둔다** — 없으면 이 줄만 글자가 왼쪽으로 튄다 */}
+                  <View style={[st.optionTile, { backgroundColor: c.sunk }]}>
+                    <MaterialCommunityIcons name="minus" size={16} color={c.textFaint} />
+                  </View>
                   <Text
                     style={[st.optionText, { color: currentId === null ? c.accent : c.text }]}
                   >
@@ -790,6 +803,14 @@ function CategoryPicker({
                         pressed && { opacity: 0.6 },
                       ]}
                     >
+                      {/*
+                        ⚠ 목록에서 **카테고리 관리 화면과 같은 타일**을 쓴다. 거기서 색과
+                          그림을 골라 놓고 여기서는 글자만 보이면, 고른 것이 어디에 쓰이는지
+                          알 수 없다.
+                      */}
+                      <View style={[st.optionTile, { backgroundColor: cat.color }]}>
+                        <MaterialCommunityIcons name={cat.icon} size={16} color={overlay.fg} />
+                      </View>
                       <Text style={[st.optionText, { color: on ? c.accent : c.text }]}>
                         {cat.name}
                       </Text>
@@ -982,11 +1003,18 @@ const st = StyleSheet.create({
   option: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: space.md,
     paddingHorizontal: space.xl,
     paddingVertical: space.lg,
   },
-  optionText: { fontSize: type.bodyStrong, fontWeight: '500' },
+  optionText: { flex: 1, fontSize: type.bodyStrong, fontWeight: '500' },
+  optionTile: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   check: { fontSize: type.subtitle, fontWeight: '800' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.xs },
   emptyCat: {

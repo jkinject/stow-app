@@ -27,7 +27,8 @@ export type ItemDetail = {
   /** 들어 있는 박스. 박스 없이 장소에 직접 둔 물건이면 null */
   container: { name: string | null } | null;
   /** 분류. 카테고리를 지우면 DB 가 여기를 null 로 만든다 (ON DELETE SET NULL) */
-  category: { id: string; name: string | null } | null;
+  /** ⚠ 색·아이콘도 함께 읽는다 — 고르기 시트가 카테고리 관리 화면과 같은 타일을 그린다 */
+  category: { id: string; name: string | null; color: string | null; icon: string | null } | null;
 };
 
 export const itemKeys = {
@@ -51,7 +52,7 @@ export function useItem(itemId: string | null) {
         // ⚠ 한 줄 리터럴이어야 한다. 문자열을 이어붙이면 PostgREST 타입 추론이 깨져
         //   data 가 GenericStringError 가 된다.
         .select(
-          'id, household_id, location_id, container_id, name, category_id, quantity, threshold, unit, purchase_url, note, photo_path, thumb_path, created_at, updated_at, updater:profiles!items_updated_by_fkey(display_name), container:containers!items_container_id_fkey(name), category:categories!items_category_id_fkey(id, name)',
+          'id, household_id, location_id, container_id, name, category_id, quantity, threshold, unit, purchase_url, note, photo_path, thumb_path, created_at, updated_at, updater:profiles!items_updated_by_fkey(display_name), container:containers!items_container_id_fkey(name), category:categories!items_category_id_fkey(id, name, color, icon)',
         )
         .eq('id', itemId!)
         .is('deleted_at', null)
@@ -137,7 +138,7 @@ export function useUpdateItem(itemId: string) {
         // ⚠ 한 줄 리터럴이어야 한다. 문자열을 이어붙이면 PostgREST 타입 추론이 깨져
         //   data 가 GenericStringError 가 된다.
         .select(
-          'id, household_id, location_id, container_id, name, category_id, quantity, threshold, unit, purchase_url, note, photo_path, thumb_path, created_at, updated_at, updater:profiles!items_updated_by_fkey(display_name), container:containers!items_container_id_fkey(name), category:categories!items_category_id_fkey(id, name)',
+          'id, household_id, location_id, container_id, name, category_id, quantity, threshold, unit, purchase_url, note, photo_path, thumb_path, created_at, updated_at, updater:profiles!items_updated_by_fkey(display_name), container:containers!items_container_id_fkey(name), category:categories!items_category_id_fkey(id, name, color, icon)',
         )
         .single();
       if (error) throw error;

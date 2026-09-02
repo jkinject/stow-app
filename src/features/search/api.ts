@@ -21,7 +21,7 @@ export type SearchRow = {
   id: string;
   name: string;
   /** 분류 이름 — 격자 카드에 보여준다 (AC-C9) */
-  category: { name: string | null } | null;
+  category: { name: string | null; color: string | null } | null;
   quantity: number;
   unit: string | null;
   thumb_path: string | null;
@@ -57,7 +57,7 @@ export function useAllItems(householdId: string | null) {
     queryFn: async (): Promise<SearchRow[]> => {
       const { data, error } = await supabase
         .from('items')
-        .select('id, name, quantity, unit, thumb_path, location_id, container_id, updated_at, created_at, category:categories!items_category_id_fkey(name)')
+        .select('id, name, quantity, unit, thumb_path, location_id, container_id, updated_at, created_at, category:categories!items_category_id_fkey(name, color)')
         .eq('household_id', householdId!)
         .is('deleted_at', null)
         .order('updated_at', { ascending: false });

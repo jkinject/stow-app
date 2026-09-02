@@ -161,6 +161,7 @@ export function Field({
   ref,
   clearable,
   wrapStyle,
+  leading,
   ...props
 }: TextInputProps & {
   ref?: React.Ref<TextInput>;
@@ -180,12 +181,25 @@ export function Field({
    *   **버려도 되는 입력**에만 켠다.
    */
   clearable?: boolean;
+  /**
+   * 칸 **왼쪽 안쪽**에 놓는 그림(검색 돋보기 등).
+   *
+   * ⚠ 글자를 그만큼 밀어 준다. 안 밀면 그림 위에 글자가 겹친다.
+   * ⚠ 누를 수 없다(`pointerEvents="none"`). 여기 놓이는 것은 **표시**이지 버튼이
+   *   아니다 — 누를 수 있게 두면 칸을 누르려다 그림에 막혀 키보드가 안 뜬다.
+   */
+  leading?: ReactNode;
 }) {
   const { c } = useTheme();
   const t = useT();
   const show = clearable && !!props.value;
   return (
     <View style={[s.fieldWrap, wrapStyle]}>
+      {leading && (
+        <View style={s.leading} pointerEvents="none">
+          {leading}
+        </View>
+      )}
       <TextInput
         ref={ref}
         {...props}
@@ -194,6 +208,7 @@ export function Field({
           s.field,
           { borderColor: c.border, backgroundColor: c.card, color: c.text },
           show && s.fieldWithClear,
+          !!leading && s.fieldWithLeading,
           props.style,
         ]}
       />
@@ -309,6 +324,9 @@ const s = StyleSheet.create({
   fieldWrap: { justifyContent: 'center' },
   // ✕ 자리를 비워 둔다 — 안 그러면 긴 글자가 버튼 밑으로 들어간다
   fieldWithClear: { paddingRight: space.giant },
+  /** ⚠ 아래 `leading` 의 left + 그림 너비만큼 밀어야 글자가 안 겹친다 */
+  fieldWithLeading: { paddingLeft: space.huge + space.md },
+  leading: { position: 'absolute', left: space.lg, zIndex: 1 },
   clearBtn: { position: 'absolute', right: 10 },
   clearCircle: { width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   /* ⚠ 기호를 상자 가운데 앉히는 값이다 — 읽는 행간이 아니므로 `leading` 을 쓰지 않는다 */

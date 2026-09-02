@@ -10,11 +10,9 @@ import { useAllContainers, useCreateContainerIn, useLocations } from '@/features
 import { useCoverStacks } from '@/features/storage/covers';
 import { LocationSheet } from '@/features/storage/LocationSheet';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, space } from '@/lib/theme';
+import { useTheme, type, radius, space, tinted } from '@/lib/theme';
 
 export type MoveTarget = { containerId: string } | { locationId: string };
-
-const HEX6 = /^#[0-9a-fA-F]{6}$/;
 
 /** 왼쪽 아이콘 칸과 그 안의 아이콘. 사진 더미는 이보다 작다 — 부속이니까 */
 const SLOT = 36;
@@ -22,17 +20,8 @@ const ICON = 20;
 const STACK_TILE = 30;
 
 
-/**
- * 강조색에 투명도를 붙여 **옅게 깔 배경**을 만든다.
- *
- * ⚠ 팔레트의 `accent` 는 라이트·다크 둘 다 `#RRGGBB` 6자리다(lib/theme.ts). 누가
- *   rgba() 나 8자리로 바꾸면 `#RRGGBBAA` + `AA` 가 되어 **깨진 색**이 나온다.
- *   그때는 조용히 카드색으로 떨어진다 — 강조가 사라지는 것보다 알아볼 수 없는 줄이
- *   그려지는 쪽이 나쁘다.
- */
-function tinted(accent: string, alpha: string, fallback: string) {
-  return HEX6.test(accent) ? accent + alpha : fallback;
-}
+/* ⚠ `tinted` 는 lib/theme 으로 옮겼다 — 카테고리 색 배지에서도 같은 규칙이 필요해졌다.
+   두 곳에 적어 두면 한쪽만 고쳐진다. */
 
 /**
  * 물건을 옮길 곳 고르기.
