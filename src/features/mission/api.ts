@@ -1,4 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
 
@@ -16,6 +18,14 @@ import { supabase } from '@/lib/supabase';
  */
 
 export const MISSION_GOAL = 5;
+
+/**
+ * "오늘은 그만 보기" 를 기억하는 자리.
+ *
+ * ⚠ 참·거짓이 아니라 **날짜를 적어 둔다.** 참으로 적으면 내일도 숨겨져 있어서, 지우는
+ *   일을 누군가 따로 해야 한다. 날짜를 적어 두면 자정이 지나는 순간 저절로 안 맞는다.
+ */
+const HIDE_KEY = 'home-store.mission-hidden';
 
 /**
  * 오늘 자정을 **기기 시간대로** 구한다.
@@ -52,6 +62,36 @@ export function useTodayMission(householdId: string | null, userId: string | nul
     },
   });
 
+  /**
+   * 오늘 이 카드를 닫았는가 (2026-09-02 사용자 요청 — 다 채우면 숨길 수 있어야 한다).
+   *
+   * ⚠ `undefined` 는 **아직 모른다**는 뜻이다. 모르는 동안 카드를 그리면, 닫아 둔
+   *   사람에게 카드가 한 번 번쩍였다 사라진다.
+   */
+  const [hiddenOn, setHiddenOn] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    let alive = true;
+    AsyncStorage.getItem(HIDE_KEY)
+      .then((v) => alive && setHiddenOn(v))
+      // 못 읽으면 그냥 보여 준다 — 카드 하나 때문에 화면을 막을 이유가 없다
+      .catch(() => alive && setHiddenOn(null));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const hide = useCallback(() => {
+    setHiddenOn(key);
+    void AsyncStorage.setItem(HIDE_KEY, key).catch(() => undefined);
+  }, [key]);
+
   const done = Math.min(q.data ?? 0, MISSION_GOAL);
-  return { done, goal: MISSION_GOAL, complete: done >= MISSION_GOAL, loading: q.isLoading };
+  return {
+    done,
+    goal: MISSION_GOAL,
+    complete: done >= MISSION_GOAL,
+    loading: q.isLoading || hiddenOn === undefined,
+    hidden: hiddenOn === key,
+    hide,
+  };
 }

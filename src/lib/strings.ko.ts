@@ -15,6 +15,20 @@
  * ⚠ 한글이 아닌 글자로 끝나면(숫자·영문 이름도 있다) '(으)로' 로 둔다. 영문 이름의
  *   읽는 소리까지 맞추려면 규칙이 훨씬 커지는데, 그 값어치가 없다.
  */
+/**
+ * 한글 조사 '을/를' 고르기. 받침이 있으면 '을', 없으면 '를'.
+ *
+ * ⚠ `withRo` 와 같은 이유로 필요하다 — 물건 이름은 사용자가 짓는 값이라 문구에 조사를
+ *   박아 둘 수 없다. "을(를)" 처럼 둘 다 적어 두면 읽을 때마다 걸린다.
+ * ⚠ 한글이 아닌 글자로 끝나면 '을(를)' 로 둔다(WD40 · Light Bulbs 같은 이름이 실제로 있다).
+ */
+function withEul(word: string): string {
+  const last = word.trim().slice(-1);
+  const code = last.charCodeAt(0);
+  if (code < 0xac00 || code > 0xd7a3) return `"${word}" 을(를)`;
+  return `"${word}" ${(code - 0xac00) % 28 === 0 ? '를' : '을'}`;
+}
+
 function withRo(word: string): string {
   const last = word.trim().slice(-1);
   const code = last.charCodeAt(0);
@@ -117,6 +131,9 @@ export const KO = {
     searchPlaceholder: '물건 이름 (초성도 됩니다: ㄱㅈㅈ)',
     total: (n: number) => `전체 ${n}건`,
     hits: (n: number) => `${n}건`,
+    /** 정렬 토글. **지금 어떤 순서인지**를 보여 준다 — 누르면 다른 쪽으로 바뀐다 */
+    sortShuffle: '랜덤순',
+    sortRecent: '최근 등록순',
     syncing: '동기화 중…',
     offline: (when: string) => `오프라인 — 마지막 동기화 ${when}`,
     noItems: '아직 등록된 물건이 없습니다',
@@ -137,6 +154,8 @@ export const KO = {
     hint: (left: number) => `물건 ${left}개만 더 등록하면 됩니다`,
     success: '미션 성공!',
     successHint: '오늘 다섯 개를 다 채웠습니다. 내일 또 만나요.',
+    /** 다 채운 뒤에만 보이는 닫기. **오늘 하루만** 숨긴다 */
+    hide: '오늘은 숨기기',
   },
 
   places: {
@@ -241,6 +260,7 @@ export const KO = {
     namePlaceholder: '물건 이름',
     nameRequired: '이름은 비울 수 없습니다.',
     quantityInvalid: '수량은 0 이상의 숫자여야 합니다.',
+    qtyFailed: '수량을 바꾸지 못했습니다',
     saved: '저장됨',
     savedFailed: '저장하지 못했습니다',
     history: '기록',
@@ -272,7 +292,8 @@ export const KO = {
     /** 같은 자리에 이어서 등록하는 입구. 등록 직후에만 보인다 */
     addMoreHere: (path: string) => `'${path}'에 물건 더 등록하기`,
     deleteTitle: '이 물건을 지울까요?',
-    deleteBody: (name: string) => `"${name}" 을(를) 목록에서 뺍니다.`,
+    /** ⚠ "목록에서 뺍니다" 는 무슨 일이 일어나는지 흐리다 (2026-09-02 사용자 지적) */
+    deleteBody: (name: string) => `${withEul(name)} 삭제합니다.`,
     deleteFailed: '삭제 실패',
     saveFailed: '저장 실패',
     openBox: '이 박스 열기',

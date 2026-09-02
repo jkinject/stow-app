@@ -59,6 +59,14 @@ export const IconImage = (p: P) => (
   </S>
 );
 
+/** 정렬 바꾸기 — 위아래 화살표 한 쌍. "순서를 바꿀 수 있다" 를 그림으로 말한다 */
+export const IconSort = (p: P) => (
+  <S {...p}>
+    <Path d="M7 20V4M7 4L4 7M7 4l3 3" />
+    <Path d="M17 4v16M17 20l-3-3M17 20l3-3" />
+  </S>
+);
+
 export const IconTrash = (p: P) => (
   <S {...p}>
     <Path d="M4 7h16M10 7V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2" />

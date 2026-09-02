@@ -86,6 +86,8 @@ export const EN: Dict = {
     searchPlaceholder: 'Item name',
     total: (n) => `${n} item${n === 1 ? '' : 's'}`,
     hits: (n) => `${n} found`,
+    sortShuffle: 'Shuffled',
+    sortRecent: 'Newest first',
     syncing: 'Syncing…',
     offline: (when) => `Offline — last synced ${when}`,
     noItems: 'No items yet',
@@ -104,6 +106,7 @@ export const EN: Dict = {
     hint: (left) => `Add ${left} more item${left === 1 ? '' : 's'}`,
     success: 'Mission complete!',
     successHint: 'Five for today. See you tomorrow.',
+    hide: 'Hide for today',
   },
 
   places: {
@@ -201,6 +204,7 @@ export const EN: Dict = {
     namePlaceholder: 'Item name',
     nameRequired: 'Name cannot be empty.',
     quantityInvalid: 'Quantity must be a number, 0 or more.',
+    qtyFailed: "Couldn't change the quantity",
     saved: 'Saved',
     savedFailed: "Couldn't save",
     history: 'History',
@@ -213,7 +217,7 @@ export const EN: Dict = {
     createdOk: 'Nice',
     addMoreHere: (path) => `Add another item to "${path}"`,
     deleteTitle: 'Delete this item?',
-    deleteBody: (name) => `"${name}" will be removed from your lists.`,
+    deleteBody: (name) => `"${name}" will be deleted.`,
     deleteFailed: "Couldn't delete",
     saveFailed: "Couldn't save",
     openBox: 'Open this box',

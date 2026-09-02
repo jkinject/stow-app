@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { MISSION_GOAL } from '@/features/mission/api';
 import { useT } from '@/lib/i18n';
@@ -61,7 +61,15 @@ function Stamp({ n, filled, index }: { n: number; filled: boolean; index: number
   );
 }
 
-export function DailyMission({ done, complete }: { done: number; complete: boolean }) {
+export function DailyMission({
+  done,
+  complete,
+  onHide,
+}: {
+  done: number;
+  complete: boolean;
+  onHide?: () => void;
+}) {
   const { c } = useTheme();
   const t = useT();
   const m = c.mission;
@@ -89,9 +97,32 @@ export function DailyMission({ done, complete }: { done: number; complete: boole
           <Text style={[st.title, { color: m.text }]} numberOfLines={1}>
             {complete ? t.mission.successHint : t.mission.hint(MISSION_GOAL - done)}
           </Text>
-          <Text style={[st.count, { color: m.textFaint }]}>
-            {done}/{MISSION_GOAL}
-          </Text>
+          {/*
+            ⚠ 다 채우면 개수 자리를 **닫기로 바꾼다** (2026-09-02 사용자 요청).
+              처음엔 카드 오른쪽 위에 따로 뒀는데, 배지와 도장 줄 사이에 끼어
+              어정쩡했다(실기기 확인, 사용자 지적).
+
+              자리를 뺏어도 잃는 것이 없다: 다 채운 카드의 "5/5" 는 배지의 "미션 성공!"
+              과 도장 다섯 개가 이미 하는 말이다. 눈이 가는 자리에 닫기를 둔다.
+
+            ⚠ 채우는 중에는 닫기를 주지 않는다. 오늘 다시 볼 방법이 없어서, 진행하던
+              것을 실수로 없애는 버튼이 된다.
+          */}
+          {complete && onHide ? (
+            <Pressable
+              onPress={onHide}
+              hitSlop={16}
+              accessibilityRole="button"
+              accessibilityLabel={t.mission.hide}
+              style={({ pressed }) => [st.hide, pressed && { opacity: 0.5 }]}
+            >
+              <Text style={[st.hideText, { color: m.textFaint }]}>✕</Text>
+            </Pressable>
+          ) : (
+            <Text style={[st.count, { color: m.textFaint }]}>
+              {done}/{MISSION_GOAL}
+            </Text>
+          )}
         </View>
       </View>
 
@@ -110,6 +141,11 @@ export function DailyMission({ done, complete }: { done: number; complete: boole
 }
 
 const st = StyleSheet.create({
+  /**
+   * ⚠ 이 여백은 **간격이 아니라 배지 자리**다. 배지가 카드 위로 `space.md` 만큼
+   *   튀어나오므로 그만큼 비워 둔다. 위 요소와의 실제 간격은 이 카드를 담는 쪽이
+   *   준다(찾기 탭의 목록 위 여백) — 여기서 같이 주면 두 곳에서 더해진다.
+   */
   outer: { marginTop: space.md },
   card: {
     borderRadius: radius.lg,
@@ -130,6 +166,10 @@ const st = StyleSheet.create({
     paddingVertical: space.sm,
   },
   badgeText: { fontSize: type.caption, fontWeight: '800', letterSpacing: tracking.wide },
+
+  /** 개수가 있던 자리. 글자와 같은 줄에 앉으므로 크기를 맞춘다 */
+  hide: { paddingLeft: space.sm },
+  hideText: { fontSize: type.label, fontWeight: '700' },
 
   stamps: { flexDirection: 'row', alignItems: 'center' },
   /**

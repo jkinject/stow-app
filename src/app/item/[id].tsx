@@ -125,6 +125,17 @@ export default function ItemDetailScreen() {
    */
   const here = row.container?.name ? `${locName} › ${row.container.name}` : locName;
 
+  /**
+   * ⚠ 실패를 **반드시 알린다.** 숫자가 누른 즉시 바뀌므로(낙관적 갱신), 조용히 실패하면
+   *   숫자가 슬그머니 되돌아가 "내가 잘못 눌렀나" 가 된다. 되돌리기는 훅이 한다.
+   */
+  function onAdjust(delta: number) {
+    adjust.mutate(delta, {
+      onError: (e) =>
+        Alert.alert(t.item.qtyFailed, e instanceof Error ? e.message : t.common.tryAgain),
+    });
+  }
+
   function onDelete() {
     Alert.alert(t.item.deleteTitle, t.item.deleteBody(row.name), [
       { text: t.common.cancel, style: 'cancel' },
@@ -240,11 +251,11 @@ export default function ItemDetailScreen() {
           <View style={[st.qtyBox, { backgroundColor: c.card }]}>
             <Text style={[st.fieldLabel, { color: c.textFaint }]}>{t.item.quantity}</Text>
             <View style={st.qtyRow}>
-              <Stepper label="−" onPress={() => adjust.mutate(-1)} disabled={row.quantity <= 0} />
+              <Stepper label="−" onPress={() => onAdjust(-1)} disabled={row.quantity <= 0} />
               <Text style={[st.qtyValue, { color: row.quantity === 0 ? c.danger : c.text }]}>
                 {t.common.qty(row.quantity)}
               </Text>
-              <Stepper label="+" onPress={() => adjust.mutate(1)} />
+              <Stepper label="+" onPress={() => onAdjust(1)} />
             </View>
             {row.quantity === 0 && (
               <Text style={[st.zeroHint, { color: c.danger }]}>{t.item.zeroHint}</Text>

@@ -28,6 +28,11 @@ export type SearchRow = {
   location_id: string;
   container_id: string | null;
   updated_at: string;
+  /**
+   * ⚠ "최근 등록순" 정렬에 쓴다. `updated_at` 으로 대신하면 **수정한 순**이 되어,
+   *   옛 물건의 이름만 고쳐도 맨 앞으로 올라온다 — 등록한 순서가 아니다.
+   */
+  created_at: string;
 };
 
 export type Indexed = SearchRow & {
@@ -52,7 +57,7 @@ export function useAllItems(householdId: string | null) {
     queryFn: async (): Promise<SearchRow[]> => {
       const { data, error } = await supabase
         .from('items')
-        .select('id, name, quantity, unit, thumb_path, location_id, container_id, updated_at, category:categories!items_category_id_fkey(name)')
+        .select('id, name, quantity, unit, thumb_path, location_id, container_id, updated_at, created_at, category:categories!items_category_id_fkey(name)')
         .eq('household_id', householdId!)
         .is('deleted_at', null)
         .order('updated_at', { ascending: false });

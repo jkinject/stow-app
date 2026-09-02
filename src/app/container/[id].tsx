@@ -258,6 +258,7 @@ export default function ContainerDetail() {
               <ItemCard
                 key={it.id}
                 name={it.name}
+                category={it.category?.name ?? null}
                 quantity={it.quantity}
                 width={cardW}
                 thumb={thumbs.get(it.thumb_path)}

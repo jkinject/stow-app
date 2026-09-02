@@ -25,7 +25,13 @@ export type ContainerSummary = {
 export type ItemRow = {
   id: string;
   name: string;
-  category: string | null;
+  /**
+   * ⚠ 옛 `items.category`(자유 문자열)가 아니라 **`category_id` 로 이어진 표**를 읽는다.
+   *   2026-08-31 에 카테고리가 표로 바뀌었는데 이 조회만 옛 컬럼을 그대로 읽고 있었다.
+   *   그래서 박스·장소 화면에는 카테고리가 영영 안 떴다(2026-09-02 사용자 지적).
+   *   찾기 탭(`features/search/api.ts`)과 **같은 모양**이어야 같은 카드에 넣을 수 있다.
+   */
+  category: { name: string | null } | null;
   quantity: number;
   container_id: string | null;
   location_id: string;
@@ -197,7 +203,9 @@ export function useContainerItems(containerId: string) {
     queryFn: async (): Promise<ItemRow[]> => {
       const { data, error } = await supabase
         .from('items')
-        .select('id, name, category, quantity, container_id, location_id, thumb_path')
+        .select(
+          'id, name, quantity, container_id, location_id, thumb_path, category:categories!items_category_id_fkey(name)',
+        )
         .eq('container_id', containerId)
         .is('deleted_at', null)
         .order('name');
@@ -215,7 +223,9 @@ export function useLooseItems(locationId: string) {
     queryFn: async (): Promise<ItemRow[]> => {
       const { data, error } = await supabase
         .from('items')
-        .select('id, name, category, quantity, container_id, location_id, thumb_path')
+        .select(
+          'id, name, quantity, container_id, location_id, thumb_path, category:categories!items_category_id_fkey(name)',
+        )
         .eq('location_id', locationId)
         .is('container_id', null)
         .is('deleted_at', null)

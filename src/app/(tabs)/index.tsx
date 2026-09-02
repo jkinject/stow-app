@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Fab } from '@/components/Fab';
-import { IconQr } from '@/components/Icon';
+import { IconQr, IconSort } from '@/components/Icon';
 import { DailyMission } from '@/components/DailyMission';
 import { StarterChecklist } from '@/components/StarterChecklist';
 import { useCategoryList } from '@/features/category/api';
@@ -27,7 +27,7 @@ import { filterItems, useSearchIndex, type Indexed } from '@/features/search/api
 import { useLocations } from '@/features/storage/api';
 import { LocationSheet } from '@/features/storage/LocationSheet';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, overlay, space } from '@/lib/theme';
+import { useTheme, type, radius, space } from '@/lib/theme';
 
 /**
  * 찾기 — 앱의 첫 화면 (2026-08-30 UI 개편).
@@ -89,10 +89,29 @@ export default function FindTab() {
    */
   const [place, setPlace] = useState<string | null>(null);
 
-  const shuffled = useMemo(() => shuffle(indexed, seed), [indexed, seed]);
+  /**
+   * 정렬 (2026-09-02 사용자 요청).
+   *
+   * ⚠ **랜덤이 기본이다.** 이 앱은 "그거 어디 뒀지" 로 여는데, 최근 등록순으로 두면
+   *   맨 위 몇 개만 늘 보이고 나머지는 영영 안 보인다. 섞어 두면 열 때마다 다른 물건이
+   *   눈에 들어와 "아 저것도 있었지" 가 된다.
+   *
+   * ⚠ 고른 값을 저장하지 않는다. 앱을 다시 켜면 랜덤으로 돌아온다 — 위 이유가
+   *   기본값의 근거이고, "방금 넣은 것 찾기" 는 그 순간에만 필요한 일이다.
+   */
+  const [sort, setSort] = useState<'shuffle' | 'recent'>('shuffle');
+
+  const ordered = useMemo(
+    () =>
+      sort === 'recent'
+        ? // ⚠ ISO 8601 문자열이라 사전순 비교가 곧 시간순이다 (Date 로 바꿀 이유가 없다)
+          indexed.slice().sort((a, b) => b.created_at.localeCompare(a.created_at))
+        : shuffle(indexed, seed),
+    [indexed, seed, sort],
+  );
   const scoped = useMemo(
-    () => (place ? shuffled.filter((i) => i.location_id === place) : shuffled),
-    [shuffled, place],
+    () => (place ? ordered.filter((i) => i.location_id === place) : ordered),
+    [ordered, place],
   );
   const results = useMemo(() => filterItems(scoped, q), [scoped, q]);
 
@@ -143,11 +162,16 @@ export default function FindTab() {
    *   와 "다섯 개를 등록하세요" 를 같이 들이밀면 무엇부터 할지 모른다 — 안내를
    *   끝낸 사람에게만 다음 목표를 준다.
    * ⚠ 물건이 하나도 없을 때도 숨긴다. 이 화면은 그때 빈 상태 안내를 보여 준다.
+   * ⚠ 다 채운 뒤 사용자가 닫았으면 **그날 하루** 안 보인다(`hidden`). 내일은 다시 뜬다.
    */
   const missionState = useTodayMission(showStarter ? null : activeId, session?.user.id ?? null);
   const mission =
-    !showStarter && !missionState.loading && results.length > 0 ? (
-      <DailyMission done={missionState.done} complete={missionState.complete} />
+    !showStarter && !missionState.loading && !missionState.hidden && results.length > 0 ? (
+      <DailyMission
+        done={missionState.done}
+        complete={missionState.complete}
+        onHide={missionState.hide}
+      />
     ) : null;
 
   /**
@@ -179,6 +203,10 @@ export default function FindTab() {
   const onReshuffle = useCallback(() => {
     setSeed((n) => n + 1);
     setLimit(PAGE);
+  }, []);
+  const onToggleSort = useCallback(() => {
+    setSort((v) => (v === 'shuffle' ? 'recent' : 'shuffle'));
+    setLimit(PAGE); // 순서가 통째로 바뀌므로 처음부터 다시 본다
   }, []);
   const onPlace = useCallback((id: string | null) => {
     setPlace(id);
@@ -279,13 +307,6 @@ export default function FindTab() {
         </ScrollView>
       )}
 
-      <View style={st.meta}>
-        <Text style={[st.metaText, { color: c.textFaint }]}>
-          {q ? t.find.hits(results.length) : t.find.total(indexed.length)}
-        </Text>
-        {isFetching && <Text style={[st.metaText, { color: c.textFaint }]}>{t.find.syncing}</Text>}
-      </View>
-
       {offline && (
         <View style={[st.banner, { backgroundColor: c.sunk, borderColor: c.border }]}>
           <Text style={[st.bannerText, { color: c.textMuted }]}>
@@ -318,9 +339,18 @@ export default function FindTab() {
           extraData={thumbs}
           numColumns={2}
           columnWrapperStyle={{ gap: GAP }}
+          /**
+           * ⚠ 위 여백을 **여기** 한 곳에 둔다 (2026-09-02 사용자 지적 — 장소 필터 아래가
+           *   붙어 보였다). "전체 N건" 이 목록 안으로 들어가면서, 전에 그 줄이 만들어
+           *   주던 간격이 함께 사라졌다.
+           *
+           *   필터 칩 쪽에 붙이면 칩이 없는 집(장소가 하나뿐)에서는 다시 0 이 된다.
+           *   목록의 시작점에 두면 칩이 있든 없든, 미션 카드가 있든 없든 같다.
+           */
           contentContainerStyle={{
             paddingHorizontal: PADDING,
-            paddingBottom: insets.bottom + 24,
+            paddingTop: space.lg,
+            paddingBottom: insets.bottom + space.xxl,
             gap: GAP,
           }}
           keyboardShouldPersistTaps="handled"
@@ -331,12 +361,47 @@ export default function FindTab() {
            *   목록과 함께 밀려 올라가야 격자에 집중할 수 있다(사용자 요청).
            */
           ListHeaderComponent={
-            checklist || mission ? (
-              <View style={st.starterWrap}>
-                {checklist}
-                {mission}
+            <>
+              {(checklist || mission) && (
+                <View style={st.starterWrap}>
+                  {checklist}
+                  {mission}
+                </View>
+              )}
+              {/*
+                ⚠ "전체 18건" 은 **격자 바로 위**에 둔다 (2026-09-02 사용자 지적).
+                  전에는 필터 칩 아래 고정이라 미션 카드보다 위에 있었는데, 그러면
+                  무엇의 개수인지 알 수 없다 — 세는 대상은 아래 격자다.
+                  같이 스크롤되는 것도 맞다: 개수는 목록의 머리말이지 화면의 머리말이 아니다.
+              */}
+              <View style={st.meta}>
+                <Text style={[st.metaText, { color: c.textFaint }]}>
+                  {q ? t.find.hits(results.length) : t.find.total(indexed.length)}
+                </Text>
+                {isFetching && (
+                  <Text style={[st.metaText, { color: c.textFaint }]}>{t.find.syncing}</Text>
+                )}
+                {/*
+                  ⚠ **지금 어떤 순서인지**를 적는다. "누르면 이렇게 됩니다" 로 적으면
+                    지금 무엇으로 보고 있는지 알 수 없다 — 순서는 보기만 해선 모른다.
+                */}
+                <Pressable
+                  onPress={onToggleSort}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [
+                    st.sortBtn,
+                    { borderColor: c.border, backgroundColor: c.card },
+                    pressed && { opacity: 0.6 },
+                  ]}
+                >
+                  <IconSort size={13} color={c.textMuted} />
+                  <Text style={[st.sortText, { color: c.textMuted }]}>
+                    {sort === 'recent' ? t.find.sortRecent : t.find.sortShuffle}
+                  </Text>
+                </Pressable>
               </View>
-            ) : null
+            </>
           }
           onEndReached={() => setLimit((n) => Math.min(n + PAGE, results.length))}
           onEndReachedThreshold={0.6}
@@ -419,12 +484,30 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  /** ⚠ 좌우 여백을 주지 않는다 — 목록 안에 있어 격자의 여백을 그대로 쓴다 */
   meta: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: PADDING,
-    paddingVertical: space.sm,
+    alignItems: 'center',
+    gap: space.sm,
+    paddingBottom: space.sm,
   },
+  /**
+   * ⚠ 위 장소 필터와 **같은 어휘**(테두리 있는 알약)로 그린다. 파란 글씨만 두었더니
+   *   "누를 수 있다" 가 전혀 안 읽혔다(2026-09-02 사용자 지적). 다만 칩보다 작게 —
+   *   장소 필터가 주인공이고 이건 곁다리다.
+   * ⚠ `marginLeft: 'auto'` 로 오른쪽 끝에 붙인다 — 가운데 "동기화 중" 이 끼어도 안 밀린다.
+   */
+  sortBtn: {
+    marginLeft: 'auto',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
+    borderWidth: 1,
+    borderRadius: radius.full,
+    paddingHorizontal: space.md,
+    paddingVertical: space.xs,
+  },
+  sortText: { fontSize: type.caption, fontWeight: '700' },
   metaText: { fontSize: type.caption, fontVariant: ['tabular-nums'] },
   banner: {
     marginHorizontal: PADDING,
@@ -441,19 +524,4 @@ const st = StyleSheet.create({
   filterRow: { paddingHorizontal: PADDING, gap: space.sm, paddingTop: space.xs, alignItems: 'center' },
   filterChip: { borderWidth: 1, borderRadius: radius.full, paddingHorizontal: space.lg, paddingVertical: space.sm },
   filterText: { fontSize: type.small, fontWeight: '600' },
-  fab: {
-    position: 'absolute',
-    right: 18,
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // 격자 위에 떠 있어야 하므로 그림자로 띄운다
-    shadowColor: overlay.bg,
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 6,
-  },
 });

@@ -175,9 +175,35 @@ export function useUpdateItem(itemId: string) {
  *   RPC 는 DB 안에서 `quantity + delta` 를 계산하므로 동시성에 안전하다.
  *   폼에서 숫자를 직접 고치는 것은 "이 값으로 정한다" 는 뜻이라 일반 update 가 맞다.
  */
+/**
+ * 수량 증감 — **누르는 즉시 숫자가 바뀐다** (낙관적 갱신, 2026-09-02 사용자 요청).
+ *
+ * ⚠ 왜 필요한가: 전에는 서버가 답한 뒤에야 숫자가 움직였다. 인터넷이 느리면 눌러도
+ *   아무 일이 없어 보여 **여러 번 누르게 된다**(사용자 보고). 그러면 실제로 여러 번
+ *   더해진다 — 느린 연결이 데이터를 틀리게 만든다.
+ *
+ * ⚠ 실패했을 때 **스냅샷으로 되돌리지 않는다.** 빠르게 여러 번 누르면 요청이 겹치는데,
+ *   각자 찍어 둔 옛 사진으로 되돌리면 성공한 다른 요청의 결과까지 지운다.
+ *   대신 **반대 방향으로 한 번 더 더한다** — 겹쳐도 합이 맞는다.
+ *
+ * ⚠ 무효화는 **마지막 요청이 끝났을 때만** 한다. 누를 때마다 목록 일곱 종류를 다시
+ *   부르면, 연타할수록 느려지는 화면이 된다.
+ *
+ * ⚠ 여기서 고치는 것은 **상세 화면의 캐시**뿐이다. 격자·검색의 수량 배지는 아래
+ *   무효화가 맞춰 준다 — 지금 보고 있지 않은 화면까지 손으로 맞출 이유가 없다.
+ */
 export function useAdjustQuantity(itemId: string) {
   const qc = useQueryClient();
+  const key = itemKeys.detail(itemId);
+
+  const shift = (delta: number) =>
+    qc.setQueryData<ItemDetail | null>(key, (prev) =>
+      prev ? { ...prev, quantity: Math.max(0, prev.quantity + delta) } : prev,
+    );
+
   return useMutation({
+    // ⚠ 아래 onSettled 가 "지금 나 말고 또 있나" 를 세는 데 쓴다
+    mutationKey: ['adjust-quantity', itemId],
     mutationFn: async (delta: number) => {
       // RPC 는 items 행을 그대로 돌려준다 — updater 조인은 없다.
       // 어차피 무효화만 하면 되므로 전체 타입을 주장하지 않는다.
@@ -187,7 +213,18 @@ export function useAdjustQuantity(itemId: string) {
       });
       if (error) throw error;
     },
-    onSuccess: () => invalidateItemViews(qc, itemId),
+    onMutate: async (delta: number) => {
+      // 진행 중이던 조회가 뒤늦게 도착해 방금 그린 숫자를 덮는 것을 막는다
+      await qc.cancelQueries({ queryKey: key });
+      shift(delta);
+    },
+    onError: (_e, delta) => shift(-delta),
+    onSettled: () => {
+      // 나 자신도 아직 세어지므로 1 이면 "마지막" 이다
+      if (qc.isMutating({ mutationKey: ['adjust-quantity', itemId] }) === 1) {
+        invalidateItemViews(qc, itemId);
+      }
+    },
   });
 }
 
