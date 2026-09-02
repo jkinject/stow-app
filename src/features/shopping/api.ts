@@ -1,25 +1,25 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 import { supabase } from '@/lib/supabase';
 
 /**
  * 구매 리스트 (AC16 · AC18).
  *
- * 편입과 해제는 **DB 트리거가 한다** (`t40_sync_shopping_list`):
- *   · 수량이 임계치 **이하로 전이**하면 자동 편입
- *   · 임계치 **초과로 복귀**하면 자동 해제
- * 그래서 이 화면은 읽기가 대부분이고, 쓰기는 "수동 추가" 와 "수동 항목 지우기" 뿐이다.
+ * 편입과 해제는 **전부 DB 트리거가 한다** (`t40_sync_shopping_list`):
+ *   · 수량이 0 으로 전이하면 편입
+ *   · 0 에서 벗어나면 해제
  *
- * ⚠ 자동 항목(`auto_threshold`)은 여기서 지우지 않는다. 지워도 수량이 여전히 임계치
- *   이하라 다음 수량 변경 때 다시 들어온다. 자동 항목을 없애는 올바른 방법은
- *   **물건을 채우는 것**(수량 올리기)이고, 그러면 트리거가 알아서 해제한다.
- *   RLS 도 같은 판단이다 — delete 정책이 `added_reason = 'manual'` 로 제한돼 있다.
+ * ⚠ 그래서 이 화면은 **읽기 전용**이다. 클라이언트가 이 표에 쓰는 길은 없고,
+ *   RLS 도 select 정책 하나만 남겼다(2026-09-02 사용자 결정).
+ *
+ * ⚠ 목록에서 빼는 올바른 방법은 **물건을 채우는 것**(수량 올리기)이다. 행을 지우는
+ *   길을 열어 두면 수량은 여전히 0 인데 목록에서만 사라져, 다음 수량 변경 때 다시
+ *   들어오거나 "샀는데 왜 또 뜨지" 가 된다. 규칙은 하나다 — 0 이면 사야 한다.
  */
 
 export type ShoppingRow = {
   id: string;
   item_id: string;
-  added_reason: 'auto_threshold' | 'manual';
   added_at: string;
   item: {
     name: string;
@@ -47,7 +47,7 @@ export function useShoppingList(householdId: string | null) {
       const { data, error } = await supabase
         .from('shopping_list')
         .select(
-          'id, item_id, added_reason, added_at, item:items!shopping_list_item_id_fkey(name, quantity, threshold, unit, thumb_path, purchase_url, location_id, container_id)',
+          'id, item_id, added_at, item:items!shopping_list_item_id_fkey(name, quantity, threshold, unit, thumb_path, purchase_url, location_id, container_id)',
         )
         .eq('household_id', householdId!)
         .is('resolved_at', null)
@@ -56,35 +56,5 @@ export function useShoppingList(householdId: string | null) {
       // 물건이 soft delete 되면 트리거가 해제하지만, 경합으로 남는 행이 있을 수 있다
       return ((data ?? []) as ShoppingRow[]).filter((r) => !!r.item);
     },
-  });
-}
-
-/** 임계치와 무관하게 "이건 사야 해" 로 직접 넣는다 */
-export function useAddToShopping(householdId: string | null) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (itemId: string) => {
-      if (!householdId) throw new Error('가구를 찾을 수 없습니다.');
-      const { error } = await supabase
-        .from('shopping_list')
-        .insert({ household_id: householdId, item_id: itemId, added_reason: 'manual' });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['shopping'] }),
-  });
-}
-
-/**
- * 수동 항목을 목록에서 뺀다.
- * ⚠ 자동 항목에는 쓸 수 없다 — RLS 가 막는다. 위 주석의 이유 참조.
- */
-export function useRemoveFromShopping() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (rowId: string) => {
-      const { error } = await supabase.from('shopping_list').delete().eq('id', rowId);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['shopping'] }),
   });
 }

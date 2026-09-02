@@ -9,6 +9,7 @@ import {
   Text,
   TextInput,
   type TextInputProps,
+  type TextStyle,
   View,
   type ViewStyle,
 } from 'react-native';
@@ -23,12 +24,26 @@ import { useTheme, type, radius, space, tracking } from '@/lib/theme';
  *   색을 안 주면 다크 모드에서 글자가 사라진다 (실기기에서 실제로 났던 버그).
  */
 
+/**
+ * 화면 제목의 글씨.
+ *
+ * ⚠ 밖으로 뺀 이유: 제목을 **입력칸으로** 대체하는 화면이 있다(물건 상세 —
+ *   제목을 눌러 이름을 고친다). 같은 모양이어야 하는데 값을 두 곳에 적어 두면
+ *   한쪽만 고쳐진다. 이 저장소에서 이미 여러 번 겪은 함정이다.
+ */
+export const titleText: TextStyle = {
+  fontSize: type.h1,
+  fontWeight: '700',
+  letterSpacing: tracking.tighter,
+};
+
 export function Screen({
   children,
   scroll = true,
   title,
   subtitle,
   back = false,
+  titleNode,
   action,
   float,
 }: {
@@ -41,6 +56,13 @@ export function Screen({
    */
   subtitle?: string;
   back?: boolean;
+  /**
+   * 제목 자리에 대신 넣을 것.
+   *
+   * ⚠ 제목을 **눌러서 고치는** 화면을 위한 것이다(물건 상세). `title` 은 문자열이라
+   *   입력칸을 넣을 수 없다. 모양은 `titleText` 를 함께 써서 맞춘다.
+   */
+  titleNode?: ReactNode;
   action?: ReactNode;
   /** 본문 **위에** 떠 있는 것 (플로팅 버튼). 스크롤을 따라가지 않는다 */
   float?: ReactNode;
@@ -53,7 +75,7 @@ export function Screen({
 
   return (
     <View style={[s.screen, { backgroundColor: c.bg, paddingTop: insets.top }]}>
-      {(title || back) && (
+      {(title || titleNode || back) && (
         <View style={s.header}>
           {back && (
             <Pressable onPress={() => router.back()} hitSlop={12} style={s.backBtn}>
@@ -62,12 +84,14 @@ export function Screen({
             </Pressable>
           )}
           <View style={s.headerRow}>
-            {title ? (
-              <Text style={[s.h1, { color: c.text }]} numberOfLines={2}>
-                {title}
-              </Text>
-            ) : (
-              <View />
+            {titleNode ?? (
+              title ? (
+                <Text style={[s.h1, { color: c.text }]} numberOfLines={2}>
+                  {title}
+                </Text>
+              ) : (
+                <View />
+              )
             )}
             {action}
           </View>
@@ -271,7 +295,7 @@ const s = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: space.md },
   backBtn: { alignSelf: 'flex-start', paddingVertical: space.xs },
   backText: { fontSize: type.body, fontWeight: '500' },
-  h1: { fontSize: type.h1, fontWeight: '700', letterSpacing: tracking.tighter, flexShrink: 1 },
+  h1: { ...titleText, flexShrink: 1 },
   /** 제목 바로 아래 — header 의 gap(6) 이 간격을 만든다 */
   h1sub: { fontSize: type.small },
   btn: { borderWidth: 1, paddingVertical: space.lg, borderRadius: radius.sm, alignItems: 'center' },

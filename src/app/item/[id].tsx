@@ -1,16 +1,25 @@
 import { Image, type ImageSource } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Linking,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconChevron, IconTrash } from '@/components/Icon';
 import { KeyboardSpacer } from '@/components/KeyboardSpacer';
 import { useToast } from '@/components/Toast';
-import { Button, Field, Loading, Screen } from '@/components/ui';
+import { Button, Field, Loading, Screen, titleText } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { useCategoryList } from '@/features/category/api';
-import { useAddToShopping } from '@/features/shopping/api';
 import {
   useAdjustQuantity,
   useDeleteItem,
@@ -47,7 +56,6 @@ export default function ItemDetailScreen() {
   const router = useRouter();
   const toast = useToast();
   const { activeId } = useHousehold();
-  const addToShopping = useAddToShopping(activeId);
 
   const item = useItem(itemId);
   const photo = useItemPhotoUrl(item.data?.photo_path);
@@ -139,7 +147,7 @@ export default function ItemDetailScreen() {
     <Screen
       back
       scroll={false}
-      title={row.name}
+      titleNode={<TitleField value={row.name} onSave={(v) => update.mutateAsync({ name: v })} />}
       /**
        * ⚠ 지우기는 **제목 줄 오른쪽의 작은 아이콘**이다 (2026-09-02 사용자 요청).
        *   본문 끝에 빨간 큰 버튼으로 두었더니 화면에서 제일 눈에 띄는 것이 "지우기" 가
@@ -147,6 +155,10 @@ export default function ItemDetailScreen() {
        *
        * ⚠ 아이콘만 두므로 `accessibilityLabel` 로 이름을 붙인다. 그림만으로는
        *   화면 낭독기에서 "버튼" 이라고만 읽힌다.
+       *
+       * ⚠ 제목 줄은 글자끼리 밑선을 맞추려고 `alignItems: 'flex-end'` 다. 아이콘에는
+       *   밑선이 없어서 그대로 두면 제목보다 아래로 처져 **틀어져 보인다**(실기기
+       *   확인, 사용자 지적). `alignSelf` 로 이 버튼만 가운데에 맞춘다.
        */
       action={
         <Pressable
@@ -155,9 +167,12 @@ export default function ItemDetailScreen() {
           hitSlop={12}
           accessibilityRole="button"
           accessibilityLabel={t.item.deleteItem}
-          style={({ pressed }) => (pressed || remove.isPending ? { opacity: 0.4 } : undefined)}
+          style={({ pressed }) => [
+            st.trashBtn,
+            (pressed || remove.isPending) && { opacity: 0.4 },
+          ]}
         >
-          <IconTrash color={c.danger} />
+          <IconTrash size={24} color={c.danger} />
         </Pressable>
       }
     >
@@ -237,14 +252,6 @@ export default function ItemDetailScreen() {
           </View>
 
           {/* 이 아래는 전부 항상 입력칸이다 */}
-          <AutoField
-            label={t.item.name}
-            value={row.name}
-            placeholder={t.item.namePlaceholder}
-            onSave={(v) => update.mutateAsync({ name: v })}
-            required
-          />
-
           <CategoryPicker
             householdId={activeId}
             currentId={row.category_id}
@@ -291,40 +298,6 @@ export default function ItemDetailScreen() {
           >
             <Text style={[st.navRowText, { color: c.text }]}>{t.history.title}</Text>
             <IconChevron color={c.textFaint} />
-          </Pressable>
-
-          {/**
-            * 살 것에 직접 담기.
-            *
-            * ⚠ 이 길이 없었다. 담는 mutation 도, 목록에 그리는 코드도, 빼는 코드도
-            *   다 있는데 **담을 방법만** 없어서 "살 것" 화면의 수동 구역이 영원히
-            *   비어 있었다(2026-09-02 점검에서 발견). 지우는 것보다 길을 내는 편이
-            *   맞다 — 지우면 나머지 셋도 같이 죽는다.
-            *
-            * ⚠ 이미 담겼는지 미리 조회하지 않는다. DB 에 부분 유니크 인덱스가 있어
-            *   (shopping_list(item_id) where resolved_at is null) 두 번째 삽입은
-            *   23505 로 막힌다. 그걸 그대로 알려 주면 되고, 화면을 열 때마다 조회를
-            *   한 번 더 할 이유가 없다.
-            */}
-          <Pressable
-            onPress={async () => {
-              try {
-                await addToShopping.mutateAsync(itemId);
-                toast(t.item.addedToShopping);
-              } catch (e) {
-                const dup = (e as { code?: string })?.code === '23505';
-                if (dup) toast(t.item.alreadyInShopping);
-                else Alert.alert(t.item.saveFailed, e instanceof Error ? e.message : t.common.tryAgain);
-              }
-            }}
-            disabled={addToShopping.isPending}
-            style={({ pressed }) => [
-              st.navRow,
-              { borderColor: c.border, backgroundColor: c.card },
-              pressed && { opacity: 0.7 },
-            ]}
-          >
-            <Text style={[st.navRowText, { color: c.text }]}>{t.item.addToShopping}</Text>
           </Pressable>
 
         </ScrollView>
@@ -561,28 +534,13 @@ function CreatedDialog({
  *   저장은 됐는데 목록엔 옛 값이 보이는, 더 나쁜 상태가 된다. 그래서 아직 살아 있는
  *   **포커스를 잃는 시점**(useFocusEffect 의 cleanup)에 저장한다.
  */
-function AutoField({
-  label,
-  value,
-  placeholder,
-  multiline,
-  required,
-  keyboardType,
-  autoCapitalize,
-  trailing,
-  onSave,
-}: {
-  label: string;
-  value: string;
-  placeholder?: string;
-  multiline?: boolean;
-  required?: boolean;
-  keyboardType?: 'url';
-  autoCapitalize?: 'none';
-  trailing?: React.ReactNode;
-  onSave: (v: string) => Promise<unknown>;
-}) {
-  const { c } = useTheme();
+/**
+ * "고치면 알아서 저장된다" 는 이 화면의 규칙을 한 곳에 모은 것.
+ *
+ * ⚠ 아래 `AutoField`(줄 단위 칸)와 `TitleField`(제목)가 **같은 규칙**을 써야 한다.
+ *   각자 구현하면 한쪽만 고쳐진다 — 실제로 메모 저장 버그를 두 번 겪었다.
+ */
+function useAutoSave(value: string, onSave: (v: string) => Promise<unknown>, required?: boolean) {
   const t = useT();
   const [draft, setDraft] = useState(value);
   const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -632,23 +590,91 @@ function AutoField({
     }, []),
   );
 
+  return {
+    draft,
+    setDraft,
+    state,
+    onFocus: () => {
+      focused.current = true;
+    },
+    onBlur: () => {
+      focused.current = false;
+      void commit();
+    },
+  };
+}
+
+/**
+ * 제목을 **눌러서 고친다** (2026-09-02 사용자 요청).
+ *
+ * ⚠ 예전에는 제목이 글자이고 본문에 "이름" 칸이 따로 있었다. 같은 값이 한 화면에
+ *   두 번 나와서, 어느 쪽을 고쳐야 하는지 알 수 없었다. 제목 자체를 입력칸으로 만들면
+ *   중복이 사라지고 "모든 칸이 항상 입력칸" 이라는 이 화면의 규칙과도 맞는다.
+ *
+ * ⚠ 모양은 `titleText`(Screen 의 제목 글씨)를 그대로 쓴다. 값을 여기에 다시 적으면
+ *   제목 크기를 바꿀 때 한쪽만 바뀐다.
+ *
+ * ⚠ 줄바꿈은 지운다. `multiline` 이라 긴 이름이 두 줄로 보이는데(글자였을 때와 같다),
+ *   그 대가로 키보드에 줄바꿈 키가 생긴다. 이름에 줄바꿈이 들어가면 목록·검색·라벨이
+ *   전부 어그러진다.
+ */
+function TitleField({ value, onSave }: { value: string; onSave: (v: string) => Promise<unknown> }) {
+  const { c } = useTheme();
+  const t = useT();
+  const a = useAutoSave(value, onSave, true);
+
+  return (
+    <TextInput
+      value={a.draft}
+      onChangeText={(v) => a.setDraft(v.replace(/\n/g, ' '))}
+      onFocus={a.onFocus}
+      onBlur={a.onBlur}
+      placeholder={t.item.namePlaceholder}
+      placeholderTextColor={c.textFaint}
+      multiline
+      submitBehavior="blurAndSubmit"
+      style={[titleText, st.titleInput, { color: c.text }]}
+    />
+  );
+}
+
+function AutoField({
+  label,
+  value,
+  placeholder,
+  multiline,
+  required,
+  keyboardType,
+  autoCapitalize,
+  trailing,
+  onSave,
+}: {
+  label: string;
+  value: string;
+  placeholder?: string;
+  multiline?: boolean;
+  required?: boolean;
+  keyboardType?: 'url';
+  autoCapitalize?: 'none';
+  trailing?: React.ReactNode;
+  onSave: (v: string) => Promise<unknown>;
+}) {
+  const { c } = useTheme();
+  const t = useT();
+  const a = useAutoSave(value, onSave, required);
+
   return (
     <View style={st.field}>
       <View style={st.fieldHead}>
         <Text style={[st.fieldLabel, { color: c.textFaint }]}>{label}</Text>
-        {state === 'saved' && <Text style={[st.savedTag, { color: c.ok }]}>{t.item.saved}</Text>}
+        {a.state === 'saved' && <Text style={[st.savedTag, { color: c.ok }]}>{t.item.saved}</Text>}
         {trailing}
       </View>
       <Field
-        value={draft}
-        onChangeText={setDraft}
-        onFocus={() => {
-          focused.current = true;
-        }}
-        onBlur={() => {
-          focused.current = false;
-          void commit();
-        }}
+        value={a.draft}
+        onChangeText={a.setDraft}
+        onFocus={a.onFocus}
+        onBlur={a.onBlur}
         placeholder={placeholder}
         multiline={multiline}
         keyboardType={keyboardType}
@@ -812,6 +838,13 @@ function Stepper({
 
 const st = StyleSheet.create({
   flex: { flex: 1 },
+  /**
+   * ⚠ 제목 입력칸. 크기·굵기는 `titleText` 가 준다 — 여기서는 **입력칸 기본 여백만**
+   *   걷어낸다. 안 걷으면 글자였을 때보다 아래로 밀려 뒤로가기 줄과 간격이 달라진다.
+   */
+  titleInput: { flex: 1, padding: 0, margin: 0, textAlignVertical: 'center' },
+  /** ⚠ 제목 줄의 밑선 맞춤에서 이 버튼만 빠져나온다. 위 주석 참조 */
+  trashBtn: { alignSelf: 'center' },
   body: { paddingHorizontal: space.xl, paddingBottom: space.giant, gap: space.lg },
   photo: { width: '100%', aspectRatio: PHOTO_ASPECT, borderRadius: radius.md },
   photoAdd: {

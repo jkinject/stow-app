@@ -255,7 +255,6 @@ export const KO = {
     formerMember: '떠난 구성원',
     deleteItem: '이 물건 지우기',
     /** 수량이 0 이 아니어도 "이건 사야 해" 라고 직접 담는 길 */
-    addToShopping: '살 것에 담기',
     /**
      * ⚠ 등록 직후 물건 상세로 넘어가는데, 그 화면은 **모든 칸이 입력칸**이라
      *   "아직 등록 중인가?" 로 읽힌다(사용자 보고 2026-09-02). 저장이 끝났다는
@@ -272,8 +271,6 @@ export const KO = {
     createdOk: '좋아요',
     /** 같은 자리에 이어서 등록하는 입구. 등록 직후에만 보인다 */
     addMoreHere: (path: string) => `'${path}'에 물건 더 등록하기`,
-    addedToShopping: '살 것에 담았습니다.',
-    alreadyInShopping: '이미 살 것에 있습니다.',
     deleteTitle: '이 물건을 지울까요?',
     deleteBody: (name: string) => `"${name}" 을(를) 목록에서 뺍니다.`,
     deleteFailed: '삭제 실패',
@@ -366,13 +363,12 @@ export const KO = {
     title: '살 것',
     none: '살 것이 없습니다',
     noneHint: '물건의 수량이 0 이 되면\n여기에 자동으로 올라옵니다.',
-    autoSection: (n: number) => `떨어졌습니다 · ${n}`,
-    manualSection: (n: number) => `직접 담은 것 · ${n}`,
+    /** 한 종류뿐이라 구역을 나누지 않는다 (2026-09-02) */
+    section: (n: number) => `떨어졌습니다 · ${n}`,
     remaining: (q: number) => `${q}개 남음`,
     outOfStock: '재고 없음',
     buy: '사러 가기',
     noLink: '구매 링크 없음 — 물건 수정에서 넣어 두면 여기서 바로 열립니다',
-    removeFromList: '빼기',
     footNote: '사 오신 뒤 물건을 눌러 수량을 올리면 목록에서 빠집니다.',
     linkFailed: '링크를 열 수 없습니다',
   },

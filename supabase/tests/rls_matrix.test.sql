@@ -59,13 +59,13 @@ insert into invites (id,household_id,code,created_by) values ('aaaa0005-0000-000
 --   있어야 한다 — 같은 가구에 또 넣으면 정책이 아니라 unique 제약이 먼저 튕긴다.
 insert into households (id,name,created_by) values ('aaaa0006-0000-0000-0000-00000000000a','코드없는가구','aaaa0000-0000-0000-0000-00000000000a');
 insert into household_members values ('aaaa0006-0000-0000-0000-00000000000a','aaaa0000-0000-0000-0000-00000000000a','owner');
-insert into shopping_list (id,household_id,item_id,added_reason) values ('aaaa0006-0000-0000-0000-00000000000a','aaaa0001-0000-0000-0000-00000000000a','aaaa0004-0000-0000-0000-00000000000a','manual');
+insert into shopping_list (id,household_id,item_id,added_reason) values ('aaaa0006-0000-0000-0000-00000000000a','aaaa0001-0000-0000-0000-00000000000a','aaaa0004-0000-0000-0000-00000000000a','auto_threshold');
 insert into device_push_tokens (id,user_id,expo_token,platform) values ('aaaa0007-0000-0000-0000-00000000000a','aaaa0000-0000-0000-0000-00000000000a','ExponentPushToken[mtx]','ios');
 insert into maintenance_log (job,candidate_count,deleted_count) values ('probe',0,0);
 
 -- 물건당 미해결 항목 1건 제약이 실제로 작동하는지 (위 예외의 근거)
 select throws_ok(
-  $$insert into shopping_list (household_id,item_id,added_reason) values ('aaaa0001-0000-0000-0000-00000000000a','aaaa0004-0000-0000-0000-00000000000a','manual')$$,
+  $$insert into shopping_list (household_id,item_id,added_reason) values ('aaaa0001-0000-0000-0000-00000000000a','aaaa0004-0000-0000-0000-00000000000a','auto_threshold')$$,
   '23505', null, '[제약] 물건당 미해결 구매항목은 1건뿐이다');
 
 select set_config('request.jwt.claims','{"sub":"aaaa0000-0000-0000-0000-00000000000a","role":"authenticated"}',true);
@@ -107,9 +107,11 @@ select is(pg_temp.probe('with x as (insert into item_events (household_id,item_i
 select is(pg_temp.probe('with x as (update item_events set type=''updated'' where household_id=''aaaa0001-0000-0000-0000-00000000000a'' returning 1) select count(*)::int from x'), 'deny', '[item_events.UPDATE] deny — append-only (P3)');
 select is(pg_temp.probe('with x as (delete from item_events where household_id=''aaaa0001-0000-0000-0000-00000000000a'' returning 1) select count(*)::int from x'), 'deny', '[item_events.DELETE] deny — append-only (P3)');
 select is(pg_temp.probe('select count(*)::int from shopping_list where household_id=''aaaa0001-0000-0000-0000-00000000000a'''), 'allow', '[shopping_list.SELECT] allow — 가구 스코프');
-select is(pg_temp.probe('with x as (insert into shopping_list (household_id,item_id,added_reason) values (''aaaa0001-0000-0000-0000-00000000000a'',''aaaa0008-0000-0000-0000-00000000000a'',''manual'') returning 1) select count(*)::int from x'), 'allow', '[shopping_list.INSERT] allow — 수동 추가만');
+-- ⚠ 2026-09-02 부터 클라이언트는 이 표에 **쓸 수 없다**(수동 담기 제거).
+--   편입은 t40 트리거(SECURITY DEFINER), 해제는 resolve_shopping_item RPC 만.
+select is(pg_temp.probe('with x as (insert into shopping_list (household_id,item_id,added_reason) values (''aaaa0001-0000-0000-0000-00000000000a'',''aaaa0008-0000-0000-0000-00000000000a'',''auto_threshold'') returning 1) select count(*)::int from x'), 'deny', '[shopping_list.INSERT] deny — 클라이언트는 못 넣는다');
 select is(pg_temp.probe('with x as (update shopping_list set resolved_at=now() where id=''aaaa0006-0000-0000-0000-00000000000a'' returning 1) select count(*)::int from x'), 'deny', '[shopping_list.UPDATE] deny — resolved_by 는 resolve_shopping_item RPC 만 (P3)');
-select is(pg_temp.probe('with x as (delete from shopping_list where id=''aaaa0006-0000-0000-0000-00000000000a'' returning 1) select count(*)::int from x'), 'allow', '[shopping_list.DELETE] allow — 수동 항목만');
+select is(pg_temp.probe('with x as (delete from shopping_list where id=''aaaa0006-0000-0000-0000-00000000000a'' returning 1) select count(*)::int from x'), 'deny', '[shopping_list.DELETE] deny — 빼는 방법은 물건을 채우는 것뿐이다');
 select is(pg_temp.probe('select count(*)::int from device_push_tokens where user_id=''aaaa0000-0000-0000-0000-00000000000a'''), 'allow', '[device_push_tokens.SELECT] allow — 본인');
 select is(pg_temp.probe('with x as (insert into device_push_tokens (user_id,expo_token,platform) values (''aaaa0000-0000-0000-0000-00000000000a'',''ExponentPushToken[new]'',''android'') returning 1) select count(*)::int from x'), 'allow', '[device_push_tokens.INSERT] allow — 본인');
 select is(pg_temp.probe('with x as (update device_push_tokens set platform=''android'' where id=''aaaa0007-0000-0000-0000-00000000000a'' returning 1) select count(*)::int from x'), 'allow', '[device_push_tokens.UPDATE] allow — 본인');
@@ -164,9 +166,9 @@ insert into expected_cells values
   ('item_events','UPDATE',false),
   ('item_events','DELETE',false),
   ('shopping_list','SELECT',true),
-  ('shopping_list','INSERT',true),
+  ('shopping_list','INSERT',false),
   ('shopping_list','UPDATE',false),
-  ('shopping_list','DELETE',true),
+  ('shopping_list','DELETE',false),
   ('device_push_tokens','SELECT',true),
   ('device_push_tokens','INSERT',true),
   ('device_push_tokens','UPDATE',true),

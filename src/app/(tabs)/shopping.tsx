@@ -6,7 +6,7 @@ import { ThumbRow } from '@/components/ThumbRow';
 import { Empty, Loading, Screen, SectionLabel } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { useThumbUrls } from '@/features/item/thumbs';
-import { useRemoveFromShopping, useShoppingList } from '@/features/shopping/api';
+import { useShoppingList } from '@/features/shopping/api';
 import { useT } from '@/lib/i18n';
 import { useTheme, type, radius, space } from '@/lib/theme';
 
@@ -26,7 +26,6 @@ export default function ShoppingTab() {
   const { activeId } = useHousehold();
 
   const list = useShoppingList(activeId);
-  const remove = useRemoveFromShopping();
   const thumbs = useThumbUrls();
 
   const rows = list.data ?? [];
@@ -35,9 +34,6 @@ export default function ShoppingTab() {
   useEffect(() => {
     thumbs.ensure((list.data ?? []).map((r) => r.item?.thumb_path ?? null));
   }, [list.data, thumbs]);
-
-  const auto = rows.filter((r) => r.added_reason === 'auto_threshold');
-  const manual = rows.filter((r) => r.added_reason === 'manual');
 
   async function openLink(url: string) {
     try {
@@ -59,36 +55,21 @@ export default function ShoppingTab() {
           />
         ) : (
           <>
-            {auto.length > 0 && (
-              <>
-                <SectionLabel>{t.shopping.autoSection(auto.length)}</SectionLabel>
-                {auto.map((r) => (
-                  <ShoppingCard
-                    key={r.id}
-                    row={r}
-                    thumb={thumbs.get(r.item?.thumb_path ?? null)}
-                    onOpen={() => router.push(`/item/${r.item_id}`)}
-                    onLink={openLink}
-                  />
-                ))}
-              </>
-            )}
-
-            {manual.length > 0 && (
-              <>
-                <SectionLabel>{t.shopping.manualSection(manual.length)}</SectionLabel>
-                {manual.map((r) => (
-                  <ShoppingCard
-                    key={r.id}
-                    row={r}
-                    thumb={thumbs.get(r.item?.thumb_path ?? null)}
-                    onOpen={() => router.push(`/item/${r.item_id}`)}
-                    onLink={openLink}
-                    onRemove={() => remove.mutate(r.id)}
-                  />
-                ))}
-              </>
-            )}
+            {/*
+              ⚠ 구역을 나누지 않는다. 예전에는 "떨어졌습니다" / "직접 담은 것" 둘로
+                갈랐는데, 직접 담는 길을 없애면서(2026-09-02 사용자 결정) 남는 것은
+                한 종류뿐이다. 한 종류를 구역으로 나누면 그 자체가 질문을 만든다.
+            */}
+            <SectionLabel>{t.shopping.section(rows.length)}</SectionLabel>
+            {rows.map((r) => (
+              <ShoppingCard
+                key={r.id}
+                row={r}
+                thumb={thumbs.get(r.item?.thumb_path ?? null)}
+                onOpen={() => router.push(`/item/${r.item_id}`)}
+                onLink={openLink}
+              />
+            ))}
 
             <Text style={[st.footNote, { color: c.textFaint }]}>
               {t.shopping.footNote}
@@ -105,13 +86,11 @@ function ShoppingCard({
   thumb,
   onOpen,
   onLink,
-  onRemove,
 }: {
   row: import('@/features/shopping/api').ShoppingRow;
   thumb?: import('expo-image').ImageSource;
   onOpen: () => void;
   onLink: (url: string) => void;
-  onRemove?: () => void;
 }) {
   const { c } = useTheme();
   const t = useT();
@@ -147,11 +126,6 @@ function ShoppingCard({
             {t.shopping.noLink}
           </Text>
         )}
-        {onRemove && (
-          <Pressable onPress={onRemove} hitSlop={8} style={st.removeBtn}>
-            <Text style={[st.actionText, { color: c.textMuted }]}>{t.shopping.removeFromList}</Text>
-          </Pressable>
-        )}
       </View>
     </View>
   );
@@ -163,7 +137,6 @@ const st = StyleSheet.create({
   actions: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingLeft: space.max },
   actionBtn: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: space.lg, paddingVertical: space.sm },
   actionText: { fontSize: type.small, fontWeight: '600' },
-  removeBtn: { paddingHorizontal: space.sm, paddingVertical: space.sm },
   noLink: { fontSize: type.tiny, flex: 1, lineHeight: 16 },
   zero: { fontSize: type.small, fontWeight: '700' },
   footNote: { fontSize: type.caption, textAlign: 'center', paddingTop: space.xl, lineHeight: 18 },
