@@ -158,3 +158,37 @@ npm run play:status
 ```
 
 트랙 목록이 나오면 준비 끝이다. 실패하면 스크립트가 무엇이 빠졌는지 말해 준다.
+
+---
+
+## ⚠ 업데이트 배포 후 반드시 할 것 — 휴면 정리 켜기
+
+휴면 집 파기는 **일시 정지해 두었다** (2026-09-02).
+
+```sql
+-- 현재: 아무 집도 휴면이 되지 않는다
+select value from app_settings where key = 'dormant_after_days';  -- 999999
+```
+
+**왜 멈췄나.** 접속 시각(`households.last_seen_at`)은 앱이 `touch_household()` 를
+불러야 올라간다. 그 코드는 2026-09-02 빌드부터 들어갔는데, **그전에 심사에 올라간
+빌드에는 없다.** 그 상태로 켜 두면 열심히 쓰고 있는 집도 접속 기록이 안 올라가
+90일 뒤 휴면 → 120일 뒤 삭제 예고 메일 → **150일 뒤 진짜 삭제**된다.
+되돌릴 수 없는 삭제를 "곧 업데이트하겠지" 에 걸 수 없다.
+
+**켜는 시점.** `touch_household` 가 든 빌드가 **스토어에 올라가고**, 사용자 대부분이
+한 번씩 앱을 연 뒤 (업데이트 배포 후 2~4주쯤).
+
+```sql
+-- 1) 사람들이 실제로 접속 기록을 남기고 있는지 먼저 본다
+select count(*) filter (where last_seen_at > now() - interval '7 days') as 최근7일,
+       count(*) as 전체
+  from households;
+
+-- 2) 위 숫자가 납득할 만하면 켠다
+update app_settings set value = '90' where key = 'dormant_after_days';
+```
+
+⚠ 켠 **다음 날** `maintenance_log` 와 `net._http_response` 를 확인할 것.
+   `marked_dormant` 가 예상보다 크면 즉시 다시 999999 로 돌린다 —
+   표시만으로는 아무것도 지워지지 않으므로 되돌릴 시간이 30일 있다.
