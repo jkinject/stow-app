@@ -37,6 +37,32 @@ export type Palette = {
   accentText: string;
   danger: string;
   ok: string;
+  /**
+   * 오늘의 미션 카드 전용 색.
+   *
+   * ⚠ 이 카드만 **테마마다 결이 다르다**(사용자 결정 2026-09-02):
+   *   다크는 진한 남색 바탕에 강조색 도장, 라이트는 크림 바탕에 주황 도장.
+   *   같은 토큰으로 두 결을 낼 수 없어 따로 둔다 — 컴포넌트에 색을 박으면
+   *   테마가 하나 늘 때마다 그 파일을 다시 열어야 한다.
+   */
+  mission: {
+    surface: string;
+    border: string;
+    text: string;
+    textFaint: string;
+    /** 채워진 도장 */
+    stampOn: string;
+    /** 빈 도장의 테두리·숫자 */
+    stampOff: string;
+    /** 도장 사이를 잇는 선 (지나온 구간) */
+    trackOn: string;
+    trackOff: string;
+    badgeBg: string;
+    badgeFg: string;
+    /** 다 채웠을 때의 배지 */
+    doneBg: string;
+    doneFg: string;
+  };
 };
 
 const light: Palette = {
@@ -53,6 +79,21 @@ const light: Palette = {
   accentText: '#2547C4', // 흰 바탕에서 7.56 — 나눌 이유가 없다
   danger: '#C41E38',
   ok: '#0C6E48',
+  // 시안 1 warm-stamp — 크림 카드 위 주황 도장. 어두운 목록 사이에서 눈에 띄라고 따뜻하게.
+  mission: {
+    surface: '#FFF4E0',
+    border: '#F1DFBE',
+    text: '#1B2340',
+    textFaint: '#6B5C42',   // 크림 위 4.9 — 작은 글씨도 읽힌다
+    stampOn: '#E08A0B',
+    stampOff: '#DCC79E',
+    trackOn: '#E08A0B',
+    trackOff: '#EADCC0',
+    badgeBg: '#E08A0B',
+    badgeFg: '#FFFFFF',
+    doneBg: '#0C6E48',
+    doneFg: '#FFFFFF',
+  },
 };
 
 const dark: Palette = {
@@ -69,6 +110,21 @@ const dark: Palette = {
   onAccent: '#FFFFFF',
   danger: '#FF8A9C',
   ok: '#66D3A2',
+  // 시안 2 dark-neon — 카드보다 더 가라앉은 바탕에 강조색 도장.
+  mission: {
+    surface: '#141A2E',
+    border: '#26304C',
+    text: '#E8EAF2',
+    textFaint: '#8B93AC',
+    stampOn: '#3E5FE0',
+    stampOff: '#333C57',
+    trackOn: '#3E5FE0',
+    trackOff: '#2A3149',
+    badgeBg: '#3E5FE0',
+    badgeFg: '#FFFFFF',
+    doneBg: '#66D3A2',
+    doneFg: '#0D0F16',
+  },
 };
 
 export const PALETTES = { light, dark };
