@@ -246,6 +246,10 @@ export const KO = {
      */
     formerMember: '떠난 구성원',
     deleteItem: '이 물건 지우기',
+    /** 수량이 0 이 아니어도 "이건 사야 해" 라고 직접 담는 길 */
+    addToShopping: '살 것에 담기',
+    addedToShopping: '살 것에 담았습니다.',
+    alreadyInShopping: '이미 살 것에 있습니다.',
     deleteTitle: '이 물건을 지울까요?',
     deleteBody: (name: string) => `"${name}" 을(를) 목록에서 뺍니다.`,
     deleteFailed: '삭제 실패',

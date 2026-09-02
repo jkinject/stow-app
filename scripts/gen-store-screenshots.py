@@ -22,7 +22,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SP = sys.argv[1] if len(sys.argv) > 1 else None
 if not SP or not os.path.isdir(SP):
     raise SystemExit('캡처 폴더를 인자로 주세요: python3 scripts/gen-store-screenshots.py <폴더>')
-OUT = os.path.join(ROOT, 'docs/store/screenshots')
+OUT = os.path.join(ROOT, 'docs/store/screenshots/en')
 os.makedirs(OUT, exist_ok=True)
 
 W, H = 1080, 1920            # 9:16 — Play 권장 크기
@@ -80,12 +80,15 @@ def center(d, text, y, f, fill):
     d.text(((W - w) // 2, y), text, font=f, fill=fill)
 
 
+# ⚠ 영어 세트다. 심사 계정(Kim Family)의 데이터가 영어라 UI 도 영어로 맞춰 찍었다 —
+#   한 화면에 두 언어가 섞이면 스토어에서 무슨 앱인지 안 읽힌다.
+#   한국어 세트는 한국어 데이터가 있는 가구에서 따로 찍어야 한다.
 SHOTS = [
-    ('t1.png', '그거 어디 뒀더라?', '이제 온 집을 뒤지지 않아도 됩니다'),
-    ('t5.png', '이름만 검색하면 끝', '초성으로도 찾아집니다'),
-    ('d2.png', '수량까지 함께 기억', '다 떨어지기 전에 알려줍니다'),
-    ('fam2.png', '가족이 함께 씁니다', '초대 코드 하나면 됩니다'),
-    ('c1.png', '카테고리로 묶어서', '약·공구·아이 물건처럼'),
+    ('sh1.png', "Where did I put that?",   'Stop searching the whole house'),
+    ('sh2.png', 'Just type the name',      'Finds it as you type'),
+    ('sh5.png', 'Boxes inside places',     'Two levels is all you need'),
+    ('sh3.png', 'Every place at a glance', 'Photos of what is actually inside'),
+    ('sh4.png', 'Knows what ran out',      'Restock before you notice'),
 ]
 
 TITLE = font(62, 12)   # Bold

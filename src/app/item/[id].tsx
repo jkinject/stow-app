@@ -10,6 +10,7 @@ import { useToast } from '@/components/Toast';
 import { Button, Field, Loading, Screen } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { useCategoryList } from '@/features/category/api';
+import { useAddToShopping } from '@/features/shopping/api';
 import {
   useAdjustQuantity,
   useDeleteItem,
@@ -46,6 +47,7 @@ export default function ItemDetailScreen() {
   const router = useRouter();
   const toast = useToast();
   const { activeId } = useHousehold();
+  const addToShopping = useAddToShopping(activeId);
 
   const item = useItem(itemId);
   const photo = useItemPhotoUrl(item.data?.photo_path);
@@ -235,6 +237,40 @@ export default function ItemDetailScreen() {
           >
             <Text style={[st.navRowText, { color: c.text }]}>{t.history.title}</Text>
             <IconChevron color={c.textFaint} />
+          </Pressable>
+
+          {/**
+            * 살 것에 직접 담기.
+            *
+            * ⚠ 이 길이 없었다. 담는 mutation 도, 목록에 그리는 코드도, 빼는 코드도
+            *   다 있는데 **담을 방법만** 없어서 "살 것" 화면의 수동 구역이 영원히
+            *   비어 있었다(2026-09-02 점검에서 발견). 지우는 것보다 길을 내는 편이
+            *   맞다 — 지우면 나머지 셋도 같이 죽는다.
+            *
+            * ⚠ 이미 담겼는지 미리 조회하지 않는다. DB 에 부분 유니크 인덱스가 있어
+            *   (shopping_list(item_id) where resolved_at is null) 두 번째 삽입은
+            *   23505 로 막힌다. 그걸 그대로 알려 주면 되고, 화면을 열 때마다 조회를
+            *   한 번 더 할 이유가 없다.
+            */}
+          <Pressable
+            onPress={async () => {
+              try {
+                await addToShopping.mutateAsync(itemId);
+                toast(t.item.addedToShopping);
+              } catch (e) {
+                const dup = (e as { code?: string })?.code === '23505';
+                if (dup) toast(t.item.alreadyInShopping);
+                else Alert.alert(t.item.saveFailed, e instanceof Error ? e.message : t.common.tryAgain);
+              }
+            }}
+            disabled={addToShopping.isPending}
+            style={({ pressed }) => [
+              st.navRow,
+              { borderColor: c.border, backgroundColor: c.card },
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Text style={[st.navRowText, { color: c.text }]}>{t.item.addToShopping}</Text>
           </Pressable>
 
           <View style={st.danger}>

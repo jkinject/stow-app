@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 
 import { useAcceptInvite, useCreateHousehold } from '@/features/household/api';
-import { takePendingInviteCode, useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
 import { useTheme, type, radius, space, tracking } from '@/lib/theme';
 
@@ -24,10 +24,9 @@ export default function Onboarding() {
   // OAuth 왕복에서 살아남은 초대 코드를 첫 렌더에 한 번만 꺼낸다 (R23).
   // effect 에서 setState 하면 한 프레임 깜빡이므로 지연 초기화로 처리한다.
   // 코드가 유실됐더라도 아래에서 직접 입력할 수 있으므로 막다른 길이 되지 않는다.
-  const [pendingCode] = useState(() => takePendingInviteCode());
-  const [mode, setMode] = useState<Mode>(pendingCode ? 'join' : 'choose');
+  const [mode, setMode] = useState<Mode>('choose');
   const [name, setName] = useState(() => t.onboarding.nameDefault);
-  const [code, setCode] = useState(pendingCode ?? '');
+  const [code, setCode] = useState('');
 
   const create = useCreateHousehold();
   const join = useAcceptInvite();

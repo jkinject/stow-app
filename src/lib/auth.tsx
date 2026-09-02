@@ -57,21 +57,16 @@ function authMessage(raw: string, t: ReturnType<typeof useT>): string {
 const AuthContext = createContext<AuthState | null>(null);
 
 /**
- * OAuth 왕복 사이에 초대 코드를 보존한다 (R23).
- * 초대 링크로 들어온 비회원의 흐름은 `코드 → 구글 로그인(외부 왕복) → accept_invite` 인데,
- * 리다이렉트 사이에 코드가 유실되면 **가입은 됐는데 가구에 못 들어간다.**
- * 모듈 스코프에 두어 브라우저 왕복 동안 살아남게 하고, 실패해도 온보딩에서
- * 다시 입력할 수 있는 경로를 남긴다.
+ * ⚠ 여기 있던 `setPendingInviteCode` / `takePendingInviteCode` 를 지웠다 (2026-09-02).
+ *
+ *   "초대 링크로 들어온 비회원 → 로그인 왕복 → accept_invite" 흐름을 위해 만들었는데,
+ *   **초대 링크라는 것이 없다.** 초대는 코드를 복사해 손으로 입력하는 방식뿐이고
+ *   (app/family.tsx), 코드를 URL 에서 읽는 라우트도 없다. 그래서 `set...` 을 부르는
+ *   곳이 어디에도 없었고, 온보딩의 `take...` 는 **언제나 null 을 받았다.**
+ *
+ *   있지도 않은 흐름을 위한 코드가 남아 있으면, 다음 사람이 "초대 링크가 되는구나"
+ *   하고 그 위에 무언가를 얹는다. 초대 링크를 만들 때 다시 넣으면 된다.
  */
-let pendingInviteCode: string | null = null;
-export const setPendingInviteCode = (code: string | null) => {
-  pendingInviteCode = code;
-};
-export const takePendingInviteCode = () => {
-  const c = pendingInviteCode;
-  pendingInviteCode = null;
-  return c;
-};
 
 /** `stow://auth-callback` — app.json 의 scheme 과 일치해야 한다 */
 const redirectTo = AuthSession.makeRedirectUri({ path: 'auth-callback' });
