@@ -13,10 +13,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Fab } from '@/components/Fab';
 import { IconQr } from '@/components/Icon';
+import { DailyMission } from '@/components/DailyMission';
 import { StarterChecklist } from '@/components/StarterChecklist';
 import { useCategoryList } from '@/features/category/api';
 import { Empty, Field, Loading } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
+import { useTodayMission } from '@/features/mission/api';
 import { useAuth } from '@/lib/auth';
 import { useStarterState } from '@/features/onboarding/checklist';
 import { ItemCard } from '@/features/item/ItemCard';
@@ -133,6 +135,20 @@ export default function FindTab() {
       onDismiss={starter.dismiss}
     />
   ) : null;
+
+  /**
+   * 오늘의 미션.
+   *
+   * ⚠ 첫 실행 안내가 떠 있는 동안에는 숨긴다. 처음 온 사람에게 "장소를 만드세요"
+   *   와 "다섯 개를 등록하세요" 를 같이 들이밀면 무엇부터 할지 모른다 — 안내를
+   *   끝낸 사람에게만 다음 목표를 준다.
+   * ⚠ 물건이 하나도 없을 때도 숨긴다. 이 화면은 그때 빈 상태 안내를 보여 준다.
+   */
+  const missionState = useTodayMission(showStarter ? null : activeId, session?.user.id ?? null);
+  const mission =
+    !showStarter && !missionState.loading && results.length > 0 ? (
+      <DailyMission done={missionState.done} complete={missionState.complete} />
+    ) : null;
 
   /**
    * 무한 스크롤. 목록 전체는 이미 메모리에 있으므로 **서버를 다시 부르지 않고**
@@ -309,7 +325,19 @@ export default function FindTab() {
           }}
           keyboardShouldPersistTaps="handled"
           /* 물건이 생겨도 남은 단계가 있으면 격자 위에 계속 둔다 */
-          ListHeaderComponent={checklist ? <View style={st.starterWrap}>{checklist}</View> : null}
+          /**
+           * ⚠ 헤더로 넣는 이유가 있다. 화면 위에 고정하면 물건을 찾는 내내 자리를
+           *   먹는다 — 이 앱을 여는 이유는 미션이 아니라 "그거 어디 뒀지" 다.
+           *   목록과 함께 밀려 올라가야 격자에 집중할 수 있다(사용자 요청).
+           */
+          ListHeaderComponent={
+            checklist || mission ? (
+              <View style={st.starterWrap}>
+                {checklist}
+                {mission}
+              </View>
+            ) : null
+          }
           onEndReached={() => setLimit((n) => Math.min(n + PAGE, results.length))}
           onEndReachedThreshold={0.6}
           // 당겨서 새로고침하면 순서를 다시 섞는다 — "다른 물건이 보고 싶다" 는 뜻이다

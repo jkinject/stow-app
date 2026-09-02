@@ -99,6 +99,13 @@ export const EN: Dict = {
     more: (n) => `${n} more`,
   },
 
+  mission: {
+    title: "Today's mission",
+    hint: (left) => `Add ${left} more item${left === 1 ? '' : 's'}`,
+    success: 'Mission complete!',
+    successHint: 'Five for today. See you tomorrow.',
+  },
+
   places: {
     title: 'Home Store',
     section: (n) => `Places${n > 0 ? ` · ${n}` : ''}`,
@@ -202,6 +209,7 @@ export const EN: Dict = {
     formerMember: 'Former member',
     deleteItem: 'Delete this item',
     addToShopping: 'Add to shopping list',
+    created: (name) => `Saved "${name}".`,
     addedToShopping: 'Added to your shopping list.',
     alreadyInShopping: 'Already on your shopping list.',
     deleteTitle: 'Delete this item?',

@@ -131,6 +131,14 @@ export const KO = {
     more: (n: number) => `${n}개 더 있습니다`,
   },
 
+  mission: {
+    title: '오늘의 미션',
+    /** 남은 개수를 말한다 — "5개 중 2개" 보다 "3개 남았다" 가 손이 움직인다 */
+    hint: (left: number) => `물건 ${left}개만 더 등록하면 됩니다`,
+    success: '미션 성공!',
+    successHint: '오늘 다섯 개를 다 채웠습니다. 내일 또 만나요.',
+  },
+
   places: {
     title: '어디뒀지',
     section: (n: number) => `보관 장소${n > 0 ? ` · ${n}개` : ''}`,
@@ -248,6 +256,12 @@ export const KO = {
     deleteItem: '이 물건 지우기',
     /** 수량이 0 이 아니어도 "이건 사야 해" 라고 직접 담는 길 */
     addToShopping: '살 것에 담기',
+    /**
+     * ⚠ 등록 직후 물건 상세로 넘어가는데, 그 화면은 **모든 칸이 입력칸**이라
+     *   "아직 등록 중인가?" 로 읽힌다(사용자 보고 2026-09-02). 저장이 끝났다는
+     *   말을 한 번 해 줘야 한다.
+     */
+    created: (name: string) => `'${name}' 을(를) 등록했습니다.`,
     addedToShopping: '살 것에 담았습니다.',
     alreadyInShopping: '이미 살 것에 있습니다.',
     deleteTitle: '이 물건을 지울까요?',

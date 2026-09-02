@@ -127,6 +127,9 @@ export function useRegisterQueue(onSynced?: () => void) {
       // 수량 0 으로 등록하면 트리거가 곧바로 구매 리스트에 넣는다 — 그것도 다시 읽는다
       void qc.invalidateQueries({ queryKey: ['shopping'] });
       void qc.invalidateQueries({ queryKey: ['category-list'] });
+      // ⚠ 오늘의 미션도 다시 센다. 안 하면 등록해도 뱃지가 안 차고, 30초 뒤에야
+      //   슬그머니 바뀐다 — 등록한 순간 차야 "해냈다" 로 읽힌다.
+      void qc.invalidateQueries({ queryKey: ['mission'] });
     },
     [qc],
   );

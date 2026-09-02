@@ -70,6 +70,37 @@ if ! grep -q '^org.gradle.jvmargs=.*MaxMetaspaceSize=1024m' android/gradle.prope
     >> android/gradle.properties
 fi
 
+# ── 아이콘·스플래시가 바뀌었으면 prebuild ─────────────────────
+#
+# ⚠⚠ 이걸 안 하면 **조용히 옛 아이콘이 박힌다.** assets/images/*.png 는 원본일 뿐이고,
+#   실제로 빌드에 들어가는 것은 prebuild 가 android/app/src/main/res/mipmap-* 에
+#   구워 둔 webp 다. 원본만 바꾸고 빌드하면 APK 안에는 **예전 그림**이 그대로 남는다.
+#   2026-09-02 에 실제로 겪었다 — 아이콘을 갈았는데 런처도 APK 도 옛것이었다.
+#
+# ⚠ prebuild 는 android/ 를 통째로 지우므로 함부로 돌리지 않는다. 원본이 생성물보다
+#   **새로울 때만** 돌린다. 지워진 것들은 아래 단계들이 다시 채운다.
+GEN_ICON=android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.webp
+NEED_PREBUILD=""
+if [ ! -f "$GEN_ICON" ]; then
+  NEED_PREBUILD="생성된 아이콘이 없음"
+else
+  for f in assets/images/icon.png assets/images/android-icon-foreground.png \
+           assets/images/android-icon-background.png assets/images/android-icon-monochrome.png \
+           assets/images/splash-icon.png app.json; do
+    [ -f "$f" ] || continue
+    if [ "$f" -nt "$GEN_ICON" ]; then NEED_PREBUILD="$f 가 더 새로움"; break; fi
+  done
+fi
+if [ -n "$NEED_PREBUILD" ]; then
+  echo "· 아이콘 원본이 바뀌었습니다 ($NEED_PREBUILD) → prebuild 를 돌립니다"
+  npx expo prebuild --platform android --no-install
+  # prebuild 가 지운 것들을 다시 채운다
+  printf 'sdk.dir=%s\n' "$ANDROID_HOME" > android/local.properties
+  sed -i '' '/^org.gradle.jvmargs=/d' android/gradle.properties
+  printf '\n# ⚠ prebuild 가 덮는다. scripts/build-android.sh 가 매번 다시 넣는다.\norg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m\n' \
+    >> android/gradle.properties
+fi
+
 # ── 환경변수 ───────────────────────────────────────────────────
 # ⚠ Expo CLI 는 기본으로 .env.local 을 읽는다. 릴리스에는 **운영 값**이 들어가야 한다.
 if [ -f .env.production.local ]; then

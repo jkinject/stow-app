@@ -7,6 +7,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { KeyboardSpacer } from '@/components/KeyboardSpacer';
+import { useToast } from '@/components/Toast';
 import { Button, Field } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { CameraCapture } from '@/features/item/CameraCapture';
@@ -85,6 +86,7 @@ export default function AddItem() {
 
   const t = useT();
   const router = useRouter();
+  const toast = useToast();
   const { activeId } = useHousehold();
 
   const ctx = useAddContext(target, isLoose);
@@ -146,7 +148,15 @@ export default function AddItem() {
       queue={queue}
       onRetake={() => setStep(1)}
       onPickDest={setPicked}
-      onDone={(id) => router.replace(`/item/${id}`)}
+      onDone={(id, name) => {
+        /**
+         * ⚠ 토스트를 **먼저** 띄우고 화면을 옮긴다. 토스트는 화면 트리 밖(루트)에
+         *   그려지므로 이동해도 그대로 떠 있다 — 도착한 상세 화면 위에서 보인다.
+         *   순서를 바꾸면 이 화면이 사라지며 호출이 묻힐 수 있다.
+         */
+        toast(t.item.created(name));
+        router.replace(`/item/${id}`);
+      }}
       onClose={() => router.back()}
     />
   );
@@ -182,7 +192,7 @@ function FormStep({
   queue: ReturnType<typeof useRegisterQueue>;
   onRetake: () => void;
   onPickDest: (d: AddContext) => void;
-  onDone: (itemId: string) => void;
+  onDone: (itemId: string, name: string) => void;
   onClose: () => void;
 }) {
   const { c } = useTheme();
@@ -245,7 +255,7 @@ function FormStep({
       // 행 저장만 기다린다. 사진 업로드는 배경에서 이어진다 (AC4)
       await queue.enqueueAndWaitForRow(draft, photo);
       abandonCycle();
-      onDone(draft.id);
+      onDone(draft.id, draft.name);
     } catch (e) {
       Alert.alert(t.add.saveFailed, e instanceof Error ? e.message : t.common.tryAgain);
     } finally {
