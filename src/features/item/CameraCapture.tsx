@@ -323,6 +323,7 @@ const st = StyleSheet.create({
     paddingTop: space.xl,
   },
   side: { alignItems: 'center', gap: space.xs, width: 76 },
+  /* ⚠ 기호를 상자 가운데 앉히는 값이다 — 읽는 행간이 아니므로 `leading` 을 쓰지 않는다 */
   sideIcon: { color: overlay.fg, fontSize: type.h1, lineHeight: 28 },
   sideLabel: { color: overlay.faint, fontSize: type.caption },
   shutter: {

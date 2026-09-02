@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui';
 import { useT } from '@/lib/i18n';
-import { radius, type, useTheme, space, tracking } from '@/lib/theme';
+import { radius, type, useTheme, space, tracking, leading } from '@/lib/theme';
 
 /**
  * 첫 실행 안내 (2026-09-01 사용자 요청: "앱 깔고 처음 로그인 딱 했을때 뭘 해야하는지 막막함").
@@ -217,7 +217,7 @@ const st = StyleSheet.create({
   stepHint: { fontSize: type.caption },
   open: { fontSize: type.label, fontWeight: '700' },
   finish: { gap: space.md, paddingBottom: space.sm },
-  finishHint: { fontSize: type.small, lineHeight: 20 },
+  finishHint: { fontSize: type.small, lineHeight: leading.small },
   hide: { alignSelf: 'center', paddingVertical: space.sm, paddingHorizontal: space.md },
   hideText: { fontSize: type.caption },
 });

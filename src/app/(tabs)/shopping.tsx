@@ -8,7 +8,7 @@ import { useHousehold } from '@/features/household/context';
 import { useThumbUrls } from '@/features/item/thumbs';
 import { useShoppingList } from '@/features/shopping/api';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, space } from '@/lib/theme';
+import { useTheme, type, radius, space, leading } from '@/lib/theme';
 
 /**
  * 살 것 (AC16 · AC18).
@@ -137,7 +137,7 @@ const st = StyleSheet.create({
   actions: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingLeft: space.max },
   actionBtn: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: space.lg, paddingVertical: space.sm },
   actionText: { fontSize: type.small, fontWeight: '600' },
-  noLink: { fontSize: type.tiny, flex: 1, lineHeight: 16 },
+  noLink: { fontSize: type.tiny, flex: 1, lineHeight: leading.tiny },
   zero: { fontSize: type.small, fontWeight: '700' },
-  footNote: { fontSize: type.caption, textAlign: 'center', paddingTop: space.xl, lineHeight: 18 },
+  footNote: { fontSize: type.caption, textAlign: 'center', paddingTop: space.xl, lineHeight: leading.caption },
 });

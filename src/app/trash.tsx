@@ -8,7 +8,7 @@ import { useHousehold } from '@/features/household/context';
 import { useRestore, useTrash, type TrashRow } from '@/features/history/api';
 import { useThumbUrls } from '@/features/item/thumbs';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, space } from '@/lib/theme';
+import { useTheme, type, space, leading } from '@/lib/theme';
 
 /**
  * 휴지통 (AC24).
@@ -111,6 +111,6 @@ function formatWhen(iso: string, t: ReturnType<typeof useT>): string {
 
 const st = StyleSheet.create({
   body: { paddingHorizontal: space.xl, gap: space.sm },
-  hint: { fontSize: type.caption, lineHeight: 18 },
+  hint: { fontSize: type.caption, lineHeight: leading.caption },
   action: { width: 96 },
 });

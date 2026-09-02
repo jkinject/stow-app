@@ -489,6 +489,7 @@ const st = StyleSheet.create({
   },
   badgeText: { fontSize: type.tiny, fontWeight: '700' },
   dots: { paddingHorizontal: space.xs },
+  /* ⚠ 기호를 상자 가운데 앉히는 값이다 — 읽는 행간이 아니므로 `leading` 을 쓰지 않는다 */
   dotsText: { fontSize: type.h2, fontWeight: '700', lineHeight: 22 },
 
   newBtn: { minWidth: 118 },

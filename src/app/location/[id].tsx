@@ -19,7 +19,7 @@ import {
 } from '@/features/storage/api';
 import { useT } from '@/lib/i18n';
 import { relTime } from '@/lib/time';
-import { useTheme, type, radius, space, tracking } from '@/lib/theme';
+import { useTheme, type, radius, space, tracking, leading } from '@/lib/theme';
 
 export default function LocationDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -324,7 +324,7 @@ const st = StyleSheet.create({
   audit: { fontSize: type.caption },
   card: { borderRadius: radius.md, padding: space.lg, gap: space.xs },
   cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
-  cardTitle: { flex: 1, fontSize: type.h2, fontWeight: '700', letterSpacing: tracking.tight, lineHeight: 27 },
+  cardTitle: { flex: 1, fontSize: type.h2, fontWeight: '700', letterSpacing: tracking.tight, lineHeight: leading.h2 },
   headActions: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
   gear: { fontSize: type.title, fontWeight: '600' },
   settings: { borderRadius: radius.md, padding: space.lg, gap: space.sm },

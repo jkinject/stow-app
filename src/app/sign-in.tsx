@@ -18,7 +18,7 @@ import { KeyboardSpacer } from '@/components/KeyboardSpacer';
 import { SIGNIN_HERO_URI } from '@/features/auth/heroImage';
 import { authMessage, useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, space, tracking } from '@/lib/theme';
+import { useTheme, type, radius, space, tracking, leading } from '@/lib/theme';
 
 /**
  * 로그인 — 앱을 처음 여는 사람이 보는 **유일한** 화면이다.
@@ -346,7 +346,7 @@ const s = StyleSheet.create({
   content: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: space.xxl, gap: space.xxxl },
   headings: { gap: space.md },
   title: { fontSize: type.display, fontWeight: '800', letterSpacing: tracking.tightest },
-  sub: { fontSize: type.bodyStrong, lineHeight: 23 },
+  sub: { fontSize: type.bodyStrong, lineHeight: leading.bodyStrong },
 
   actions: { gap: space.md },
   /** 알약 — 레퍼런스 셋 다 완전히 둥근 버튼을 쓴다 */
@@ -374,6 +374,6 @@ const s = StyleSheet.create({
 
   sentBox: { gap: space.sm, padding: space.xl, borderRadius: radius.lg },
   sentTitle: { fontSize: type.subtitle, fontWeight: '700' },
-  sentBody: { fontSize: type.label, lineHeight: 20 },
+  sentBody: { fontSize: type.label, lineHeight: leading.label },
   link: { fontSize: type.label, fontWeight: '600', marginTop: space.xs },
 });

@@ -113,6 +113,7 @@ const st = StyleSheet.create({
     justifyContent: 'center',
   },
   off: { opacity: 0.35 },
+  /* ⚠ 기호를 상자 가운데 앉히는 값이다 — 읽는 행간이 아니므로 `leading` 을 쓰지 않는다 */
   btnText: { color: overlay.fg, fontSize: type.title, fontWeight: '700', lineHeight: 24 },
   level: { paddingHorizontal: space.md, minWidth: 76, alignItems: 'center' },
   levelText: { color: overlay.fg, fontSize: type.caption, fontWeight: '600', fontVariant: ['tabular-nums'] },

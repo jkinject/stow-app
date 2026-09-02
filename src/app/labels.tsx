@@ -8,7 +8,7 @@ import { useHousehold } from '@/features/household/context';
 import { A4_PT, buildLabelSheetHtml, PER_PAGE, type LabelInput } from '@/features/qr/labels';
 import { useAllContainers, useLocations } from '@/features/storage/api';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, space } from '@/lib/theme';
+import { useTheme, type, radius, space, leading } from '@/lib/theme';
 
 /**
  * A4 라벨 시트 만들기 (AC11).
@@ -177,7 +177,7 @@ export default function Labels() {
 
 const st = StyleSheet.create({
   body: { paddingHorizontal: space.xl, gap: space.md, flex: 1 },
-  intro: { fontSize: type.label, lineHeight: 20 },
+  intro: { fontSize: type.label, lineHeight: leading.label },
   bulk: { flexDirection: 'row', gap: space.xl },
   bulkText: { fontSize: type.label, fontWeight: '600' },
   scroll: { flexGrow: 0, flexShrink: 1 },

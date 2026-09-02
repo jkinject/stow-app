@@ -24,7 +24,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/lib/i18n';
 import { relTime } from '@/lib/time';
-import { useTheme, type, radius, overlay, space, tracking } from '@/lib/theme';
+import { useTheme, type, radius, overlay, space, tracking, leading } from '@/lib/theme';
 
 /** 컨테이너 한 건 조회. 목록을 거치지 않고 직접 가져온다 */
 function useContainer(containerId: string) {
@@ -343,7 +343,7 @@ const st = StyleSheet.create({
   thumbAdd: { fontSize: type.display, fontWeight: '400' },
   cardMain: { flex: 1, gap: space.xs, justifyContent: 'center' },
   cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
-  cardTitle: { flex: 1, fontSize: type.h2, fontWeight: '700', letterSpacing: tracking.tight, lineHeight: 27 },
+  cardTitle: { flex: 1, fontSize: type.h2, fontWeight: '700', letterSpacing: tracking.tight, lineHeight: leading.h2 },
   photoEdit: {
     position: 'absolute',
     right: 10,

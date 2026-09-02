@@ -4,7 +4,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { createSessionFromUrl } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, space } from '@/lib/theme';
+import { useTheme, type, space, leading } from '@/lib/theme';
 
 /**
  * OAuth / 매직링크 콜백 착지점.
@@ -81,6 +81,6 @@ export default function AuthCallback() {
 const s = StyleSheet.create({
   root: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.md, paddingHorizontal: space.huge },
   text: { fontSize: type.body },
-  failed: { textAlign: 'center', lineHeight: 22 },
+  failed: { textAlign: 'center', lineHeight: leading.body },
   failBox: { gap: space.md },
 });

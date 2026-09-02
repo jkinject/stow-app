@@ -5,7 +5,7 @@ import { FlatList, Pressable, StyleSheet, Text } from 'react-native';
 import { Screen } from '@/components/ui';
 import { useT } from '@/lib/i18n';
 import LICENSES from '@/lib/licenses.json';
-import { radius, space, type, useTheme } from '@/lib/theme';
+import { radius, space, type, useTheme, leading } from '@/lib/theme';
 
 /**
  * 오픈소스 라이선스 고지.
@@ -80,11 +80,11 @@ export default function LicensesScreen() {
 
 const st = StyleSheet.create({
   list: { paddingHorizontal: space.xl, paddingBottom: space.giant, gap: space.sm },
-  intro: { fontSize: type.small, lineHeight: 20, paddingBottom: space.md },
+  intro: { fontSize: type.small, lineHeight: leading.small, paddingBottom: space.md },
   group: { fontSize: type.small, fontWeight: '700', paddingTop: space.lg, paddingBottom: space.xs },
   row: { borderRadius: radius.sm, paddingHorizontal: space.md, paddingVertical: space.md, gap: space.xs },
   pressed: { opacity: 0.6 },
   name: { fontSize: type.label, fontWeight: '600' },
   version: { fontSize: type.tiny, fontWeight: '400' },
-  copyright: { fontSize: type.tiny, lineHeight: 16 },
+  copyright: { fontSize: type.tiny, lineHeight: leading.tiny },
 });

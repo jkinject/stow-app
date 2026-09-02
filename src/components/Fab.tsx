@@ -55,5 +55,6 @@ const st = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 6,
   },
+  /* ⚠ 기호를 상자 가운데 앉히는 값이다 — 읽는 행간이 아니므로 `leading` 을 쓰지 않는다 */
   icon: { fontSize: type.display, fontWeight: '600', lineHeight: 34 },
 });

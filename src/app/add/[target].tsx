@@ -465,6 +465,7 @@ const st = StyleSheet.create({
     paddingTop: space.xl,
   },
   camSideBtn: { alignItems: 'center', gap: space.xs, width: 76 },
+  /* ⚠ 기호를 상자 가운데 앉히는 값이다 — 읽는 행간이 아니므로 `leading` 을 쓰지 않는다 */
   camSideIcon: { color: overlay.fg, fontSize: type.h1, lineHeight: 28 },
   camSideLabel: { color: overlay.faint, fontSize: type.caption },
   shutter: {

@@ -311,6 +311,7 @@ const s = StyleSheet.create({
   fieldWithClear: { paddingRight: space.giant },
   clearBtn: { position: 'absolute', right: 10 },
   clearCircle: { width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  /* ⚠ 기호를 상자 가운데 앉히는 값이다 — 읽는 행간이 아니므로 `leading` 을 쓰지 않는다 */
   clearMark: { fontSize: type.tiny, fontWeight: '700', lineHeight: 14 },
   row: {
     borderRadius: radius.sm,

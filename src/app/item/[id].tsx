@@ -36,7 +36,7 @@ import { useRemovePhoto, useSetPhoto } from '@/features/item/photoApi';
 import { IMAGE_CACHE_POLICY } from '@/features/item/thumbs';
 import { useLocations } from '@/features/storage/api';
 import { useT } from '@/lib/i18n';
-import { overlay, radius, type, useTheme, space, tracking } from '@/lib/theme';
+import { overlay, radius, type, useTheme, space, tracking, leading } from '@/lib/theme';
 
 /**
  * 물건 상세 — **수정 모드가 없다** (2026-08-31 사용자 요청).
@@ -869,7 +869,7 @@ const st = StyleSheet.create({
   photoAddText: { fontSize: type.body, fontWeight: '600' },
   pathRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
   pathHint: { fontSize: type.tiny, fontWeight: '600', letterSpacing: tracking.wide, marginBottom: space.xs },
-  path: { fontSize: type.title, fontWeight: '700', letterSpacing: tracking.tight, lineHeight: 25 },
+  path: { fontSize: type.title, fontWeight: '700', letterSpacing: tracking.tight, lineHeight: leading.title },
   moveBtn: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: space.lg, paddingVertical: space.sm },
   moveText: { fontSize: type.small, fontWeight: '600' },
   qtyBox: { borderRadius: radius.md, padding: space.lg, gap: space.md },
@@ -884,6 +884,7 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  /* ⚠ 기호를 상자 가운데 앉히는 값이다 — 읽는 행간이 아니므로 `leading` 을 쓰지 않는다 */
   stepperText: { fontSize: type.h2, fontWeight: '600', lineHeight: 26 },
   field: { gap: space.xs },
   fieldHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
@@ -1009,5 +1010,5 @@ const st = StyleSheet.create({
   navRowText: { fontSize: type.bodyStrong, fontWeight: '600' },
   gone: { paddingHorizontal: space.xxl, paddingTop: space.max, gap: space.md },
   goneTitle: { fontSize: type.title, fontWeight: '700' },
-  goneHint: { fontSize: type.body, lineHeight: 22, marginBottom: space.lg },
+  goneHint: { fontSize: type.body, lineHeight: leading.body, marginBottom: space.lg },
 });

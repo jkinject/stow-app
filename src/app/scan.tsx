@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
 import { parseQrPayload } from '@/features/qr/payload';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, overlay, space } from '@/lib/theme';
+import { useTheme, type, radius, overlay, space, leading } from '@/lib/theme';
 
 /**
  * QR 스캔 (AC12 · AC13 · AC14).
@@ -126,7 +126,7 @@ const st = StyleSheet.create({
   root: { flex: 1 },
   pad: { paddingHorizontal: space.xxl, gap: space.md },
   denyTitle: { fontSize: type.title, fontWeight: '700' },
-  denyHint: { fontSize: type.body, lineHeight: 22 },
+  denyHint: { fontSize: type.body, lineHeight: leading.body },
   denyActions: { gap: space.md, marginTop: space.xxl },
   overlay: {
     position: 'absolute',

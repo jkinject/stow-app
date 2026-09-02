@@ -6,7 +6,7 @@ import { Button, Loading, Screen } from '@/components/ui';
 import { parseQrPayload } from '@/features/qr/payload';
 import { useContainerByToken } from '@/features/storage/api';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, space } from '@/lib/theme';
+import { useTheme, type, space, leading } from '@/lib/theme';
 
 /**
  * QR 딥링크 착지점 — `stow://c/{token}` (AC12 · AC14).
@@ -126,6 +126,6 @@ const st = StyleSheet.create({
   name: { fontSize: type.title, fontWeight: '700' },
   ms: { fontSize: type.caption, fontVariant: ['tabular-nums'] },
   failTitle: { fontSize: type.title, fontWeight: '700', textAlign: 'center' },
-  failHint: { fontSize: type.body, lineHeight: 22, textAlign: 'center' },
+  failHint: { fontSize: type.body, lineHeight: leading.body, textAlign: 'center' },
   actions: { alignSelf: 'stretch', gap: space.md, marginTop: space.xxl },
 });
