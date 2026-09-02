@@ -498,3 +498,15 @@ content_path = "./supabase/templates/confirm_signup.html"
 #   붙인 뒤에는 여기가 실제 상한이 된다. 가구당 사람 수가 적은 앱이라 100 이면 넉넉하다.
 [remotes.production.auth.rate_limit]
 email_sent = 100
+
+# ═══════════════════════════════════════════════════════════════
+# Edge Functions
+# ═══════════════════════════════════════════════════════════════
+[functions.household-lifecycle]
+# ⚠ JWT 검사를 끈다. 이 함수를 부르는 건 사람이 아니라 **cron(pg_net)** 이라
+#   사용자 토큰이 없다. 켜 두면 401 UNAUTHORIZED_NO_AUTH_HEADER 로만 튕긴다
+#   (실제로 그랬다 — 2026-09-02).
+#
+# ⚠⚠ 그래서 함수 안의 `x-cron-secret` 검사가 **유일한 문**이 된다. 그 검사는
+#   비밀이 없으면 **거부**하도록 되어 있어야 한다(fail closed). index.ts 주석 참고.
+verify_jwt = false

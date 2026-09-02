@@ -91,7 +91,20 @@ async function removeAll(paths: string[]): Promise<boolean> {
 }
 
 Deno.serve(async (req) => {
-  if (CRON_SECRET && req.headers.get('x-cron-secret') !== CRON_SECRET) {
+  /**
+   * ⚠⚠ **열려 있으면 안 된다.** 이 함수는 `verify_jwt = false` 로 배포된다 —
+   *   cron 이 pg_net 으로 부르는데 그쪽에 사용자 JWT 가 없기 때문이다. 그래서 이
+   *   헤더 검사가 **유일한 문**이다. 뚫리면 아무나 남의 집을 지우게 만들 수 있다.
+   *
+   * ⚠ 처음엔 `if (CRON_SECRET && ...)` 였다. 비밀이 설정 안 된 환경에서는 검사를
+   *   **건너뛰는** 코드다. 배포에서 secrets 를 빠뜨리면 문이 활짝 열린다 —
+   *   기본값이 위험한 쪽이면 안 된다. 없으면 거부한다(fail closed).
+   */
+  if (!CRON_SECRET) {
+    console.error('CRON_SECRET 이 설정되지 않았습니다. 요청을 거부합니다.');
+    return new Response('not configured', { status: 503 });
+  }
+  if (req.headers.get('x-cron-secret') !== CRON_SECRET) {
     return new Response('forbidden', { status: 403 });
   }
 
