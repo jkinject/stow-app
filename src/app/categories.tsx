@@ -55,8 +55,10 @@ export default function CategoriesScreen() {
    * 순서를 바꾸는 동안의 **화면용 순서**.
    *
    * ⚠ 서버 응답을 기다렸다 다시 그리면 버튼을 눌러도 한참 뒤에 움직인다. 여기서 먼저
-   *   바꾸고 저장을 뒤로 보낸다. 저장이 실패하면 `onSettled` 의 무효화가 서버 순서로
-   *   되돌린다 — 되돌릴 값을 우리가 따로 들고 있지 않는다.
+   *   바꾸고 저장을 뒤로 보낸다.
+   *
+   * ⚠ 저장이 실패하면 **이 값을 버려야** 서버 순서가 다시 보인다(`move` 의 onError).
+   *   안 버리면 저장되지 않은 순서가 화면에만 남는다.
    */
   const [localOrder, setLocalOrder] = useState<string[] | null>(null);
 
@@ -143,13 +145,30 @@ export default function CategoriesScreen() {
     );
   }
 
-  function move(index: number, delta: number) {
+  /**
+   * ⚠ 화면에 보이는 자리가 아니라 **id 로 전체 목록에서 찾아** 옮긴다.
+   *   지금은 순서 편집 중에 거르지 않으니 두 목록이 같지만, 그건 위쪽 `visible` 의
+   *   조건에 딸린 우연이다. 나중에 누가 "편집 중에도 검색되게" 바꾸면 이 함수는
+   *   조용히 엉뚱한 줄을 옮긴다 — 자리를 넘겨받지 않는 편이 안전하다.
+   */
+  function move(id: string, delta: number) {
     const next = rows.map((r) => r.id);
-    const to = index + delta;
-    if (to < 0 || to >= next.length) return;
-    [next[index], next[to]] = [next[to], next[index]];
+    const from = next.indexOf(id);
+    const to = from + delta;
+    if (from < 0 || to < 0 || to >= next.length) return;
+    [next[from], next[to]] = [next[to], next[from]];
     setLocalOrder(next);
-    reorder.mutate(next);
+    reorder.mutate(next, {
+      /**
+       * ⚠ 실패하면 **화면용 순서를 버린다.** 안 버리면 서버가 옛 순서를 돌려줘도
+       *   이 값이 계속 덮어써서, 저장되지 않은 순서가 화면에만 남는다.
+       *   (주석에는 "무효화가 되돌린다" 고 적어 뒀는데, 이 값이 그걸 막고 있었다)
+       */
+      onError: (e) => {
+        setLocalOrder(null);
+        Alert.alert(t.category.saveFailed, e instanceof Error ? e.message : t.common.tryAgain);
+      },
+    });
   }
 
   return (
@@ -221,7 +240,7 @@ export default function CategoriesScreen() {
               last={i === visible.length - 1}
               onPress={() => setSheet({ open: true, edit: row })}
               onMenu={() => onRowMenu(row)}
-              onMove={(d) => move(i, d)}
+              onMove={(d) => move(row.id, d)}
             />
           ))
         )}

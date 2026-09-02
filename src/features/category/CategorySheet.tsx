@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -44,6 +45,32 @@ export function CategorySheet({
   const { c } = useTheme();
   const t = useT();
   const insets = useSafeAreaInsets();
+  const win = useWindowDimensions();
+
+  /**
+   * 아이콘 격자를 **남는 폭에 정확히 맞춘다** (2026-09-03 사용자 지적).
+   *
+   * ⚠ 칸 크기를 숫자로 박아 두면(전에는 44) 마지막 칸 뒤에 자투리가 남아 **오른쪽 끝이
+   *   위 입력칸과 안 맞는다.** 기기 폭이 제각각이라 어떤 숫자를 골라도 어딘가에서는
+   *   어긋난다.
+   *
+   * ⚠ 나눗셈 결과를 그대로 쓰면 안 된다. 소수 폭은 픽셀 격자로 반올림되면서 한 줄의
+   *   합이 컨테이너를 아주 조금 넘길 수 있고, 그러면 **마지막 칸이 다음 줄로 밀린다**
+   *   (8개 줄이 7개 줄로 보인다). 그래서 칸은 정수로 내리고, **남는 폭은 간격에**
+   *   나눠 준다 — 간격은 조금 어긋나도 눈에 띄지 않지만 줄바꿈은 바로 보인다.
+   *
+   * ⚠ 여기 쓰는 여백은 아래 `body` 의 `paddingHorizontal` 과 **같은 토큰**이어야 한다.
+   */
+  const avail = win.width - space.xl * 2;
+  const cell = Math.floor((avail - space.sm * (ICON_COLS - 1)) / ICON_COLS);
+  const iconGap = (avail - cell * ICON_COLS) / (ICON_COLS - 1);
+  /**
+   * 색 원도 같은 규칙으로 **한 줄에 다 넣는다**.
+   * ⚠ 전에는 고정 40dp 라 여덟 개까지만 들어가고 둘째 줄에 두 개가 덩그러니 남았다.
+   *   고를 것이 열 개뿐인데 두 줄로 나뉘면 "여기까지가 전부인가" 를 한 번 생각하게 된다.
+   */
+  const dot = Math.floor((avail - space.sm * (CATEGORY_COLORS.length - 1)) / CATEGORY_COLORS.length);
+  const dotGap = (avail - dot * CATEGORY_COLORS.length) / (CATEGORY_COLORS.length - 1);
 
   /**
    * ⚠ `visible` 이 켜질 때마다 초기값으로 되돌려야 한다. 시트를 닫아도 컴포넌트는 살아
@@ -126,7 +153,7 @@ export function CategorySheet({
 
               <View style={st.group}>
                 <Text style={[st.label, { color: c.textFaint }]}>{t.category.colorLabel}</Text>
-                <View style={st.swatches}>
+                <View style={[st.swatches, { gap: dotGap }]}>
                   {CATEGORY_COLORS.map((v) => {
                     const on = v === color;
                     return (
@@ -137,7 +164,13 @@ export function CategorySheet({
                         accessibilityState={{ selected: on }}
                         style={({ pressed }) => [
                           st.swatch,
-                          { backgroundColor: v, borderColor: on ? c.text : 'transparent' },
+                          {
+                            width: dot,
+                            height: dot,
+                            borderRadius: dot / 2,
+                            backgroundColor: v,
+                            borderColor: on ? c.text : 'transparent',
+                          },
                           pressed && { opacity: 0.7 },
                         ]}
                       >
@@ -156,7 +189,7 @@ export function CategorySheet({
                     것은 고르는 것보다 어렵다. 목록이 94개라 훑어서 고르는 편이 빠르다.
                     (갈래 순서대로 늘어놓았다 — features/category/icons.ts 참고)
                 */}
-                <View style={st.iconGrid}>
+                <View style={[st.iconGrid, { gap: iconGap }]}>
                   {ALL_ICONS.map((n) => {
                     const on = n === icon;
                     return (
@@ -169,6 +202,8 @@ export function CategorySheet({
                           style={({ pressed }) => [
                             st.iconCell,
                             {
+                              width: cell,
+                              height: cell,
                               backgroundColor: on ? color : c.card,
                               borderColor: on ? color : c.border,
                             },
@@ -203,6 +238,8 @@ export function CategorySheet({
 }
 
 const TILE = 52;
+/** 아이콘 격자의 열 수. 칸 크기는 폭에서 나눠 구한다 — 위 `cell` 참고 */
+const ICON_COLS = 8;
 
 const st = StyleSheet.create({
   flex: { flex: 1 },
@@ -239,20 +276,14 @@ const st = StyleSheet.create({
   group: { gap: space.sm },
   label: { fontSize: type.tiny, fontWeight: '700', letterSpacing: tracking.wide },
 
-  swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
-  swatch: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.full,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  /** ⚠ 크기·간격은 위에서 계산해 넘긴다 — 폭에 정확히 맞춘다 */
+  swatches: { flexDirection: 'row' },
+  swatch: { borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
 
-  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.xs },
+  /** ⚠ `gap` 은 위에서 계산해 넘긴다 — 남는 폭을 여기로 흡수한다 */
+  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: space.xs },
+  /** ⚠ 크기는 여기서 정하지 않는다 — 폭에서 나눠 넘긴다(`cell`) */
   iconCell: {
-    width: 44,
-    height: 44,
     borderRadius: radius.sm,
     borderWidth: 1,
     alignItems: 'center',
