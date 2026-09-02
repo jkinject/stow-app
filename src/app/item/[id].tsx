@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { IconChevron } from '@/components/Icon';
+import { IconChevron, IconTrash } from '@/components/Icon';
 import { KeyboardSpacer } from '@/components/KeyboardSpacer';
 import { useToast } from '@/components/Toast';
 import { Button, Field, Loading, Screen } from '@/components/ui';
@@ -136,7 +136,31 @@ export default function ItemDetailScreen() {
   }
 
   return (
-    <Screen back scroll={false} title={row.name}>
+    <Screen
+      back
+      scroll={false}
+      title={row.name}
+      /**
+       * ⚠ 지우기는 **제목 줄 오른쪽의 작은 아이콘**이다 (2026-09-02 사용자 요청).
+       *   본문 끝에 빨간 큰 버튼으로 두었더니 화면에서 제일 눈에 띄는 것이 "지우기" 가
+       *   됐다 — 이 화면에서 자주 하는 일은 수량·이름 고치기이지 지우는 게 아니다.
+       *
+       * ⚠ 아이콘만 두므로 `accessibilityLabel` 로 이름을 붙인다. 그림만으로는
+       *   화면 낭독기에서 "버튼" 이라고만 읽힌다.
+       */
+      action={
+        <Pressable
+          onPress={onDelete}
+          disabled={remove.isPending}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={t.item.deleteItem}
+          style={({ pressed }) => (pressed || remove.isPending ? { opacity: 0.4 } : undefined)}
+        >
+          <IconTrash color={c.danger} />
+        </Pressable>
+      }
+    >
       <KeyboardSpacer style={st.flex}>
         <ScrollView
           style={st.flex}
@@ -303,14 +327,6 @@ export default function ItemDetailScreen() {
             <Text style={[st.navRowText, { color: c.text }]}>{t.item.addToShopping}</Text>
           </Pressable>
 
-          <View style={st.danger}>
-            <Button
-              label={t.item.deleteItem}
-              onPress={onDelete}
-              variant="danger"
-              busy={remove.isPending}
-            />
-          </View>
         </ScrollView>
 
         {/*
@@ -947,7 +963,6 @@ const st = StyleSheet.create({
     justifyContent: 'space-between',
   },
   navRowText: { fontSize: type.bodyStrong, fontWeight: '600' },
-  danger: { marginTop: space.xxl },
   gone: { paddingHorizontal: space.xxl, paddingTop: space.max, gap: space.md },
   goneTitle: { fontSize: type.title, fontWeight: '700' },
   goneHint: { fontSize: type.body, lineHeight: 22, marginBottom: space.lg },
