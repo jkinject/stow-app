@@ -3,7 +3,16 @@ import * as Crypto from 'expo-crypto';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Keyboard,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { KeyboardSpacer } from '@/components/KeyboardSpacer';
@@ -239,6 +248,17 @@ function FormStep({
       purchase_url: null,
       note: null,
     };
+
+    /**
+     * ⚠ **키보드를 먼저 내린다.** 올라온 채로 화면을 바꾸면 도착한 화면이 그 높이를
+     *   그대로 물려받아 아래가 텅 빈다(실기기 확인 2026-09-02).
+     *
+     *   `KeyboardSpacer` 는 키보드 높이를 안드로이드 IME 인셋에서 읽는데, 이 화면이
+     *   사라지면서 추적이 끊기고 키보드는 그 뒤에 닫힌다 — 닫혔다는 사실을 아무도
+     *   못 듣는다. 여기서 내려 두면 **이 화면이 아직 떠 있는 동안** 닫히므로 그
+     *   변화가 제대로 기록된다. (저장이 네트워크를 한 번 다녀오는 사이에 끝난다)
+     */
+    Keyboard.dismiss();
 
     setSaving(true);
     try {

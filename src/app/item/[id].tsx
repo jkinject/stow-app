@@ -485,22 +485,29 @@ function CreatedDialog({
           style={[st.celebCard, { backgroundColor: c.bg, borderColor: c.border }]}
           onPress={(e) => e.stopPropagation()}
         >
-          <View style={st.celebArt}>
-            {photo ? (
+          {/*
+            ⚠ 사진이 없으면 **빈 네모를 두지 않는다.** 처음엔 자리를 지키려고 회색
+              네모를 뒀는데, 실기기에서 보니 카드에 구멍이 뚫린 것처럼 보였다.
+              사진이 없을 때는 체크 하나만 크게 둔다 — 알릴 것은 "됐다" 이지
+              "사진이 없다" 가 아니다.
+          */}
+          {photo ? (
+            <View style={st.celebArt}>
               <Image
                 source={photo}
                 style={[st.celebPhoto, { backgroundColor: c.sunk }]}
                 contentFit="cover"
                 cachePolicy={IMAGE_CACHE_POLICY}
               />
-            ) : (
-              /* ⚠ 사진이 없어도 자리는 그대로 둔다 — 없으면 체크가 허공에 뜬다 */
-              <View style={[st.celebPhoto, { backgroundColor: c.sunk }]} />
-            )}
-            <View style={[st.celebMark, { backgroundColor: c.ok, borderColor: c.bg }]}>
-              <Text style={[st.celebMarkText, { color: overlay.fg }]}>✓</Text>
+              <View style={[st.celebMark, { backgroundColor: c.ok, borderColor: c.bg }]}>
+                <Text style={[st.celebMarkText, { color: overlay.fg }]}>✓</Text>
+              </View>
             </View>
-          </View>
+          ) : (
+            <View style={[st.celebSolo, { backgroundColor: c.ok }]}>
+              <Text style={[st.celebSoloText, { color: overlay.fg }]}>✓</Text>
+            </View>
+          )}
 
           <Text style={[st.celebTitle, { color: c.text }]}>{t.item.createdTitle}</Text>
           <Text style={[st.celebName, { color: c.text }]} numberOfLines={2}>
@@ -887,6 +894,16 @@ const st = StyleSheet.create({
     justifyContent: 'center',
   },
   celebMarkText: { fontSize: type.small, fontWeight: '900' },
+  /** 사진이 없을 때 — 체크 하나만 크게 */
+  celebSolo: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: space.sm,
+  },
+  celebSoloText: { fontSize: type.h2, fontWeight: '900' },
   celebTitle: { fontSize: type.title, fontWeight: '800', letterSpacing: tracking.tight },
   celebName: { fontSize: type.body, fontWeight: '700', textAlign: 'center' },
   celebWhere: { fontSize: type.small, textAlign: 'center' },
