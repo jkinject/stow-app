@@ -7,7 +7,6 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { KeyboardSpacer } from '@/components/KeyboardSpacer';
-import { useToast } from '@/components/Toast';
 import { Button, Field } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { CameraCapture } from '@/features/item/CameraCapture';
@@ -86,7 +85,6 @@ export default function AddItem() {
 
   const t = useT();
   const router = useRouter();
-  const toast = useToast();
   const { activeId } = useHousehold();
 
   const ctx = useAddContext(target, isLoose);
@@ -148,14 +146,16 @@ export default function AddItem() {
       queue={queue}
       onRetake={() => setStep(1)}
       onPickDest={setPicked}
-      onDone={(id, name) => {
+      onDone={(id) => {
         /**
-         * ⚠ 토스트를 **먼저** 띄우고 화면을 옮긴다. 토스트는 화면 트리 밖(루트)에
-         *   그려지므로 이동해도 그대로 떠 있다 — 도착한 상세 화면 위에서 보인다.
-         *   순서를 바꾸면 이 화면이 사라지며 호출이 묻힐 수 있다.
+         * ⚠ 여기서 알리지 않는다. **도착한 상세 화면이** 축하 팝업을 띄운다
+         *   (2026-09-02 사용자 요청 — 토스트는 등록된 느낌이 약하다).
+         *
+         *   왜 그쪽인가: 팝업에는 등록된 물건의 사진·이름·자리가 함께 나와야
+         *   "이게 등록됐다" 가 분명해진다. 그 정보는 상세 화면에 이미 다 있다.
+         *   `justCreated` 는 그 한 번을 알리는 신호일 뿐이다.
          */
-        toast(t.item.created(name));
-        router.replace(`/item/${id}`);
+        router.replace({ pathname: '/item/[id]', params: { id, justCreated: '1' } });
       }}
       onClose={() => router.back()}
     />

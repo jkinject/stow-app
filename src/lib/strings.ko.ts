@@ -261,7 +261,17 @@ export const KO = {
      *   "아직 등록 중인가?" 로 읽힌다(사용자 보고 2026-09-02). 저장이 끝났다는
      *   말을 한 번 해 줘야 한다.
      */
-    created: (name: string) => `'${name}' 을(를) 등록했습니다.`,
+    /**
+     * 등록 직후의 축하 팝업 (2026-09-02 사용자 요청).
+     *
+     * ⚠ 토스트에서 팝업으로 바꿨다. "toast는 너무 등록된 느낌이 약해" —
+     *   등록은 이 앱에서 가장 중요한 한 순간이라 스쳐 지나가면 안 된다.
+     */
+    createdTitle: '등록 완료!',
+    createdWhere: (path: string) => `'${path}'에 담았습니다.`,
+    createdOk: '좋아요',
+    /** 같은 자리에 이어서 등록하는 입구. 등록 직후에만 보인다 */
+    addMoreHere: (path: string) => `'${path}'에 물건 더 등록하기`,
     addedToShopping: '살 것에 담았습니다.',
     alreadyInShopping: '이미 살 것에 있습니다.',
     deleteTitle: '이 물건을 지울까요?',

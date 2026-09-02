@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import { Image, type ImageSource } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -40,7 +40,7 @@ import { overlay, radius, type, useTheme, space, tracking } from '@/lib/theme';
  *   (이 프로젝트에서 이미 한 번 겪은 함정).
  */
 export default function ItemDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, justCreated } = useLocalSearchParams<{ id: string; justCreated?: string }>();
   const itemId = String(id);
   const { c } = useTheme();
   const t = useT();
@@ -59,9 +59,32 @@ export default function ItemDetailScreen() {
   const setPhoto = useSetPhoto('items', itemId, activeId);
   const removePhoto = useRemovePhoto('items', itemId);
 
+  const insets = useSafeAreaInsets();
+
   const [moving, setMoving] = useState(false);
   const [photoSheet, setPhotoSheet] = useState(false);
   const [viewer, setViewer] = useState(false);
+
+  /**
+   * **등록 직후인가** (2026-09-02 사용자 요청).
+   *
+   *   `celebrate` — 축하 팝업을 한 번 띄운다. 예전엔 토스트였는데 "등록된 느낌이
+   *                 약하다" 고 했다. 등록은 이 앱에서 가장 중요한 한 순간이라 화면
+   *                 구석에서 스쳐 지나가면 안 된다.
+   *   `fresh`     — 이 화면에 머무는 동안 아래에 "같은 자리에 또 등록" 을 띄운다.
+   *
+   * ⚠ 두 값 모두 **첫 렌더에서 굳힌다.** 바로 아래에서 파라미터를 지우기 때문에,
+   *   굳히지 않으면 지운 순간 버튼까지 함께 사라진다.
+   *
+   * ⚠ 파라미터를 지우는 이유: 신호가 남아 있으면 이 화면이 다시 그려질 때
+   *   (안드로이드가 메모리 때문에 되살리는 경우 등) 팝업이 또 뜬다.
+   *   "나갔다가 다시 들어가면 안 뜨게" 가 요청이었다.
+   */
+  const [fresh] = useState(() => justCreated === '1');
+  const [celebrate, setCelebrate] = useState(() => justCreated === '1');
+  useEffect(() => {
+    if (justCreated === '1') router.setParams({ justCreated: '' });
+  }, [justCreated, router]);
 
   if (item.isLoading) {
     return (
@@ -86,6 +109,13 @@ export default function ItemDetailScreen() {
   const row = item.data;
   const locName = (locations.data ?? []).find((l) => l.id === row.location_id)?.name ?? '';
   const path = row.container?.name ? `${locName} › ${row.container.name}` : `${locName}${t.item.loose}`;
+  /**
+   * "또 등록하기" 에 쓰는 자리 이름.
+   *
+   * ⚠ `path` 를 그대로 쓰지 않는다. 낱개 물건의 `path` 는 "신발장 · 낱개" 라서
+   *   "'신발장 · 낱개'에 물건 더 등록하기" 가 된다 — 자리 이름이 아니라 설명이다.
+   */
+  const here = row.container?.name ? `${locName} › ${row.container.name}` : locName;
 
   function onDelete() {
     Alert.alert(t.item.deleteTitle, t.item.deleteBody(row.name), [
@@ -282,6 +312,50 @@ export default function ItemDetailScreen() {
             />
           </View>
         </ScrollView>
+
+        {/*
+          등록 직후에만 뜨는 "같은 자리에 또 등록" (2026-09-02 사용자 요청).
+
+          왜 필요한가: 물건은 대개 **몰아서** 넣는다. 한 박스를 정리하는 동안 여러 개를
+          넣게 되는데, 그때마다 박스 화면으로 되돌아가는 것은 군더더기다.
+
+          ⚠ **키보드를 따라 올라가는 자리**에 둔다(KeyboardSpacer 안, 스크롤 뒤).
+            화면 바닥에 띄워 두면 메모를 입력할 때 키보드 위에 겹쳐 입력칸을 덮는다.
+
+          ⚠ `push` 가 아니라 `replace` 다. 이어서 등록하면 등록→상세→등록→상세… 로
+            스택이 계속 쌓여 나중에 뒤로가기를 그만큼 눌러야 한다. 바꿔치우면 몇 개를
+            넣든 뒤로가기 한 번에 원래 있던 화면으로 돌아간다.
+        */}
+        {fresh && (
+          <View
+            style={[
+              st.againBar,
+              {
+                backgroundColor: c.bg,
+                borderTopColor: c.border,
+                paddingBottom: insets.bottom + space.md,
+              },
+            ]}
+          >
+            <Pressable
+              onPress={() =>
+                router.replace(
+                  row.container_id ? `/add/${row.container_id}` : `/add/${row.location_id}?loose=1`,
+                )
+              }
+              style={({ pressed }) => [
+                st.againPill,
+                { borderColor: c.accentText },
+                pressed && { opacity: 0.6 },
+              ]}
+            >
+              <Text style={[st.againText, { color: c.accentText }]} numberOfLines={1}>
+                {t.item.addMoreHere(here)}
+              </Text>
+              <IconChevron color={c.accentText} />
+            </Pressable>
+          </View>
+        )}
       </KeyboardSpacer>
 
       {/* 크게 보기 — 박스 상세와 **같은 컴포넌트** */}
@@ -339,6 +413,14 @@ export default function ItemDetailScreen() {
         </Modal>
       )}
 
+      <CreatedDialog
+        visible={celebrate}
+        name={row.name}
+        path={here}
+        photo={photo.data}
+        onClose={() => setCelebrate(false)}
+      />
+
       <MovePicker
         visible={moving}
         householdId={activeId}
@@ -362,6 +444,78 @@ export default function ItemDetailScreen() {
         }}
       />
     </Screen>
+  );
+}
+
+/**
+ * 등록 직후의 축하 팝업 (2026-09-02 사용자 요청).
+ *
+ * ⚠ 예전에는 토스트였다. "toast는 너무 등록된 느낌이 약해" — 맞는 지적이다.
+ *   토스트는 화면 구석에 잠깐 떴다 사라져서, 처음 쓰는 사람은 등록이 끝난 건지
+ *   아직 진행 중인지 알 수 없었다("이게 등록된 거야?" 라는 실사용 반응).
+ *
+ * ⚠ **방금 넣은 물건의 사진과 이름을 함께 보여 준다.** "등록되었습니다" 라는 글자만
+ *   띄우면 무엇이 등록됐는지는 여전히 본인이 확인해야 한다. 사진이 뜨면 그 자체가
+ *   증거다 — 그 정보는 이미 이 화면에 다 있어서 따로 실어 나를 것도 없다.
+ *
+ * ⚠ 바깥을 눌러도 닫힌다. 축하는 결정이 아니라 알림이라 확인을 강요할 이유가 없다.
+ */
+function CreatedDialog({
+  visible,
+  name,
+  path,
+  photo,
+  onClose,
+}: {
+  visible: boolean;
+  name: string;
+  path: string;
+  photo: ImageSource | null | undefined;
+  onClose: () => void;
+}) {
+  const { c } = useTheme();
+  const t = useT();
+
+  if (!visible) return null;
+
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={st.celebBack} onPress={onClose}>
+        <Pressable
+          style={[st.celebCard, { backgroundColor: c.bg, borderColor: c.border }]}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <View style={st.celebArt}>
+            {photo ? (
+              <Image
+                source={photo}
+                style={[st.celebPhoto, { backgroundColor: c.sunk }]}
+                contentFit="cover"
+                cachePolicy={IMAGE_CACHE_POLICY}
+              />
+            ) : (
+              /* ⚠ 사진이 없어도 자리는 그대로 둔다 — 없으면 체크가 허공에 뜬다 */
+              <View style={[st.celebPhoto, { backgroundColor: c.sunk }]} />
+            )}
+            <View style={[st.celebMark, { backgroundColor: c.ok, borderColor: c.bg }]}>
+              <Text style={[st.celebMarkText, { color: overlay.fg }]}>✓</Text>
+            </View>
+          </View>
+
+          <Text style={[st.celebTitle, { color: c.text }]}>{t.item.createdTitle}</Text>
+          <Text style={[st.celebName, { color: c.text }]} numberOfLines={2}>
+            {name}
+          </Text>
+          <Text style={[st.celebWhere, { color: c.textMuted }]} numberOfLines={2}>
+            {t.item.createdWhere(path)}
+          </Text>
+
+          <View style={st.celebBtn}>
+            <Button label={t.item.createdOk} onPress={onClose} />
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -682,6 +836,61 @@ const st = StyleSheet.create({
   },
   selectText: { flex: 1, fontSize: type.bodyStrong },
   backdrop: { flex: 1, backgroundColor: overlay.scrim, justifyContent: 'flex-end' },
+
+  /* 등록 직후 아래에 붙는 띠 — "같은 자리에 또 등록" */
+  againBar: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: space.md,
+    paddingHorizontal: space.xl,
+  },
+  againPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.xs,
+    borderWidth: 1,
+    borderRadius: radius.full,
+    paddingVertical: space.lg,
+    paddingHorizontal: space.lg,
+  },
+  againText: { flexShrink: 1, fontSize: type.small, fontWeight: '700' },
+
+  /* 등록 완료 팝업 */
+  celebBack: {
+    flex: 1,
+    backgroundColor: overlay.scrim,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: space.xl,
+  },
+  celebCard: {
+    width: '100%',
+    maxWidth: 340,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: space.huge,
+    alignItems: 'center',
+    gap: space.sm,
+  },
+  celebArt: { marginBottom: space.sm },
+  celebPhoto: { width: 96, height: 96, borderRadius: radius.lg },
+  /** ⚠ 테두리 색은 카드 바탕과 같다 — 사진 위에 얹혔다는 것이 그 틈으로 읽힌다 */
+  celebMark: {
+    position: 'absolute',
+    right: -space.sm,
+    bottom: -space.sm,
+    width: 34,
+    height: 34,
+    borderRadius: radius.full,
+    borderWidth: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  celebMarkText: { fontSize: type.small, fontWeight: '900' },
+  celebTitle: { fontSize: type.title, fontWeight: '800', letterSpacing: tracking.tight },
+  celebName: { fontSize: type.body, fontWeight: '700', textAlign: 'center' },
+  celebWhere: { fontSize: type.small, textAlign: 'center' },
+  celebBtn: { alignSelf: 'stretch', marginTop: space.md },
   sheet: { borderTopWidth: 1, borderTopLeftRadius: 18, borderTopRightRadius: 18, paddingTop: space.lg },
   sheetScroll: { maxHeight: 320 },
   sheetTitle: {
