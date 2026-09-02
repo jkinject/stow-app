@@ -75,7 +75,7 @@ export function DailyMission({ done, complete }: { done: number; complete: boole
       <View style={[st.card, { backgroundColor: m.surface, borderColor: m.border }]}>
         <View style={st.stamps}>
           {Array.from({ length: MISSION_GOAL }, (_, i) => (
-            <View key={i} style={st.stampCell}>
+            <View key={i} style={i === 0 ? st.firstCell : st.stampCell}>
               {i > 0 && (
                 /* 도장 사이를 잇는 선. 지나온 구간만 켠다 — 진행이 한눈에 읽힌다 */
                 <View style={[st.track, { backgroundColor: i <= done - 1 ? m.trackOn : m.trackOff }]} />
@@ -132,7 +132,12 @@ const st = StyleSheet.create({
   badgeText: { fontSize: type.caption, fontWeight: '800', letterSpacing: tracking.wide },
 
   stamps: { flexDirection: 'row', alignItems: 'center' },
-  /** ⚠ 각 칸이 균등하게 늘어나야 도장 사이 간격이 같다 */
+  /**
+   * ⚠ **첫 칸은 늘리지 않는다.** 첫 도장 앞에는 선이 없어서, 다섯 칸을 똑같이 나누면
+   *   남는 여백이 1번과 2번 사이에만 몰려 그 사이만 넓어 보인다(실기기에서 확인).
+   *   첫 칸을 도장 크기로 고정해야 나머지 넷이 같은 폭을 나눠 간격이 고르다.
+   */
+  firstCell: { width: STAMP, flexDirection: 'row', alignItems: 'center' },
   stampCell: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   track: { flex: 1, height: 2 },
   stamp: {
