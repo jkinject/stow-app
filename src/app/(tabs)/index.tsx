@@ -115,6 +115,12 @@ export default function FindTab() {
   );
   const results = useMemo(() => filterItems(scoped, q), [scoped, q]);
 
+  /**
+   * 장소 필터를 그릴지. 장소가 하나뿐이면 고를 게 없어 숨긴다.
+   * ⚠ 아래 여백을 누가 줄지도 이 값으로 갈린다 — `headAlone` 주석 참고.
+   */
+  const showFilters = (locations.data?.length ?? 0) > 1;
+
   const cardW = (win.width - PADDING * 2 - GAP) / 2;
 
   /**
@@ -247,7 +253,7 @@ export default function FindTab() {
   return (
     <View style={[st.root, { backgroundColor: c.bg, paddingTop: insets.top }]}>
       {/* 검색창과 스캔은 항상 맨 위에 고정된다 — 이 화면의 두 시작점이다 */}
-      <View style={st.head}>
+      <View style={[st.head, !showFilters && st.headAlone]}>
         <Field
           value={q}
           onChangeText={onQuery}
@@ -272,7 +278,7 @@ export default function FindTab() {
       </View>
 
       {/* 장소 필터 — 좌우로 넘겨 고른다. 장소가 하나뿐이면 고를 게 없으므로 숨긴다 */}
-      {(locations.data?.length ?? 0) > 1 && (
+      {showFilters && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -340,16 +346,13 @@ export default function FindTab() {
           numColumns={2}
           columnWrapperStyle={{ gap: GAP }}
           /**
-           * ⚠ 위 여백을 **여기** 한 곳에 둔다 (2026-09-02 사용자 지적 — 장소 필터 아래가
-           *   붙어 보였다). "전체 N건" 이 목록 안으로 들어가면서, 전에 그 줄이 만들어
-           *   주던 간격이 함께 사라졌다.
-           *
-           *   필터 칩 쪽에 붙이면 칩이 없는 집(장소가 하나뿐)에서는 다시 0 이 된다.
-           *   목록의 시작점에 두면 칩이 있든 없든, 미션 카드가 있든 없든 같다.
+           * ⚠ 위 여백을 **여기 두지 않는다.** 목록 안에 주면 스크롤과 함께 밀려 올라가,
+           *   내리는 순간 카드가 장소 필터에 그대로 닿는다(실기기 확인 — 사용자가 두 번
+           *   지적한 지점이다). 필터 아래 간격은 **고정된 쪽**(필터 줄 자신)이 가져야
+           *   스크롤해도 남는다. `filterScroll` / `headAlone` 참고.
            */
           contentContainerStyle={{
             paddingHorizontal: PADDING,
-            paddingTop: space.lg,
             paddingBottom: insets.bottom + space.xxl,
             gap: GAP,
           }}
@@ -471,6 +474,11 @@ const st = StyleSheet.create({
   flex: { flex: 1 },
   head: { flexDirection: 'row', gap: space.sm, paddingHorizontal: PADDING, paddingTop: space.sm },
   /**
+   * ⚠ 장소 필터가 없을 때만 붙는다. 목록 바로 위에 있는 것이 여백을 주는 규칙이라,
+   *   필터가 없으면 검색줄이 그 역할을 이어받는다.
+   */
+  headAlone: { paddingBottom: space.lg },
+  /**
    * ⚠ 여기에 `flex: 1` 을 두면 안 된다. `Field` 는 ✕ 버튼을 얹으려고 TextInput 을
    *   **세로 컬럼** View 로 감싼다. 그래서 이 스타일의 flex 는 가로가 아니라
    *   **세로**로 작동해 입력칸이 찌그러지고 글자가 안 보인다 (실사용 보고).
@@ -520,7 +528,8 @@ const st = StyleSheet.create({
   bannerText: { fontSize: type.small },
   starterWrap: { paddingBottom: space.lg, marginHorizontal: -PADDING },
   more: { fontSize: type.caption, textAlign: 'center', paddingVertical: space.lg },
-  filterScroll: { flexGrow: 0, flexShrink: 0 },
+  /** ⚠ 아래 여백은 **스크롤과 무관해야** 한다 — 위 contentContainerStyle 주석 참고 */
+  filterScroll: { flexGrow: 0, flexShrink: 0, marginBottom: space.lg },
   filterRow: { paddingHorizontal: PADDING, gap: space.sm, paddingTop: space.xs, alignItems: 'center' },
   filterChip: { borderWidth: 1, borderRadius: radius.full, paddingHorizontal: space.lg, paddingVertical: space.sm },
   filterText: { fontSize: type.small, fontWeight: '600' },
