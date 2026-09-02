@@ -36,17 +36,22 @@ const BUCKET = 'item-photos';
 /** Storage 는 한 번에 지울 수 있는 개수에 한계가 있다. 넉넉히 잡되 쪼갠다 */
 const REMOVE_CHUNK = 100;
 
-type Warn = { household_id: string; household_name: string; emails: string[] };
+type Owner = { email: string; locale: 'ko' | 'en' | null };
+type Warn = { household_id: string; household_name: string; owners: Owner[] };
 type Doomed = { household_id: string; paths: string[] };
 
 const db = createClient(SB_URL, SERVICE_KEY, { auth: { persistSession: false } });
 
-function warnEmail(name: string) {
-  return {
-    subject: `[어디뒀지] '${name}' 이(가) 30일 뒤 삭제됩니다`,
-    html: `
+const WRAP = (inner: string) => `
 <div style="font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
             max-width:520px;margin:0 auto;padding:32px 24px;color:#14161F;line-height:1.7">
+${inner}
+</div>`.trim();
+
+function ko(name: string) {
+  return {
+    subject: `[어디뒀지] '${name}' 이(가) 30일 뒤 삭제됩니다`,
+    inner: `
   <p style="font-size:13px;letter-spacing:.06em;color:#6E7591;margin:0 0 8px">어디뒀지 · Stow</p>
   <h1 style="font-size:21px;margin:0 0 20px">'${name}' 을(를) 정리하려고 합니다</h1>
   <p style="margin:0 0 16px">
@@ -63,20 +68,79 @@ function warnEmail(name: string) {
   </p>
   <p style="margin:0;color:#6E7591;font-size:13px">
     문의: <a href="mailto:jkinject@gmail.com" style="color:#2547C4">jkinject@gmail.com</a>
-  </p>
-</div>`.trim(),
+  </p>`,
   };
 }
 
-async function sendWarning(w: Warn): Promise<boolean> {
-  if (!RESEND_KEY || w.emails.length === 0) return false;
-  const { subject, html } = warnEmail(w.household_name);
+function en(name: string) {
+  return {
+    subject: `[Stow] "${name}" will be deleted in 30 days`,
+    inner: `
+  <p style="font-size:13px;letter-spacing:.06em;color:#6E7591;margin:0 0 8px">Stow · 어디뒀지</p>
+  <h1 style="font-size:21px;margin:0 0 20px">We're about to clear out "${name}"</h1>
+  <p style="margin:0 0 16px">
+    <strong>Nobody has opened this household in over 90 days.</strong>
+    So that unused data is not kept longer than necessary, <strong>everything in it —
+    items, photos, places and member links — will be deleted in 30 days</strong>.
+  </p>
+  <p style="margin:0 0 16px">
+    To keep it, <strong>just open the app once.</strong> That cancels the deletion and
+    resets the clock. There is nothing else you need to do.
+  </p>
+  <p style="margin:0 0 24px;color:#6E7591;font-size:14px">
+    Deletion is irreversible. This email goes only to the owners of this household.
+  </p>
+  <p style="margin:0;color:#6E7591;font-size:13px">
+    Questions: <a href="mailto:jkinject@gmail.com" style="color:#2547C4">jkinject@gmail.com</a>
+  </p>`,
+  };
+}
+
+/**
+ * 받는 사람의 언어로 고른다.
+ *
+ * ⚠ 언어를 **모르면 두 언어로 함께** 보낸다. 이 기능 이전에 마지막으로 앱을 연
+ *   사람은 `profiles.locale` 이 null 이다. 찍어서 한쪽으로 보내면 절반은 못 읽는데,
+ *   못 읽으면 30일 뒤 집이 사라진다. 길어지는 것쯤은 감수할 값이 아니다.
+ *   영어를 먼저 둔다 — 한국어 사용자는 아래를 보면 되고, 그 반대는 어렵다.
+ */
+function warnEmail(name: string, locale: Owner['locale']) {
+  if (locale === 'ko') { const k = ko(name); return { subject: k.subject, html: WRAP(k.inner) }; }
+  if (locale === 'en') { const e = en(name); return { subject: e.subject, html: WRAP(e.inner) }; }
+  const e = en(name);
+  const k = ko(name);
+  return {
+    subject: `${e.subject} / ${k.subject}`,
+    html: WRAP(`${e.inner}
+  <hr style="border:none;border-top:1px solid #DCE0EC;margin:32px 0" />
+${k.inner}`),
+  };
+}
+
+/**
+ * ⚠ 한 통을 여러 명에게 보내지 않는다. 관리자마다 언어가 다를 수 있어서,
+ *   묶으면 누군가는 못 읽는 언어로 받는다. 사람별로 나눠 보낸다.
+ *   한 명이라도 성공하면 그 집은 "예고했다" 로 본다 — 전원 성공을 요구하면
+ *   메일함 하나가 막혀 있을 때 집이 영원히 안 지워진다.
+ */
+async function sendOne(to: string, name: string, locale: Owner['locale']): Promise<boolean> {
+  if (!RESEND_KEY) return false;
+  const { subject, html } = warnEmail(name, locale);
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: `어디뒀지 <${SENDER}>`, to: w.emails, subject, html }),
+    body: JSON.stringify({ from: `어디뒀지 Stow <${SENDER}>`, to: [to], subject, html }),
   });
   return res.ok;
+}
+
+async function sendWarning(w: Warn): Promise<boolean> {
+  let any = false;
+  for (const o of w.owners) {
+    if (!o.email) continue;
+    if (await sendOne(o.email, w.household_name, o.locale)) any = true;
+  }
+  return any;
 }
 
 /** 없는 파일이 섞여 있어도 나머지는 지워야 한다. 조각내 부르고 실패한 조각만 표시한다 */
@@ -106,6 +170,35 @@ Deno.serve(async (req) => {
   }
   if (req.headers.get('x-cron-secret') !== CRON_SECRET) {
     return new Response('forbidden', { status: 403 });
+  }
+
+  /**
+   * 미리보기 — 예고 메일이 어떻게 생겼는지 실제로 받아 보는 길.
+   *
+   *     curl -X POST -H "x-cron-secret: ..." -H "Content-Type: application/json" \
+   *          -d '{"preview_to":"me@example.com"}' <함수 URL>
+   *
+   * ⚠ 왜 여기 두는가. 미리보기용 템플릿을 따로 만들면 **두 벌이 되어 한쪽만 고쳐진다.**
+   *   실제로 나갈 메일과 보이는 메일이 달라지면 미리보기의 의미가 없다.
+   *
+   * ⚠ **어떤 데이터도 건드리기 전에** 여기서 끝난다. 미리보기를 부른다고 남의 집이
+   *   휴면으로 표시되거나 지워지면 안 된다.
+   */
+  const body = (await req.json().catch(() => ({}))) as {
+    preview_to?: string;
+    preview_name?: string;
+    /** 'ko' | 'en' | 생략(=모를 때처럼 두 언어) */
+    preview_locale?: Owner['locale'];
+  };
+  if (body.preview_to) {
+    const ok = await sendOne(
+      body.preview_to,
+      body.preview_name ?? '우리 집',
+      body.preview_locale ?? null,
+    );
+    return new Response(JSON.stringify({ preview_sent: ok, to: body.preview_to }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   const report: Record<string, unknown> = {};

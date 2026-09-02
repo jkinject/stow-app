@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 import { deletePhotoObjects } from '@/features/item/photo';
+import { useI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -57,6 +58,27 @@ export function useTouchHousehold(householdId: string | null) {
     if (!householdId) return;
     void supabase.rpc('touch_household', { p_household: householdId }).then(() => {});
   }, [householdId]);
+}
+
+/**
+ * 지금 쓰고 있는 화면 언어를 서버에 알린다.
+ *
+ * ⚠⚠ 이게 없으면 **외국인에게 한국어 메일이 나간다.** 휴면 삭제 예고 메일은 그 사람이
+ *   앱을 90일 넘게 안 열었을 때 나가므로, 그때는 요청도 기기 정보도 없다. 서버가
+ *   언어를 알 방법은 미리 적어 두는 것뿐이다.
+ *
+ * 값이 바뀔 때만 쓴다 — 앱을 열 때마다 UPDATE 할 이유가 없다. 실패는 조용히 넘긴다.
+ */
+export function useReportLocale(userId: string | null) {
+  const { lang } = useI18n();
+  useEffect(() => {
+    if (!userId) return;
+    void (async () => {
+      const { data } = await supabase.from('profiles').select('locale').eq('id', userId).maybeSingle();
+      if (data?.locale === lang) return;
+      await supabase.from('profiles').update({ locale: lang }).eq('id', userId);
+    })().catch(() => {});
+  }, [userId, lang]);
 }
 
 /**

@@ -127,13 +127,24 @@ select bag_eq(
   '(3) 휴면 30일이 지난 집만 예고 대상이다 (방금 휴면이 된 집은 아니다)'
 );
 select bag_eq(
-  $$select unnest(emails) from public.dormant_households_to_warn()$$,
+  $$select o->>'email' from public.dormant_households_to_warn(), jsonb_array_elements(owners) o$$,
   $$values ('owner1@dorm.test'),('owner2@dorm.test')$$,
   '(3) 관리자 전원에게 보낸다 — 한 명만 보내면 그 사람이 못 볼 때 집이 사라진다'
 );
 select is(
-  (select count(*)::int from public.dormant_households_to_warn() where 'fam@dorm.test' = any(emails)),
+  (select count(*)::int from public.dormant_households_to_warn(), jsonb_array_elements(owners) o
+    where o->>'email' = 'fam@dorm.test'),
   0, '(3) 일반 구성원은 예고 대상이 아니다');
+
+-- ⚠ 언어를 사람별로 준다. 외국인에게 한국어 메일이 나가면 안 되고, 관리자마다
+--   언어가 다를 수 있어 한 통으로 묶을 수 없다.
+update profiles set locale = 'en' where id = 'e0000000-0000-0000-0000-000000000002';
+select bag_eq(
+  $$select coalesce(o->>'locale','(모름)')
+      from public.dormant_households_to_warn(), jsonb_array_elements(owners) o$$,
+  $$values ('(모름)'),('en')$$,
+  '(3) 관리자마다 제 언어가 함께 온다 (아직 앱을 안 연 사람은 모름 → 두 언어로 보낸다)'
+);
 select is(
   (select warned_at is null from households where id = 'e0000001-0000-0000-0000-00000000000d'),
   true, '(4) 목록을 뽑았다고 예고한 것이 되지는 않는다 — 메일이 나간 뒤에 표시한다');

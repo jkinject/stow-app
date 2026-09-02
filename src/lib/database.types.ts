@@ -595,18 +595,21 @@ export type Database = {
           created_at: string
           display_name: string
           id: string
+          locale: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           display_name: string
           id: string
+          locale?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
           display_name?: string
           id?: string
+          locale?: string | null
         }
         Relationships: []
       }
@@ -894,9 +897,9 @@ export type Database = {
       dormant_households_to_warn: {
         Args: never
         Returns: {
-          emails: string[]
           household_id: string
           household_name: string
+          owners: Json
         }[]
       }
       gen_invite_code: { Args: never; Returns: string }
