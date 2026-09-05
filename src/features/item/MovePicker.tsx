@@ -5,19 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconBox, IconBoxes } from '@/components/Icon';
 import { ThumbStack } from '@/components/ThumbStack';
 import { Button, Empty, Field, Loading } from '@/components/ui';
-import { useThumbUrls } from '@/features/item/thumbs';
 import { useAllContainers, useCreateContainerIn, useLocations } from '@/features/storage/api';
 import { useCoverStacks } from '@/features/storage/covers';
 import { LocationSheet } from '@/features/storage/LocationSheet';
+import { ICON, pickerSt, Slot, STACK_TILE, Target } from '@/features/storage/PickerRow';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, space, tinted } from '@/lib/theme';
+import { useTheme, type, space, tinted } from '@/lib/theme';
 
 export type MoveTarget = { containerId: string } | { locationId: string };
-
-/** 왼쪽 아이콘 칸과 그 안의 아이콘. 사진 더미는 이보다 작다 — 부속이니까 */
-const SLOT = 36;
-const ICON = 20;
-const STACK_TILE = 30;
 
 
 /* ⚠ `tinted` 는 lib/theme 으로 옮겼다 — 카테고리 색 배지에서도 같은 규칙이 필요해졌다.
@@ -187,25 +182,25 @@ export function MovePicker({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent={false}>
-      <View style={[st.root, { backgroundColor: c.bg, paddingTop: insets.top }]}>
-        <View style={[st.head, { borderBottomColor: c.border }]}>
-          <Text style={[st.title, { color: c.text }]}>{title ?? t.item.moveTitle}</Text>
+      <View style={[pickerSt.root, { backgroundColor: c.bg, paddingTop: insets.top }]}>
+        <View style={[pickerSt.head, { borderBottomColor: c.border }]}>
+          <Text style={[pickerSt.title, { color: c.text }]}>{title ?? t.item.moveTitle}</Text>
           <Pressable onPress={onClose} hitSlop={12} disabled={busy}>
-            <Text style={[st.close, { color: c.accentText }]}>{t.common.close}</Text>
+            <Text style={[pickerSt.close, { color: c.accentText }]}>{t.common.close}</Text>
           </Pressable>
         </View>
 
         {loading ? (
           <Loading />
         ) : locs.length === 0 ? (
-          <View style={st.rescue}>
+          <View style={pickerSt.rescue}>
             <Empty text={t.item.noPlaces} hint={t.item.noPlacesHint} />
             <Button label={t.locSheet.title} onPress={() => setCreating(true)} />
           </View>
         ) : (
           <ScrollView
             ref={scrollRef}
-            contentContainerStyle={[st.body, { paddingBottom: insets.bottom + 32 }]}
+            contentContainerStyle={[pickerSt.body, { paddingBottom: insets.bottom + 32 }]}
             keyboardShouldPersistTaps="handled"
             onLayout={(e) => {
               viewH.current = e.nativeEvent.layout.height;
@@ -225,7 +220,7 @@ export function MovePicker({
               return (
                 <View
                   key={loc.id}
-                  style={st.group}
+                  style={pickerSt.group}
                   onLayout={(e) => {
                     if (!holdsCurrent) return;
                     hereY.current.group = e.nativeEvent.layout.y;
@@ -240,7 +235,7 @@ export function MovePicker({
                       setOpen((o) => ({ ...o, [loc.id]: !o[loc.id] }));
                     }}
                     style={({ pressed }) => [
-                      st.row,
+                      pickerSt.row,
                       {
                         // 물건이 든 장소는 옅게, 정확한 자리(박스/직속)는 진하게 —
                         // 두 단계로 나눠야 "이 장소 안, 그중 이 칸" 이 한눈에 읽힌다
@@ -256,11 +251,11 @@ export function MovePicker({
                         오른쪽에 딸려 붙는다 — 왼쪽에 사진 세 장을 겹치니 줄의
                         시작이 뭉개져 보였다(사용자 보고). */}
                     <Slot><IconBoxes color={c.textFaint} size={ICON} /></Slot>
-                    <View style={st.rowMain}>
-                      <Text style={[st.rowTitleStrong, { color: c.text }]} numberOfLines={1}>
+                    <View style={pickerSt.rowMain}>
+                      <Text style={[pickerSt.rowTitleStrong, { color: c.text }]} numberOfLines={1}>
                         {loc.name}
                       </Text>
-                      <Text style={[st.rowSub, { color: c.textFaint }]} numberOfLines={1}>
+                      <Text style={[pickerSt.rowSub, { color: c.textFaint }]} numberOfLines={1}>
                         {mine.length > 0 ? t.places.boxes(mine.length) : t.item.noBoxesYet}
                       </Text>
                     </View>
@@ -268,10 +263,10 @@ export function MovePicker({
                         ⚠ 사진 **앞**이다. 뒤에 두면 배지 없는 줄에도 자리를 비워 둬야
                         사진 오른쪽 끝이 맞는데, 그러면 대부분의 줄에 빈 칸이 남는다. */}
                     {holdsCurrent && !expanded && (
-                      <Text style={[st.here, { color: c.accentText }]}>{t.item.moveHere}</Text>
+                      <Text style={[pickerSt.here, { color: c.accentText }]}>{t.item.moveHere}</Text>
                     )}
                     <ThumbStack paths={cover.loc.get(loc.id)} get={thumbs.get} size={STACK_TILE} />
-                    <Text style={[st.chevron, { color: c.textFaint }]}>
+                    <Text style={[pickerSt.chevron, { color: c.textFaint }]}>
                       {expanded ? '\u25BE' : '\u25B8'}
                     </Text>
                   </Pressable>
@@ -279,7 +274,7 @@ export function MovePicker({
                   {expanded && (
                     <>
                       {/* 장소 직속 — 신발장 우산, 냉장고 우유처럼 박스에 안 넣는 물건 */}
-                      <View style={st.indent}>
+                      <View style={pickerSt.indent}>
                         {/* ⚠ 여기엔 사진 더미를 달지 않는다. 이 줄은 담는 곳이 아니라
                             **동작**("그냥 두기")이고, 이름이 길어서 오른쪽에 더미까지
                             붙이면 글자가 잘린다. */}
@@ -296,7 +291,7 @@ export function MovePicker({
                       {mine.map((b) => (
                         <View
                           key={b.id}
-                          style={st.indent}
+                          style={pickerSt.indent}
                           onLayout={(e) => {
                             if (currentContainerId !== b.id) return;
                             hereY.current.row = e.nativeEvent.layout.y;
@@ -318,7 +313,7 @@ export function MovePicker({
 
                       {/* 박스를 만드는 길. 장소마다 따로 둔다 — 어느 장소에 만드는지가
                           곧 그 물건이 갈 자리라, 목록 맨 아래 버튼 하나로는 알 수 없다. */}
-                      <View style={st.indent}>
+                      <View style={pickerSt.indent}>
                         {boxFor === loc.id ? (
                           <View style={st.newBox}>
                             <Field
@@ -346,9 +341,9 @@ export function MovePicker({
                             }}
                             disabled={busy}
                             hitSlop={8}
-                            style={st.addMore}
+                            style={pickerSt.addMore}
                           >
-                            <Text style={[st.addMoreText, { color: c.accentText }]}>
+                            <Text style={[pickerSt.addMoreText, { color: c.accentText }]}>
                               {t.item.addBoxHere}
                             </Text>
                           </Pressable>
@@ -361,8 +356,8 @@ export function MovePicker({
             })}
 
             {/* 목록이 있어도 새로 만들 수 있다 */}
-            <Pressable onPress={() => setCreating(true)} hitSlop={8} style={st.addMore}>
-              <Text style={[st.addMoreText, { color: c.accentText }]}>+ {t.locSheet.title}</Text>
+            <Pressable onPress={() => setCreating(true)} hitSlop={8} style={pickerSt.addMore}>
+              <Text style={[pickerSt.addMoreText, { color: c.accentText }]}>+ {t.locSheet.title}</Text>
             </Pressable>
           </ScrollView>
         )}
@@ -377,110 +372,8 @@ export function MovePicker({
   );
 }
 
-/** 줄 왼쪽의 아이콘 칸. 크기가 고정이라 모든 줄의 글자가 같은 x 에서 시작한다 */
-function Slot({ children }: { children: React.ReactNode }) {
-  const { c } = useTheme();
-  return <View style={[st.slot, { backgroundColor: c.sunk }]}>{children}</View>;
-}
-
-function Target({
-  label,
-  sub,
-  icon,
-  paths,
-  get,
-  here,
-  busy,
-  onPress,
-}: {
-  label: string;
-  /** 없으면 한 줄짜리 줄이 된다 (장소 직속 항목) */
-  sub?: string;
-  /** 왼쪽 칸 — 그 줄이 무엇인지(장소냐 박스냐) */
-  icon: React.ReactNode;
-  paths?: string[];
-  get: ReturnType<typeof useThumbUrls>['get'];
-  here: boolean;
-  busy: boolean;
-  onPress: () => void;
-}) {
-  const { c } = useTheme();
-  const t = useT();
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={here || busy}
-      style={({ pressed }) => [
-        st.row,
-        {
-          backgroundColor: here ? tinted(c.accent, '33', c.card) : c.card,
-          borderColor: here ? c.accent : 'transparent',
-        },
-        (pressed || here || busy) && { opacity: here ? 1 : 0.6 },
-      ]}
-    >
-      {/* ⚠ 왼쪽 자리는 항상 차지한다. 비워 두면 그 줄만 글자가 왼쪽으로 밀려서
-          목록의 시작선이 어긋난다(실기기 확인). */}
-      <Slot>{icon}</Slot>
-      <View style={st.rowMain}>
-        <Text style={[st.rowTitle, { color: c.text }]} numberOfLines={1}>
-          {label}
-        </Text>
-        {!!sub && (
-          <Text style={[st.rowSub, { color: c.textFaint }]} numberOfLines={1}>
-            {sub}
-          </Text>
-        )}
-      </View>
-      {here && <Text style={[st.here, { color: c.accentText }]}>{t.item.moveHere}</Text>}
-      <ThumbStack paths={paths} get={get} size={STACK_TILE} />
-    </Pressable>
-  );
-}
-
 const st = StyleSheet.create({
-  root: { flex: 1 },
-  head: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: space.xl,
-    paddingVertical: space.lg,
-    borderBottomWidth: 1,
-  },
-  title: { fontSize: type.title, fontWeight: '700' },
-  close: { fontSize: type.body, fontWeight: '600' },
-  body: { paddingHorizontal: space.xl, paddingTop: space.lg, gap: space.xl },
-  group: { gap: space.sm },
-  indent: { paddingLeft: space.xl },
-  row: {
-    borderRadius: radius.sm,
-    // ⚠ 강조할 때만 borderWidth 를 주면 그 줄만 2px 커져 목록이 흔들린다.
-    //   자리를 항상 잡아 두고 **색만** 바꾼다.
-    borderWidth: 1,
-    borderColor: 'transparent',
-    paddingHorizontal: space.lg,
-    paddingVertical: space.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.md,
-  },
-  rowMain: { flex: 1, gap: space.xs },
-  rowTitle: { fontSize: type.body, fontWeight: '600' },
-  rowTitleStrong: { fontSize: type.subtitle, fontWeight: '700' },
-  rowSub: { fontSize: type.caption },
-  here: { fontSize: type.caption, fontWeight: '700' },
-  rescue: { paddingHorizontal: space.xl, gap: space.xs },
-  addMore: { alignSelf: 'flex-start', paddingVertical: space.sm },
+  /** 이 화면에만 있는 것 — 목적지 목록 안에서 박스를 새로 만드는 자리 */
   newBox: { gap: space.md, paddingVertical: space.xs },
   hint: { fontSize: type.caption },
-  chevron: { fontSize: type.body, fontWeight: '700' },
-  slot: {
-    width: SLOT,
-    height: SLOT,
-    borderRadius: radius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addMoreText: { fontSize: type.body, fontWeight: '600' },
 });

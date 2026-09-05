@@ -9,6 +9,7 @@ import { useHousehold } from '@/features/household/context';
 import { useAudit } from '@/features/history/api';
 import { Fab } from '@/components/Fab';
 import { PhotoViewer } from '@/components/PhotoViewer';
+import { useToast } from '@/components/Toast';
 import { ItemCard } from '@/features/item/ItemCard';
 import { IMAGE_CACHE_POLICY, useThumbUrls } from '@/features/item/thumbs';
 import { useItemPhotoUrl } from '@/features/item/api';
@@ -19,8 +20,10 @@ import {
   useContainerItems,
   useDeleteContainerById,
   useLocations,
+  useMoveContainer,
   useUpdateContainer,
 } from '@/features/storage/api';
+import { BoxMovePicker } from '@/features/storage/BoxMovePicker';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/lib/i18n';
 import { relTime } from '@/lib/time';
@@ -50,6 +53,7 @@ export default function ContainerDetail() {
   const t = useT();
   const router = useRouter();
   const { activeId } = useHousehold();
+  const toast = useToast();
 
   const container = useContainer(containerId);
   const items = useContainerItems(containerId);
@@ -68,6 +72,7 @@ export default function ContainerDetail() {
   }, [items.data, thumbs]);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [moving, setMoving] = useState(false);
   const [photoSheet, setPhotoSheet] = useState(false);
   const [viewer, setViewer] = useState(false);
 
@@ -89,6 +94,7 @@ export default function ContainerDetail() {
   const setPhoto = useSetPhoto('containers', containerId, activeId);
   const removePhoto = useRemovePhoto('containers', containerId);
   const updateContainer = useUpdateContainer(containerId);
+  const moveContainer = useMoveContainer(containerId);
   const deleteContainer = useDeleteContainerById(containerId);
 
   function onDeleteBox() {
@@ -187,10 +193,42 @@ export default function ContainerDetail() {
                 Alert.alert(t.item.saveFailed, e instanceof Error ? e.message : t.common.tryAgain);
               }
             }}
+            onMove={() => setMoving(true)}
+            locationName={location?.name ?? null}
             onDelete={onDeleteBox}
             deleting={deleteContainer.isPending}
           />
         )}
+
+        {/*
+          박스를 통째로 옮기기 (2026-09-05 사용자 요청).
+
+          ⚠ 성공은 토스트다 — 이동은 확인을 누르게 할 만큼 무거운 일이 아니다.
+            실패는 Alert 으로 붙잡는다(사라지는 알림은 놓친다).
+          ⚠ 토스트는 **모달이 닫힌 뒤에** 띄운다. Modal 이 떠 있는 동안에는 알림이
+            그 아래에 깔려 보이지 않는다(components/Toast.tsx 참고).
+        */}
+        <BoxMovePicker
+          visible={moving}
+          householdId={activeId}
+          currentLocationId={container.data?.location_id ?? null}
+          itemCount={list.length}
+          busy={moveContainer.isPending}
+          onClose={() => setMoving(false)}
+          onPick={async (locationId, name) => {
+            try {
+              await moveContainer.mutateAsync(locationId);
+              setMoving(false);
+              setSettingsOpen(false);
+              toast(t.container.movedTo(name));
+            } catch (e) {
+              Alert.alert(
+                t.container.moveFailed,
+                e instanceof Error ? e.message : t.common.tryAgain,
+              );
+            }
+          }}
+        />
 
         {/* 크게 보기 — 물건 상세와 **같은 컴포넌트**를 쓴다 */}
         <PhotoViewer
@@ -283,15 +321,20 @@ export default function ContainerDetail() {
  */
 function BoxSettings({
   initialName,
+  locationName,
   busy,
   deleting,
   onSave,
+  onMove,
   onDelete,
 }: {
   initialName: string;
+  /** 지금 있는 장소 — 어디에서 어디로 가는지 알아야 옮길 마음이 선다 */
+  locationName: string | null;
   busy: boolean;
   deleting: boolean;
   onSave: (patch: { name: string }) => void;
+  onMove: () => void;
   onDelete: () => void;
 }) {
   const { c } = useTheme();
@@ -315,6 +358,19 @@ function BoxSettings({
         disabled={!nameOk || !changed}
         onPress={() => onSave({ name: trimmed })}
       />
+      {/*
+        박스 옮기기 — 이름 수정과 삭제 사이. 삭제와 붙여 두지 않는다.
+        "옮기기" 는 되돌릴 수 있는 일이고 삭제는 아니라서, 위험한 것끼리 모아 두면
+        손이 미끄러진다. 지금 있는 장소를 함께 적어 어디에서 떠나는지 밝힌다.
+      */}
+      <View style={st.settingsMove}>
+        <Text style={[st.fieldLabel, { color: c.textFaint }]}>{t.container.place}</Text>
+        <Text style={[st.settingsHere, { color: c.text }]} numberOfLines={1}>
+          {locationName ?? t.common.notFound}
+        </Text>
+        <Button label={t.container.moveBox} onPress={onMove} variant="secondary" />
+      </View>
+
       <View style={st.settingsDanger}>
         <Button label={t.container.deleteBox} onPress={onDelete} variant="danger" busy={deleting} />
       </View>
@@ -365,6 +421,8 @@ const st = StyleSheet.create({
   },
   photoAddText: { fontSize: type.body, fontWeight: '600' },
   settings: { borderRadius: radius.md, padding: space.lg, gap: space.sm },
+  settingsMove: { marginTop: space.lg, gap: space.sm },
+  settingsHere: { fontSize: type.body, fontWeight: '600' },
   settingsDanger: { marginTop: space.lg },
   fieldLabel: { fontSize: type.tiny, fontWeight: '600', letterSpacing: tracking.wide },
   err: { fontSize: type.caption },

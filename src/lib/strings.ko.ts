@@ -217,6 +217,17 @@ export const KO = {
     printFailed: '인쇄하지 못했습니다',
     addItem: '이 박스에 물건 등록',
     contents: (n: number) => `내용물${n > 0 ? ` · ${n}개` : ''}`,
+    /* ── 박스를 통째로 옮기기 (2026-09-05 사용자 요청) ── */
+    place: '지금 있는 장소',
+    moveBox: '다른 장소로 옮기기',
+    moveTitle: '박스를 어디로 옮길까요?',
+    /** ⚠ 박스만 가고 물건은 남는 줄 알면 누르기가 무섭다. 미리 밝힌다 */
+    moveWithItems: (n: number) => `안에 든 물건 ${n}개도 함께 옮겨집니다.`,
+    moveNowhere: '옮길 다른 장소가 없습니다',
+    moveNowhereHint: '장소를 하나 더 만들면 그리로 옮길 수 있습니다.',
+    /** 조사는 받침을 따라간다 — `item.movedTo` 와 같은 규칙(withRo) */
+    movedTo: (name: string) => `${withRo(name)} 옮겼습니다.`,
+    moveFailed: '옮기지 못했습니다',
     deleteBox: '이 박스 지우기',
     deleteTitle: '이 박스를 지울까요?',
     deleteWithItems: (n: number, loc: string) =>

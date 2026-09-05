@@ -322,6 +322,52 @@ export function useUpdateContainer(containerId: string) {
 }
 
 /**
+ * 박스를 **통째로** 다른 장소로 옮긴다 (2026-09-05 사용자 요청 — "박스를 통째로
+ * 다른 장소로 옮기는 기능이 없음").
+ *
+ * 정리는 물건 하나가 아니라 박스째 움직인다. 지금까지는 새 장소에 박스를 다시 만들고
+ * 물건을 하나씩 옮기는 수밖에 없었다.
+ *
+ * ⚠ **안에 든 물건의 장소는 여기서 손대지 않는다.** DB 트리거(t46_relocate_items)가
+ *   따라 옮긴다. 앱에서 두 번 update 하면 사이에 끊겼을 때 박스와 물건이 서로 다른
+ *   장소를 가리킨 채 남는다 — 물건을 찾아 주는 앱에서 제일 나쁜 상태다 (P2).
+ *
+ * ⚠ **`.select()` 로 영향 행 수를 본다.** RLS 거부는 오류가 아니라 0행으로 온다.
+ *   확인하지 않으면 아무 일도 안 일어난 것을 "옮겼습니다" 로 알리게 된다.
+ */
+export function useMoveContainer(containerId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (locationId: string) => {
+      const { data, error } = await supabase
+        .from('containers')
+        .update({ location_id: locationId })
+        .eq('id', containerId)
+        .is('deleted_at', null)
+        .select('id');
+      if (error) throw error;
+      if ((data ?? []).length === 0) throw new Error('이 박스를 옮길 권한이 없습니다.');
+    },
+    /**
+     * ⚠ 무효화할 곳이 많다. 박스 하나가 옮겨지면 **떠난 장소와 도착한 장소**의 박스
+     *   목록, 두 장소의 박스·물건 개수, 그리고 안에 든 물건들의 경로 문자열까지
+     *   한꺼번에 옛 값이 된다. 하나라도 빠뜨리면 "옮겼는데 저기엔 아직 그대로" 가 된다.
+     */
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['container', containerId] });
+      void qc.invalidateQueries({ queryKey: ['container-by-token'] }); // QR 로 열어 둔 화면
+      void qc.invalidateQueries({ queryKey: ['containers'] });         // 장소별 박스 목록(양쪽)
+      void qc.invalidateQueries({ queryKey: ['all-containers'] });
+      void qc.invalidateQueries({ queryKey: ['locations'] });          // 장소별 박스·물건 개수
+      void qc.invalidateQueries({ queryKey: ['items'] });              // 박스 내용물 · 낱개 목록
+      void qc.invalidateQueries({ queryKey: ['item'] });               // 물건 상세의 장소 이름
+      void qc.invalidateQueries({ queryKey: ['search'] });             // 경로 문자열
+      void qc.invalidateQueries({ queryKey: ['add-context'] });        // 등록 화면 헤더
+    },
+  });
+}
+
+/**
  * 박스 삭제 (soft delete).
  * 안의 물건은 지워지지 않는다 — 트리거 t45_detach_items 가 `container_id` 를 null 로
  * 풀어 장소 직속으로 남긴다. 물건을 잃는 것보다 낫다는 판단이다 (§M3).
