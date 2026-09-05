@@ -3,7 +3,8 @@ import * as Sharing from 'expo-sharing';
 import { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Button, Empty, Loading, Screen, SectionLabel } from '@/components/ui';
+import { IconCheck } from '@/components/Icon';
+import { Button, Empty, Loading, Screen, SectionLabel, TextButton } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { A4_PT, buildLabelSheetHtml, PER_PAGE, type LabelInput } from '@/features/qr/labels';
 import { useAllContainers, useLocations } from '@/features/storage/api';
@@ -103,12 +104,11 @@ export default function Labels() {
         ) : (
           <>
             <View style={st.bulk}>
-              <Pressable onPress={() => setPicked(new Set(list.map((x) => x.id)))} hitSlop={8}>
-                <Text style={[st.bulkText, { color: c.accentText }]}>{t.labels.selectAll}</Text>
-              </Pressable>
-              <Pressable onPress={() => setPicked(new Set())} hitSlop={8}>
-                <Text style={[st.bulkText, { color: c.accentText }]}>{t.labels.clear}</Text>
-              </Pressable>
+              <TextButton
+                label={t.labels.selectAll}
+                onPress={() => setPicked(new Set(list.map((x) => x.id)))}
+              />
+              <TextButton label={t.labels.clear} onPress={() => setPicked(new Set())} />
             </View>
 
             <SectionLabel>{t.labels.boxCount(list.length)}</SectionLabel>
@@ -132,7 +132,7 @@ export default function Labels() {
                         on && { backgroundColor: c.accent },
                       ]}
                     >
-                      {on && <Text style={[st.checkMark, { color: c.onAccent }]}>✓</Text>}
+                      {on && <IconCheck size={14} color={c.onAccent} />}
                     </View>
                     <View style={st.rowMain}>
                       <Text style={[st.name, { color: c.text }]} numberOfLines={1}>
@@ -179,7 +179,6 @@ const st = StyleSheet.create({
   body: { paddingHorizontal: space.xl, gap: space.md, flex: 1 },
   intro: { fontSize: type.label, lineHeight: leading.label },
   bulk: { flexDirection: 'row', gap: space.xl },
-  bulkText: { fontSize: type.label, fontWeight: '600' },
   scroll: { flexGrow: 0, flexShrink: 1 },
   scrollInner: { gap: space.sm, paddingBottom: space.sm },
   row: {
@@ -197,7 +196,6 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkMark: { fontSize: type.body, fontWeight: '800' },
   rowMain: { flex: 1, gap: space.xs },
   name: { fontSize: type.bodyStrong, fontWeight: '600' },
   loc: { fontSize: type.caption },

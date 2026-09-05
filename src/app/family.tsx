@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ChoiceSheet, type Choice } from '@/components/ChoiceSheet';
-import { IconUsers } from '@/components/Icon';
-import { Button, Field, Loading, Screen, SectionLabel } from '@/components/ui';
+import { IconDots, IconUsers } from '@/components/Icon';
+import { Button, Field, IconButton, Loading, Screen, SectionLabel } from '@/components/ui';
 import {
   useInvite,
   useLeaveHousehold,
@@ -343,9 +343,12 @@ function MemberRow({
         </View>
 
         {showMenu && (
-          <Pressable onPress={() => setMenu(true)} hitSlop={12} style={st.dots}>
-            <Text style={[st.dotsText, { color: c.textMuted }]}>⋯</Text>
-          </Pressable>
+          <IconButton
+            icon={<IconDots size={20} color={c.textMuted} />}
+            onPress={() => setMenu(true)}
+            label={t.family.memberMenu(member.name)}
+            style={st.dots}
+          />
         )}
       </View>
 
@@ -455,7 +458,6 @@ const st = StyleSheet.create({
   body: { paddingHorizontal: space.xl, gap: space.xxl, paddingTop: space.xs },
   section: { gap: space.sm },
   card: { borderRadius: radius.md, overflow: 'hidden' },
-  list: { gap: space.sm },
 
   house: { borderRadius: radius.md, padding: space.lg, gap: space.sm },
   houseName: { fontSize: type.title, fontWeight: '700' },
@@ -490,9 +492,7 @@ const st = StyleSheet.create({
   badgeText: { fontSize: type.tiny, fontWeight: '700' },
   dots: { paddingHorizontal: space.xs },
   /* ⚠ 기호를 상자 가운데 앉히는 값이다 — 읽는 행간이 아니므로 `leading` 을 쓰지 않는다 */
-  dotsText: { fontSize: type.h2, fontWeight: '700', lineHeight: 22 },
 
-  newBtn: { minWidth: 118 },
   invite: { borderRadius: radius.md, padding: space.lg, gap: space.md },
   code: { fontSize: type.h2, fontWeight: '700', letterSpacing: tracking.code },
   inviteFoot: { flexDirection: 'row', alignItems: 'center', gap: space.xxl },

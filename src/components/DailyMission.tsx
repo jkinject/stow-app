@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { IconCheck, IconX } from '@/components/Icon';
 import { MISSION_GOAL } from '@/features/mission/api';
 import { useT } from '@/lib/i18n';
 import { radius, space, tracking, type, useTheme } from '@/lib/theme';
@@ -54,9 +55,11 @@ function Stamp({ n, filled, index }: { n: number; filled: boolean; index: number
         },
       ]}
     >
-      <Text style={[st.stampText, { color: filled ? m.badgeFg : m.stampOff }]}>
-        {filled ? '✓' : n}
-      </Text>
+      {filled ? (
+        <IconCheck size={18} color={m.badgeFg} />
+      ) : (
+        <Text style={[st.stampText, { color: m.stampOff }]}>{n}</Text>
+      )}
     </Animated.View>
   );
 }
@@ -116,7 +119,7 @@ export function DailyMission({
               accessibilityLabel={t.mission.hide}
               style={({ pressed }) => [st.hide, pressed && { opacity: 0.5 }]}
             >
-              <Text style={[st.hideText, { color: m.textFaint }]}>✕</Text>
+              <IconX size={16} color={m.textFaint} />
             </Pressable>
           ) : (
             <Text style={[st.count, { color: m.textFaint }]}>
@@ -132,8 +135,9 @@ export function DailyMission({
           { backgroundColor: complete ? m.doneBg : m.badgeBg },
         ]}
       >
+        {complete && <IconCheck size={14} color={m.doneFg} />}
         <Text style={[st.badgeText, { color: complete ? m.doneFg : m.badgeFg }]}>
-          {complete ? `✓  ${t.mission.success}` : t.mission.title}
+          {complete ? t.mission.success : t.mission.title}
         </Text>
       </View>
     </View>
@@ -158,6 +162,9 @@ const st = StyleSheet.create({
   },
   /** 카드 위 테두리에 걸치는 알약 배지 */
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
     position: 'absolute',
     top: -space.md,
     alignSelf: 'center',
@@ -169,7 +176,6 @@ const st = StyleSheet.create({
 
   /** 개수가 있던 자리. 글자와 같은 줄에 앉으므로 크기를 맞춘다 */
   hide: { paddingLeft: space.sm },
-  hideText: { fontSize: type.label, fontWeight: '700' },
 
   stamps: { flexDirection: 'row', alignItems: 'center' },
   /**

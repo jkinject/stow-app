@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconBoxes } from '@/components/Icon';
-import { Button, Empty, Loading } from '@/components/ui';
+import { ModalHeader } from '@/components/Sheet';
+import { Button, Empty, Loading, TextButton } from '@/components/ui';
 import { useT } from '@/lib/i18n';
 import { space, type, useTheme } from '@/lib/theme';
 
@@ -61,12 +62,10 @@ export function BoxMovePicker({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent={false}>
       <View style={[pickerSt.root, { backgroundColor: c.bg, paddingTop: insets.top }]}>
-        <View style={[pickerSt.head, { borderBottomColor: c.border }]}>
-          <Text style={[pickerSt.title, { color: c.text }]}>{t.container.moveTitle}</Text>
-          <Pressable onPress={onClose} hitSlop={12} disabled={busy}>
-            <Text style={[pickerSt.close, { color: c.accentText }]}>{t.common.close}</Text>
-          </Pressable>
-        </View>
+        <ModalHeader
+          title={t.container.moveTitle}
+          right={<TextButton label={t.common.close} onPress={onClose} disabled={busy} />}
+        />
 
         {locations.isLoading ? (
           <Loading />
@@ -108,11 +107,11 @@ export function BoxMovePicker({
 
             {/* 목록이 있어도 새로 만들 수 있다 — 이동 화면과 같은 자리, 같은 문구 */}
             {others.length > 0 && (
-              <Pressable onPress={() => setCreating(true)} hitSlop={8} style={pickerSt.addMore}>
-                <Text style={[pickerSt.addMoreText, { color: c.accentText }]}>
-                  + {t.locSheet.title}
-                </Text>
-              </Pressable>
+              <TextButton
+                label={`+ ${t.locSheet.title}`}
+                onPress={() => setCreating(true)}
+                style={pickerSt.addMore}
+              />
             )}
           </ScrollView>
         )}

@@ -85,18 +85,12 @@ export function Target({
   );
 }
 
+/**
+ * ⚠ 머리말(제목·닫기)은 여기 없다 — `components/Sheet` 의 `ModalHeader` 가 맡는다
+ *   (2026-09-06 점검에서 화면마다 제각각이던 것을 한 벌로 모았다).
+ */
 export const pickerSt = StyleSheet.create({
   root: { flex: 1 },
-  head: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: space.xl,
-    paddingVertical: space.lg,
-    borderBottomWidth: 1,
-  },
-  title: { fontSize: type.title, fontWeight: '700' },
-  close: { fontSize: type.body, fontWeight: '600' },
   body: { paddingHorizontal: space.xl, paddingTop: space.lg, gap: space.xl },
   group: { gap: space.sm },
   indent: { paddingLeft: space.xl },
@@ -119,8 +113,6 @@ export const pickerSt = StyleSheet.create({
   here: { fontSize: type.caption, fontWeight: '700' },
   rescue: { paddingHorizontal: space.xl, gap: space.xs },
   addMore: { alignSelf: 'flex-start', paddingVertical: space.sm },
-  addMoreText: { fontSize: type.body, fontWeight: '600' },
-  chevron: { fontSize: type.body, fontWeight: '700' },
   slot: {
     width: SLOT,
     height: SLOT,

@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Keyboard, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { IconBox, IconBoxes } from '@/components/Icon';
+import { IconBox, IconBoxes, IconChevron } from '@/components/Icon';
 import { ThumbStack } from '@/components/ThumbStack';
-import { Button, Empty, Field, Loading } from '@/components/ui';
+import { ModalHeader } from '@/components/Sheet';
+import { Button, Empty, Field, Loading, TextButton } from '@/components/ui';
 import { useAllContainers, useCreateContainerIn, useLocations } from '@/features/storage/api';
 import { useCoverStacks } from '@/features/storage/covers';
 import { LocationSheet } from '@/features/storage/LocationSheet';
@@ -261,12 +262,10 @@ export function MovePicker({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent={false}>
       <View style={[pickerSt.root, { backgroundColor: c.bg, paddingTop: insets.top }]}>
-        <View style={[pickerSt.head, { borderBottomColor: c.border }]}>
-          <Text style={[pickerSt.title, { color: c.text }]}>{title ?? t.item.moveTitle}</Text>
-          <Pressable onPress={onClose} hitSlop={12} disabled={busy}>
-            <Text style={[pickerSt.close, { color: c.accentText }]}>{t.common.close}</Text>
-          </Pressable>
-        </View>
+        <ModalHeader
+          title={title ?? t.item.moveTitle}
+          right={<TextButton label={t.common.close} onPress={onClose} disabled={busy} />}
+        />
 
         {loading ? (
           <Loading />
@@ -352,9 +351,14 @@ export function MovePicker({
                       <Text style={[pickerSt.here, { color: c.accentText }]}>{t.item.moveHere}</Text>
                     )}
                     <ThumbStack paths={cover.loc.get(loc.id)} get={thumbs.get} size={STACK_TILE} />
-                    <Text style={[pickerSt.chevron, { color: c.textFaint }]}>
-                      {expanded ? '\u25BE' : '\u25B8'}
-                    </Text>
+                    {/* ⚠ 문자(▸▾)가 아니라 그림이다. 문자는 기기 폰트마다 크기·기울기가
+                        달라지고 색도 따라오지 않는다 (Icon.tsx 의 규칙). 펼침은 같은
+                        그림을 **돌려서** 나타낸다 — 방향이 하나뿐이어야 눈이 따라간다. */}
+                    <IconChevron
+                      size={18}
+                      color={c.textFaint}
+                      style={expanded ? { transform: [{ rotate: '90deg' }] } : undefined}
+                    />
                   </Pressable>
 
                   {expanded && (
@@ -420,7 +424,8 @@ export function MovePicker({
                             </Text>
                           </View>
                         ) : (
-                          <Pressable
+                          <TextButton
+                            label={t.item.addBoxHere}
                             onPress={() => {
                               setBoxName('');
                               setBoxFor(loc.id);
@@ -430,13 +435,8 @@ export function MovePicker({
                               userMoved.current = true;
                             }}
                             disabled={busy}
-                            hitSlop={8}
                             style={pickerSt.addMore}
-                          >
-                            <Text style={[pickerSt.addMoreText, { color: c.accentText }]}>
-                              {t.item.addBoxHere}
-                            </Text>
-                          </Pressable>
+                          />
                         )}
                       </View>
                     </>
@@ -446,9 +446,11 @@ export function MovePicker({
             })}
 
             {/* 목록이 있어도 새로 만들 수 있다 */}
-            <Pressable onPress={() => setCreating(true)} hitSlop={8} style={pickerSt.addMore}>
-              <Text style={[pickerSt.addMoreText, { color: c.accentText }]}>+ {t.locSheet.title}</Text>
-            </Pressable>
+            <TextButton
+              label={`+ ${t.locSheet.title}`}
+              onPress={() => setCreating(true)}
+              style={pickerSt.addMore}
+            />
           </ScrollView>
         )}
 

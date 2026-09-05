@@ -415,7 +415,7 @@ const st = StyleSheet.create({
   },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   name: { flexShrink: 1, fontSize: type.bodyStrong, fontWeight: '800', letterSpacing: tracking.tight },
-  badge: { borderRadius: radius.xs, paddingHorizontal: space.sm, paddingVertical: 2 },
+  badge: { borderRadius: radius.xs, paddingHorizontal: space.sm, paddingVertical: space.xs },
   badgeText: { fontSize: type.tiny, fontWeight: '800', fontVariant: ['tabular-nums'] },
   desc: { fontSize: type.small, lineHeight: leading.small, marginTop: space.xs },
 

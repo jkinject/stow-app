@@ -244,6 +244,8 @@ export const KO = {
     loose: ' · 낱개',
     move: '이동',
     /* ── 등록할 때 찍은 사진이 아직 안 올라간 상태 (2026-09-06) ── */
+    qtyUp: '수량 늘리기',
+    qtyDown: '수량 줄이기',
     photoUploading: '사진 올리는 중…',
     photoStuck: '사진을 올리지 못했습니다',
     photoRetry: '눌러서 다시 시도',
@@ -345,6 +347,9 @@ export const KO = {
   },
   camera: {
     zoomNone: '줌 없음',
+    /** 아이콘만 있는 버튼의 스크린리더 이름 (2026-09-06) */
+    zoomIn: '확대',
+    zoomOut: '축소',
     zoomLevel: (pct: number) => `줌 ${pct}%`,
     preparing: '카메라 준비 중…',
     restart: '카메라 다시 켜기',
@@ -446,6 +451,8 @@ export const KO = {
     memberCount: (n: number) => `${n}명`,
     me: '나',
     joined: (when: string) => `${when} 참여`,
+    /** 아이콘만 있는 버튼이라 스크린리더가 읽을 이름이 따로 필요하다 (2026-09-06) */
+    memberMenu: (name: string) => `${name} 님 메뉴 열기`,
     promote: '관리자로 지정',
     demote: '관리자 해제',
     promoteTitle: (name: string) => `${name} 님을 관리자로 지정할까요?`,

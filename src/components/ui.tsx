@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { IconX } from '@/components/Icon';
 import { useT } from '@/lib/i18n';
 import { useTheme, type, radius, space, tracking } from '@/lib/theme';
 
@@ -157,6 +158,103 @@ export function Button({
   );
 }
 
+/**
+ * 글씨만 있는 버튼 (링크·"+ 만들기"·닫기·저장…).
+ *
+ * ⚠⚠ 점검에서 **19종**이 나왔다 (2026-09-06). 같은 역할인데 파일마다 이름이 다르고
+ *   (link · open · openLink · topAction · save · close · addBtn · addMoreText ·
+ *    destPick · againText · bulkText…), 크기가 12~16, 굵기가 500·600·700 으로 갈렸다.
+ *   `Button` 은 있는데 **글씨 버튼이 없어서** 각자 만든 결과다. 글자 크기 24종을
+ *   정리했던 것과 같은 종류의 소음이라, 여기 한 벌로 모은다.
+ *
+ * 두 단계뿐이다:
+ *   `body`  — 화면의 주된 동작 (닫기 · 저장 · + 만들기)
+ *   `small` — 줄 안에 딸려 붙는 것 (목록 오른쪽 링크)
+ * 색은 기본이 강조색이고, `danger` 는 되돌릴 수 없는 것, `muted` 는 취소처럼
+ * 눈에 덜 띄어야 하는 것이다.
+ */
+export function TextButton({
+  label,
+  onPress,
+  size = 'body',
+  tone = 'accent',
+  disabled = false,
+  numberOfLines,
+  style,
+  accessibilityLabel,
+}: {
+  label: string;
+  onPress: () => void;
+  size?: 'body' | 'small';
+  tone?: 'accent' | 'muted' | 'danger';
+  disabled?: boolean;
+  numberOfLines?: number;
+  /** 자리 잡기(정렬·여백)만 준다. 글자 크기·굵기·색은 여기서 정한다 */
+  style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
+}) {
+  const { c } = useTheme();
+  const color = disabled
+    ? c.textFaint
+    : tone === 'danger'
+      ? c.danger
+      : tone === 'muted'
+        ? c.textMuted
+        : c.accentText;
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      hitSlop={12}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      style={({ pressed }) => [style, pressed && { opacity: 0.6 }]}
+    >
+      <Text
+        style={[size === 'small' ? s.textBtnSmall : s.textBtnBody, { color }]}
+        numberOfLines={numberOfLines}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+/**
+ * 아이콘 하나만 있는 버튼.
+ *
+ * ⚠ **라벨을 반드시 받는다.** 점검에서 Pressable 96개 중 접근성 라벨이 붙은 것이
+ *   15개뿐이었는데, 하필 라벨이 없는 쪽이 ⚙ · ⋯ · ✕ 처럼 **글자가 없는 버튼**이었다.
+ *   스크린리더에는 읽을 것이 아무것도 없었다. 타입으로 강제해 다시 빠지지 않게 한다.
+ */
+export function IconButton({
+  icon,
+  onPress,
+  label,
+  disabled = false,
+  style,
+}: {
+  icon: ReactNode;
+  onPress: () => void;
+  /** 스크린리더가 읽는 이름 */
+  label: string;
+  disabled?: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      hitSlop={12}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [s.iconBtn, style, (pressed || disabled) && { opacity: 0.5 }]}
+    >
+      {icon}
+    </Pressable>
+  );
+}
+
 export function Field({
   ref,
   clearable,
@@ -220,7 +318,7 @@ export function Field({
           accessibilityLabel={t.common.clear}
         >
           <View style={[s.clearCircle, { backgroundColor: c.borderStrong }]}>
-            <Text style={[s.clearMark, { color: c.card }]}>✕</Text>
+            <IconX size={12} color={c.card} />
           </View>
         </Pressable>
       )}
@@ -315,6 +413,11 @@ const s = StyleSheet.create({
   h1sub: { fontSize: type.small },
   btn: { borderWidth: 1, paddingVertical: space.lg, borderRadius: radius.sm, alignItems: 'center' },
   btnText: { fontSize: type.bodyStrong, fontWeight: '600' },
+  textBtnBody: { fontSize: type.body, fontWeight: '600' },
+  /** 작은 글씨는 굵어야 같은 무게로 읽힌다 */
+  textBtnSmall: { fontSize: type.small, fontWeight: '700' },
+  /** 아이콘 버튼의 최소 크기 — 손가락이 닿는 넓이(44dp 권장)를 hitSlop 과 함께 채운다 */
+  iconBtn: { minWidth: 32, minHeight: 32, alignItems: 'center', justifyContent: 'center' },
   field: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: space.lg, paddingVertical: space.md, fontSize: type.bodyStrong },
   /**
    * ⚠ `flex: 1` 을 여기 박으면 안 된다. 부모가 **세로** 컬럼일 때
@@ -327,10 +430,8 @@ const s = StyleSheet.create({
   /** ⚠ 아래 `leading` 의 left + 그림 너비만큼 밀어야 글자가 안 겹친다 */
   fieldWithLeading: { paddingLeft: space.huge + space.md },
   leading: { position: 'absolute', left: space.lg, zIndex: 1 },
-  clearBtn: { position: 'absolute', right: 10 },
+  clearBtn: { position: 'absolute', right: space.md },
   clearCircle: { width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  /* ⚠ 기호를 상자 가운데 앉히는 값이다 — 읽는 행간이 아니므로 `leading` 을 쓰지 않는다 */
-  clearMark: { fontSize: type.tiny, fontWeight: '700', lineHeight: 14 },
   row: {
     borderRadius: radius.sm,
     paddingHorizontal: space.lg,

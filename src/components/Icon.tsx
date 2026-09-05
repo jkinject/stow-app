@@ -1,4 +1,4 @@
-import type { ColorValue } from 'react-native';
+import type { ColorValue, StyleProp, ViewStyle } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 /**
@@ -12,16 +12,20 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
  * ⚠ `color` 는 `ColorValue` 다. 하단 탭의 `tabBarIcon` 이 넘겨주는 값이 `string` 이
  *   아니라 `ColorValue`(플랫폼 색 객체를 포함)라서, string 으로 좁히면 탭에서 못 쓴다.
  */
-type P = { size?: number; color: ColorValue };
-const S = ({ size = 22, color, children }: P & { children: React.ReactNode }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+/**
+ * ⚠ `style` 을 받는다 — 같은 그림을 **돌려 쓰는** 자리가 있다(펼침 표시의 ▸/▾).
+ *   방향마다 아이콘을 따로 그리면 두 벌이 되고, 한쪽만 고쳐진다.
+ */
+type P = { size?: number; color: ColorValue; style?: StyleProp<ViewStyle> };
+const S = ({ size = 22, color, style, children }: P & { children: React.ReactNode }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={style}
     stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
     {children}
   </Svg>
 );
 
-export const IconChevron = ({ size = 20, color }: P) => (
-  <S size={size} color={color}><Path d="M9 5l7 7-7 7" /></S>
+export const IconChevron = ({ size = 20, ...p }: P) => (
+  <S size={size} {...p}><Path d="M9 5l7 7-7 7" /></S>
 );
 
 export const IconGlobe = (p: P) => (
@@ -182,4 +186,22 @@ export const IconTag = (p: P) => (
 
 export const IconPlus = (p: P) => (
   <S {...p}><Path d="M12 5v14M5 12h14" /></S>
+);
+
+/**
+ * ⚠ 아래 셋은 화면에서 **문자로 그려지고 있던 것**을 아이콘으로 되돌린 것이다
+ *   (2026-09-06 디자인 점검). ✓ 는 6곳, ✕ 는 3곳, − 는 2곳에 문자로 박혀 있었다.
+ *   이 파일 맨 위의 규칙("문자를 아이콘으로 쓰지 않는다")이 지켜지지 않은 이유는
+ *   **여기 그 그림이 없어서**였다. 규칙만 적어 두고 대안을 안 주면 규칙이 진다.
+ */
+export const IconCheck = (p: P) => (
+  <S {...p}><Path d="M5 12.5l4.5 4.5L19 7" /></S>
+);
+
+export const IconX = (p: P) => (
+  <S {...p}><Path d="M6 6l12 12M18 6L6 18" /></S>
+);
+
+export const IconMinus = (p: P) => (
+  <S {...p}><Path d="M5 12h14" /></S>
 );

@@ -1,7 +1,4 @@
-import { Modal, Pressable, StyleSheet, Text } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { useTheme, type, overlay, space, tracking } from '@/lib/theme';
+import { BottomSheet, SheetOption } from '@/components/Sheet';
 
 /**
  * 아래에서 올라와 값 하나를 고르는 시트.
@@ -12,6 +9,10 @@ import { useTheme, type, overlay, space, tracking } from '@/lib/theme';
  *
  * 버튼 3개짜리 `Alert` 로 대신하지 않는 이유: 안드로이드는 버튼을
  * neutral/negative/positive 자리에 배치해 **적은 순서와 보이는 순서가 달라진다.**
+ *
+ * ⚠ 껍데기(배경·모서리·머리말)와 줄은 `components/Sheet` 로 옮겼다 (2026-09-06).
+ *   같은 껍데기가 세 곳에 각자 적혀 있었고 셋 다 척도 밖의 모서리(18)를 쓰고 있었다.
+ *   이 파일에 남은 것은 **"고르기" 라는 뜻**뿐이다.
  */
 export type Choice = {
   key: string;
@@ -33,64 +34,18 @@ export function ChoiceSheet({
   onPick: (key: string) => void;
   onClose: () => void;
 }) {
-  const { c } = useTheme();
-  const insets = useSafeAreaInsets();
-
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={st.backdrop} onPress={onClose}>
-        <Pressable
-          style={[
-            st.sheet,
-            { backgroundColor: c.bg, borderColor: c.border, paddingBottom: insets.bottom + 16 },
-          ]}
-          onPress={(e) => e.stopPropagation()}
-        >
-          <Text style={[st.title, { color: c.textFaint }]} numberOfLines={2}>
-            {title}
-          </Text>
-          {options.map((o, i) => (
-            <Pressable
-              key={o.key}
-              onPress={() => onPick(o.key)}
-              style={({ pressed }) => [
-                st.option,
-                i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
-                pressed && { opacity: 0.6 },
-              ]}
-            >
-              <Text
-                style={[st.optionText, { color: o.danger ? c.danger : o.on ? c.accentText : c.text }]}
-              >
-                {o.label}
-              </Text>
-              {o.on && <Text style={[st.check, { color: c.accentText }]}>✓</Text>}
-            </Pressable>
-          ))}
-        </Pressable>
-      </Pressable>
-    </Modal>
+    <BottomSheet label={title} onClose={onClose}>
+      {options.map((o, i) => (
+        <SheetOption
+          key={o.key}
+          label={o.label}
+          on={o.on}
+          danger={o.danger}
+          divider={i > 0}
+          onPress={() => onPick(o.key)}
+        />
+      ))}
+    </BottomSheet>
   );
 }
-
-const st = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: overlay.scrim, justifyContent: 'flex-end' },
-  sheet: { borderTopWidth: 1, borderTopLeftRadius: 18, borderTopRightRadius: 18, paddingTop: space.lg },
-  title: {
-    fontSize: type.tiny,
-    fontWeight: '700',
-    letterSpacing: tracking.wide,
-    textTransform: 'uppercase',
-    paddingHorizontal: space.xl,
-    paddingBottom: space.md,
-  },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: space.xl,
-    paddingVertical: space.lg,
-  },
-  optionText: { fontSize: type.bodyStrong, fontWeight: '500' },
-  check: { fontSize: type.subtitle, fontWeight: '800' },
-});

@@ -1,7 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useState } from 'react';
 import {
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,9 +8,8 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { KeyboardSpacer } from '@/components/KeyboardSpacer';
+import { BottomSheet } from '@/components/Sheet';
 import { Button, Field } from '@/components/ui';
 import { useT } from '@/lib/i18n';
 import { overlay, radius, space, tracking, type, useTheme } from '@/lib/theme';
@@ -44,7 +42,6 @@ export function CategorySheet({
 }) {
   const { c } = useTheme();
   const t = useT();
-  const insets = useSafeAreaInsets();
   const win = useWindowDimensions();
 
   /**
@@ -98,24 +95,20 @@ export function CategorySheet({
   const canSave = name.trim().length > 0 && !busy;
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <View style={st.backdrop}>
-        <KeyboardSpacer style={st.flexEnd}>
-          <View
-            style={[
-              st.sheet,
-              { backgroundColor: c.bg, borderColor: c.border, paddingBottom: insets.bottom + space.lg },
-            ]}
-          >
-            <View style={st.head}>
-              <Text style={[st.title, { color: c.text }]}>
-                {initial ? t.category.editTitle : t.category.newTitle}
-              </Text>
-              <Pressable onPress={onClose} hitSlop={12} accessibilityLabel={t.common.close}>
-                <MaterialCommunityIcons name="close" size={22} color={c.textMuted} />
-              </Pressable>
-            </View>
-
+    /*
+      ⚠ 껍데기(배경·모서리·머리말·자판 밀어올리기)는 `components/Sheet` 가 맡는다
+        (2026-09-06). 여기 있던 것과 같은 코드가 세 곳에 있었다.
+      ⚠ `dismissOnBackdrop` 를 끈 채로 둔다 — **폼**이라 밖을 눌러 닫히면 적던 것이
+        조용히 사라진다. 원래 이 화면이 그렇게 되어 있었고, 그 판단을 그대로 옮긴다.
+    */
+    <BottomSheet
+      title={initial ? t.category.editTitle : t.category.newTitle}
+      onClose={onClose}
+      dismissOnBackdrop={false}
+      keyboard
+      maxHeightRatio="90%"
+    >
+      <View style={st.sheetBody}>
             <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={st.body}>
               {/* 미리보기 — 목록에서 보게 될 모습 그대로 */}
               <View style={st.preview}>
@@ -222,18 +215,16 @@ export function CategorySheet({
               </View>
             </ScrollView>
 
-            <View style={st.foot}>
-              <Button
-                label={t.common.save}
-                onPress={() => onSave({ name, description: desc, color, icon })}
-                disabled={!canSave}
-                busy={busy}
-              />
-            </View>
-          </View>
-        </KeyboardSpacer>
+        <View style={st.foot}>
+          <Button
+            label={t.common.save}
+            onPress={() => onSave({ name, description: desc, color, icon })}
+            disabled={!canSave}
+            busy={busy}
+          />
+        </View>
       </View>
-    </Modal>
+    </BottomSheet>
   );
 }
 
@@ -243,23 +234,8 @@ const ICON_COLS = 8;
 
 const st = StyleSheet.create({
   flex: { flex: 1 },
-  flexEnd: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { flex: 1, backgroundColor: overlay.scrim },
-  sheet: {
-    borderTopWidth: 1,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    paddingTop: space.lg,
-    maxHeight: '90%',
-  },
-  head: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: space.xl,
-    paddingBottom: space.md,
-  },
-  title: { fontSize: type.subtitle, fontWeight: '800', letterSpacing: tracking.tight },
+  /** 시트 안쪽 — 목록이 길어도 저장 버튼이 바닥에 붙어 있게 */
+  sheetBody: { flexShrink: 1 },
   body: { paddingHorizontal: space.xl, paddingBottom: space.lg, gap: space.xl },
 
   preview: { flexDirection: 'row', alignItems: 'center', gap: space.lg },

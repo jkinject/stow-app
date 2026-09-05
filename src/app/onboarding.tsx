@@ -1,18 +1,18 @@
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 
+import { Button, Field, TextButton, titleText } from '@/components/ui';
 import { useAcceptInvite, useCreateHousehold } from '@/features/household/api';
 import { useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, space, tracking } from '@/lib/theme';
+import { useTheme, type, space, tracking } from '@/lib/theme';
+
+/**
+ * ⚠ 입력칸·버튼·링크를 **여기서 다시 만들지 않는다** (2026-09-06 점검).
+ *   예전에는 `input`·`primary`·`secondary`·`link` 를 직접 정의했는데, 값이 `ui.tsx` 의
+ *   `Field`·`Button` 과 글자 하나까지 같았다. 우연히 같은 것은 언젠가 갈라진다 —
+ *   한쪽만 고쳐지는 날이 반드시 온다. 공용 컴포넌트를 쓴다.
+ */
 
 type Mode = 'choose' | 'create' | 'join';
 
@@ -55,12 +55,8 @@ export default function Onboarding() {
         <>
           <Text style={[s.title, { color: c.text }]}>{t.onboarding.chooseTitle}</Text>
           <Text style={[s.sub, { color: c.textMuted }]}>{t.onboarding.chooseSub}</Text>
-          <Pressable style={[s.primary, { backgroundColor: c.accent }]} onPress={() => setMode('create')}>
-            <Text style={[s.primaryText, { color: c.onAccent }]}>{t.onboarding.createCta}</Text>
-          </Pressable>
-          <Pressable style={[s.secondary, { borderColor: c.borderStrong }]} onPress={() => setMode('join')}>
-            <Text style={[s.secondaryText, { color: c.text }]}>{t.onboarding.joinCta}</Text>
-          </Pressable>
+          <Button label={t.onboarding.createCta} onPress={() => setMode('create')} />
+          <Button label={t.onboarding.joinCta} onPress={() => setMode('join')} variant="secondary" />
         </>
       )}
 
@@ -68,25 +64,15 @@ export default function Onboarding() {
         <>
           <Text style={[s.title, { color: c.text }]}>{t.onboarding.nameTitle}</Text>
           <Text style={[s.sub, { color: c.textMuted }]}>{t.onboarding.nameSub}</Text>
-          <TextInput
-            style={[s.input, { borderColor: c.border, color: c.text, backgroundColor: c.card }]}
+          <Field
             value={name}
             onChangeText={setName}
             placeholder={t.onboarding.namePlaceholder}
-            placeholderTextColor={c.textFaint}
             autoFocus
             editable={!create.isPending}
           />
-          <Pressable style={[s.primary, { backgroundColor: c.accent }]} onPress={onCreate} disabled={create.isPending}>
-            {create.isPending ? (
-              <ActivityIndicator color={c.onAccent} />
-            ) : (
-              <Text style={[s.primaryText, { color: c.onAccent }]}>{t.onboarding.create}</Text>
-            )}
-          </Pressable>
-          <Pressable onPress={() => setMode('choose')}>
-            <Text style={[s.link, { color: c.accentText }]}>{t.common.back}</Text>
-          </Pressable>
+          <Button label={t.onboarding.create} onPress={onCreate} busy={create.isPending} />
+          <TextButton label={t.common.back} onPress={() => setMode('choose')} style={s.link} />
         </>
       )}
 
@@ -94,64 +80,40 @@ export default function Onboarding() {
         <>
           <Text style={[s.title, { color: c.text }]}>{t.onboarding.codeTitle}</Text>
           <Text style={[s.sub, { color: c.textMuted }]}>{t.onboarding.codeSub}</Text>
-          <TextInput
-            style={[s.input, s.codeInput, { borderColor: c.border, color: c.text, backgroundColor: c.card }]}
+          <Field
+            style={s.codeInput}
             value={code}
-            onChangeText={(t) => setCode(t.toUpperCase())}
+            onChangeText={(v) => setCode(v.toUpperCase())}
             placeholder="ABCD2345"
-            placeholderTextColor={c.textFaint}
             autoCapitalize="characters"
             autoCorrect={false}
             maxLength={32}
             autoFocus
             editable={!join.isPending}
           />
-          <Pressable style={[s.primary, { backgroundColor: c.accent }]} onPress={onJoin} disabled={join.isPending}>
-            {join.isPending ? (
-              <ActivityIndicator color={c.onAccent} />
-            ) : (
-              <Text style={[s.primaryText, { color: c.onAccent }]}>{t.onboarding.join}</Text>
-            )}
-          </Pressable>
-          <Pressable onPress={() => setMode('choose')}>
-            <Text style={[s.link, { color: c.accentText }]}>{t.common.back}</Text>
-          </Pressable>
+          <Button label={t.onboarding.join} onPress={onJoin} busy={join.isPending} />
+          <TextButton label={t.common.back} onPress={() => setMode('choose')} style={s.link} />
         </>
       )}
 
-      <Pressable style={s.signOut} onPress={() => signOut()}>
-        <Text style={[s.signOutText, { color: c.textFaint }]}>{t.more.signOut}</Text>
-      </Pressable>
+      <TextButton
+        label={t.more.signOut}
+        onPress={() => signOut()}
+        size="small"
+        tone="muted"
+        style={s.signOut}
+      />
     </View>
   );
 }
 
 const s = StyleSheet.create({
   root: { flex: 1, justifyContent: 'center', paddingHorizontal: space.xxxl, gap: space.md },
-  title: { fontSize: type.h1, fontWeight: '700', letterSpacing: tracking.tighter },
+  /** 화면 제목은 `Screen` 과 같은 값을 쓴다 — 이 화면만 헤더가 없을 뿐이다 */
+  title: titleText,
   sub: { fontSize: type.body, marginBottom: space.md },
-  input: {
-    borderWidth: 1,
-    borderRadius: radius.sm,
-    paddingHorizontal: space.lg,
-    paddingVertical: space.md,
-    fontSize: type.bodyStrong,
-  },
+  /** 초대 코드는 한 글자씩 읽는다 — 크게, 벌려서, 폭이 고르게 */
   codeInput: { fontSize: type.title, letterSpacing: tracking.code, textAlign: 'center', fontVariant: ['tabular-nums'] },
-  primary: {
-    paddingVertical: space.lg,
-    borderRadius: radius.sm,
-    alignItems: 'center',
-  },
-  primaryText: { fontSize: type.bodyStrong, fontWeight: '600' },
-  secondary: {
-    borderWidth: 1,
-    paddingVertical: space.lg,
-    borderRadius: radius.sm,
-    alignItems: 'center',
-  },
-  secondaryText: { fontSize: type.bodyStrong, fontWeight: '500' },
-  link: { fontSize: type.label, textAlign: 'center', paddingVertical: space.sm },
-  signOut: { position: 'absolute', bottom: 40, alignSelf: 'center' },
-  signOutText: { fontSize: type.small },
+  link: { alignSelf: 'center', paddingVertical: space.sm },
+  signOut: { position: 'absolute', bottom: space.giant, alignSelf: 'center' },
 });

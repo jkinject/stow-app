@@ -153,6 +153,6 @@ const st = StyleSheet.create({
     textShadowColor: overlay.shadow,
     textShadowRadius: 6,
   },
-  top: { position: 'absolute', left: 16, right: 16 },
+  top: { position: 'absolute', left: space.lg, right: space.lg },
   close: { color: overlay.fg, fontSize: type.bodyStrong, fontWeight: '600', textShadowColor: overlay.shadow, textShadowRadius: 6 },
 });

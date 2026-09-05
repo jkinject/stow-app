@@ -1,10 +1,13 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 
-import { Button, Empty, Field, Loading, Screen, SectionLabel } from '@/components/ui';
+import { IconGear, IconX } from '@/components/Icon';
+import { SettingsCard } from '@/components/SettingsCard';
+import { Button, Empty, Field, IconButton, Loading, Screen, SectionLabel, TextButton } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { useAudit } from '@/features/history/api';
+import { CardGrid, useCardWidth } from '@/components/CardGrid';
 import { Fab } from '@/components/Fab';
 import { ItemCard } from '@/features/item/ItemCard';
 import { useThumbUrls } from '@/features/item/thumbs';
@@ -36,18 +39,8 @@ export default function LocationDetail() {
   const loose = useLooseItems(locationId);
   const audit = useAudit('locations', locationId);
 
-  // 박스와 낱개 물건 모두 찾기 탭과 같은 2열 격자로 통일한다
-  const win = useWindowDimensions();
-  /**
-   * 한 줄에 두 장. 남는 폭을 정확히 반으로 나눈다.
-   *
-   * ⚠⚠ 이 식은 **아래 스타일과 같은 값을 봐야 한다** (body 의 좌우 여백, list 의 gap).
-   *   예전에는 여기에 20 과 10 을 **숫자로 베껴 두고** 스타일에는 따로 적어 뒀다.
-   *   그래서 간격을 척도에 맞추며 스타일의 gap 만 10→12 로 바뀌자, 카드 두 장이
-   *   1px 넘쳐서 **한 줄에 하나씩** 떨어졌다(2026-09-02 사용자 보고).
-   *   토큰을 직접 참조하면 두 값이 다시 어긋날 수 없다. 숫자를 적지 말 것.
-   */
-  const cardW = (win.width - space.xl * 2 - space.md) / 2;
+  // 격자 치수는 `CardGrid` 한 곳에서 온다 — 화면마다 카드 폭이 다르면 안 된다
+  const cardW = useCardWidth();
 
   // 박스에 안 들어간 낱개 물건도 박스 안 물건과 똑같이 보여야 한다
   const thumbs = useThumbUrls();
@@ -165,11 +158,17 @@ export default function LocationDetail() {
             <Text style={[st.cardTitle, { color: c.text }]} numberOfLines={3}>
               {location?.name ?? ''}
             </Text>
-            <Pressable onPress={() => setSettingsOpen((v) => !v)} hitSlop={12}>
-              <Text style={[st.gear, { color: c.accentText }]}>
-                {settingsOpen ? t.common.close : '⚙'}
-              </Text>
-            </Pressable>
+            <IconButton
+              icon={
+                settingsOpen ? (
+                  <IconX size={22} color={c.accentText} />
+                ) : (
+                  <IconGear size={22} color={c.accentText} />
+                )
+              }
+              onPress={() => setSettingsOpen((v) => !v)}
+              label={settingsOpen ? t.common.close : t.location.settings}
+            />
           </View>
           {audit.data && (
             <Text style={[st.audit, { color: c.textFaint }]}>
@@ -181,26 +180,30 @@ export default function LocationDetail() {
           )}
         </View>
         {settingsOpen && location?.name && (
-          <LocationSettings
+          <SettingsCard
+            label={t.location.name}
+            placeholder={t.location.namePlaceholder}
             initialName={location.name}
             busy={updateLocation.isPending}
-            onSave={async (patch) => {
+            onSave={async (name) => {
               try {
-                await updateLocation.mutateAsync(patch);
+                await updateLocation.mutateAsync({ name });
                 setSettingsOpen(false);
               } catch (e) {
                 Alert.alert(t.item.saveFailed, e instanceof Error ? e.message : t.common.tryAgain);
               }
             }}
-            onDelete={onDeleteLocation}
+            danger={{ label: t.location.deleteLocation, onPress: onDeleteLocation }}
           />
         )}
 
         <SectionLabel
           action={
-            <Pressable onPress={() => setAdding((v) => !v)} hitSlop={12}>
-              <Text style={[st.addBtn, { color: c.accentText }]}>{adding ? t.common.done : t.location.addBox}</Text>
-            </Pressable>
+            <TextButton
+              label={adding ? t.common.done : t.location.addBox}
+              onPress={() => setAdding((v) => !v)}
+              size="small"
+            />
           }
         >
           {t.location.boxSection(cs.length)}
@@ -230,7 +233,7 @@ export default function LocationDetail() {
             hint={t.location.noBoxesHint}
           />
         ) : (
-          <View style={st.list}>
+          <CardGrid>
             {cs.map((ct) => (
               <ItemCard
                 key={ct.id}
@@ -242,13 +245,13 @@ export default function LocationDetail() {
                 onLongPress={() => onContainerLongPress(ct.id, ct.name, ct.item_count)}
               />
             ))}
-          </View>
+          </CardGrid>
         )}
 
         {ls.length > 0 && (
           <>
             <SectionLabel>{t.location.looseSection(ls.length)}</SectionLabel>
-            <View style={st.list}>
+            <CardGrid>
               {ls.map((it) => (
                 <ItemCard
                   key={it.id}
@@ -261,7 +264,7 @@ export default function LocationDetail() {
                   onPress={() => router.push(`/item/${it.id}`)}
                 />
               ))}
-            </View>
+            </CardGrid>
           </>
         )}
 
@@ -280,61 +283,12 @@ export default function LocationDetail() {
  * ⚠ 이름 변경 훅(`useRenameLocation`)은 있었지만 **부르는 화면이 없었다.**
  *   기능이 없다는 사용자 보고의 원인이 이것이다. 박스 설정과 같은 모양으로 맞춘다.
  */
-function LocationSettings({
-  initialName,
-  busy,
-  onSave,
-  onDelete,
-}: {
-  initialName: string;
-  busy: boolean;
-  onSave: (patch: { name: string }) => void;
-  onDelete: () => void;
-}) {
-  const { c } = useTheme();
-  const t = useT();
-  // 초기값은 마운트 때 한 번만. 재조회에 맞춰 되돌리면 입력하던 게 지워진다.
-  const [name, setName] = useState(initialName);
-
-  const trimmed = name.trim();
-  const nameOk = trimmed.length > 0;
-  const changed = trimmed !== initialName;
-
-  return (
-    <View style={[st.settings, { backgroundColor: c.card }]}>
-      <Text style={[st.fieldLabel, { color: c.textFaint }]}>{t.location.name}</Text>
-      <Field value={name} onChangeText={setName} placeholder={t.location.namePlaceholder} />
-      {!nameOk && <Text style={[st.err, { color: c.danger }]}>{t.item.nameRequired}</Text>}
-
-      <Button
-        label={busy ? t.common.saving : t.common.save}
-        busy={busy}
-        disabled={!nameOk || !changed}
-        onPress={() => onSave({ name: trimmed })}
-      />
-      <View style={st.settingsDanger}>
-        <Button label={t.location.deleteLocation} onPress={onDelete} variant="danger" />
-      </View>
-    </View>
-  );
-}
-
 const st = StyleSheet.create({
   body: { paddingHorizontal: space.xl, gap: space.md },
-  qr: { fontSize: type.small, fontWeight: '600' },
   audit: { fontSize: type.caption },
   card: { borderRadius: radius.md, padding: space.lg, gap: space.xs },
   cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
   cardTitle: { flex: 1, fontSize: type.h2, fontWeight: '700', letterSpacing: tracking.tight, lineHeight: leading.h2 },
-  headActions: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
-  gear: { fontSize: type.title, fontWeight: '600' },
-  settings: { borderRadius: radius.md, padding: space.lg, gap: space.sm },
-  settingsDanger: { marginTop: space.lg },
-  fieldLabel: { fontSize: type.tiny, fontWeight: '600', letterSpacing: tracking.wide },
-  err: { fontSize: type.caption },
-  addBtn: { fontSize: type.body, fontWeight: '600' },
   addBox: { gap: space.md, paddingVertical: space.xs },
   hint: { fontSize: type.caption, textAlign: 'center' },
-  list: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
-  footer: { marginTop: space.huge },
 });

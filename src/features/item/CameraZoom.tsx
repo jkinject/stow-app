@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, type GestureResponderEvent } from 'react-native';
 
 import { type, radius, overlay, space } from '@/lib/theme';
+import { IconMinus, IconPlus } from '@/components/Icon';
 import { useT } from '@/lib/i18n';
 
 /**
@@ -78,16 +79,28 @@ export function ZoomBar({
   const t = useT();
   return (
     <View style={st.bar} pointerEvents="box-none">
-      <Pressable onPress={onOut} disabled={zoom <= 0} style={[st.btn, zoom <= 0 && st.off]}>
-        <Text style={st.btnText}>−</Text>
+      <Pressable
+        onPress={onOut}
+        disabled={zoom <= 0}
+        accessibilityRole="button"
+        accessibilityLabel={t.camera.zoomOut}
+        style={[st.btn, zoom <= 0 && st.off]}
+      >
+        <IconMinus size={20} color={overlay.fg} />
       </Pressable>
       <Pressable onPress={onReset} style={st.level}>
         <Text style={st.levelText}>
           {zoom === 0 ? t.camera.zoomNone : t.camera.zoomLevel(Math.round(zoom * 100))}
         </Text>
       </Pressable>
-      <Pressable onPress={onIn} disabled={zoom >= 1} style={[st.btn, zoom >= 1 && st.off]}>
-        <Text style={st.btnText}>+</Text>
+      <Pressable
+        onPress={onIn}
+        disabled={zoom >= 1}
+        accessibilityRole="button"
+        accessibilityLabel={t.camera.zoomIn}
+        style={[st.btn, zoom >= 1 && st.off]}
+      >
+        <IconPlus size={20} color={overlay.fg} />
       </Pressable>
     </View>
   );
@@ -113,8 +126,6 @@ const st = StyleSheet.create({
     justifyContent: 'center',
   },
   off: { opacity: 0.35 },
-  /* ⚠ 기호를 상자 가운데 앉히는 값이다 — 읽는 행간이 아니므로 `leading` 을 쓰지 않는다 */
-  btnText: { color: overlay.fg, fontSize: type.title, fontWeight: '700', lineHeight: 24 },
   level: { paddingHorizontal: space.md, minWidth: 76, alignItems: 'center' },
   levelText: { color: overlay.fg, fontSize: type.caption, fontWeight: '600', fontVariant: ['tabular-nums'] },
 });

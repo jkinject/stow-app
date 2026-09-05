@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { confirmDestructive } from '@/lib/confirm';
+import { IconChevron, IconImage, IconTrash, IconX } from '@/components/Icon';
 import { useT } from '@/lib/i18n';
 import { overlay, radius, type, space } from '@/lib/theme';
 
@@ -195,8 +196,15 @@ export function CameraCapture({
       </View>
 
       <View style={[st.top, { paddingTop: insets.top + 6 }]}>
-        <Pressable onPress={onClose} hitSlop={14} disabled={busy}>
-          <Text style={st.action}>✕</Text>
+        <Pressable
+          onPress={onClose}
+          hitSlop={14}
+          disabled={busy}
+          accessibilityRole="button"
+          accessibilityLabel={t.common.close}
+          style={st.actionSpacer}
+        >
+          <IconX size={24} color={overlay.fg} />
         </Pressable>
         <Text style={st.title} numberOfLines={1}>
           {title ?? ''}
@@ -217,7 +225,7 @@ export function CameraCapture({
 
       <View style={[st.bottom, { paddingBottom: insets.bottom + 22 }]}>
         <Pressable onPress={() => void fromGallery()} style={st.side} hitSlop={10} disabled={busy}>
-          <Text style={st.sideIcon}>▢</Text>
+          <IconImage size={26} color={overlay.fg} />
           <Text style={st.sideLabel}>{t.addFlow.fromGallery}</Text>
         </Pressable>
 
@@ -236,7 +244,7 @@ export function CameraCapture({
         {/* 오른쪽 자리는 화면에 따라 다르다: 등록이면 "사진 없이", 교체면 "사진 제거" */}
         {onSkip ? (
           <Pressable onPress={onSkip} style={st.side} hitSlop={10} disabled={busy}>
-            <Text style={st.sideIcon}>›</Text>
+            <IconChevron size={26} color={overlay.fg} />
             <Text style={st.sideLabel}>{t.addFlow.skipPhoto}</Text>
           </Pressable>
         ) : onRemove ? (
@@ -255,7 +263,7 @@ export function CameraCapture({
             hitSlop={10}
             disabled={busy}
           >
-            <Text style={st.sideIcon}>⌫</Text>
+            <IconTrash size={26} color={overlay.fg} />
             <Text style={st.sideLabel}>{t.camera.removePhoto}</Text>
           </Pressable>
         ) : (
@@ -300,7 +308,6 @@ const st = StyleSheet.create({
     alignItems: 'center',
     gap: space.md,
   },
-  action: { color: overlay.fg, fontSize: type.h2, fontWeight: '600', width: 40 },
   actionSpacer: { width: 40 },
   title: {
     flex: 1,
@@ -323,8 +330,6 @@ const st = StyleSheet.create({
     paddingTop: space.xl,
   },
   side: { alignItems: 'center', gap: space.xs, width: 76 },
-  /* ⚠ 기호를 상자 가운데 앉히는 값이다 — 읽는 행간이 아니므로 `leading` 을 쓰지 않는다 */
-  sideIcon: { color: overlay.fg, fontSize: type.h1, lineHeight: 28 },
   sideLabel: { color: overlay.faint, fontSize: type.caption },
   shutter: {
     width: 76,

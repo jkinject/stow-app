@@ -1,7 +1,9 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useTheme, type, overlay, space } from '@/lib/theme';
+import { IconPlus } from '@/components/Icon';
+import { useT } from '@/lib/i18n';
+import { useTheme, overlay, space } from '@/lib/theme';
 
 /**
  * 우측 하단 플로팅 버튼 — 찾기 탭, 장소 상세, 박스 상세가 같은 것을 쓴다.
@@ -23,17 +25,20 @@ const GAP = space.xxl;
 
 export function Fab({ onPress, tabBar = false }: { onPress: () => void; tabBar?: boolean }) {
   const { c } = useTheme();
+  const t = useT();
   const insets = useSafeAreaInsets();
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={t.find.addItem}
       style={({ pressed }) => [
         st.fab,
         { backgroundColor: c.accent, bottom: (tabBar ? 0 : insets.bottom) + GAP },
         pressed && { opacity: 0.8 },
       ]}
     >
-      <Text style={[st.icon, { color: c.onAccent }]}>＋</Text>
+      <IconPlus size={30} color={c.onAccent} />
     </Pressable>
   );
 }
@@ -55,6 +60,4 @@ const st = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 6,
   },
-  /* ⚠ 기호를 상자 가운데 앉히는 값이다 — 읽는 행간이 아니므로 `leading` 을 쓰지 않는다 */
-  icon: { fontSize: type.display, fontWeight: '600', lineHeight: 34 },
 });

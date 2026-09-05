@@ -16,11 +16,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-import { IconChevron, IconTrash } from '@/components/Icon';
+import { IconCheck, IconChevron, IconMinus, IconPlus, IconTrash } from '@/components/Icon';
 import { safeIcon, type IconName } from '@/features/category/icons';
 import { KeyboardSpacer } from '@/components/KeyboardSpacer';
+import { BottomSheet, SheetOption } from '@/components/Sheet';
 import { useToast } from '@/components/Toast';
-import { Button, Field, Loading, Screen, titleText } from '@/components/ui';
+import { Button, Field, Loading, Screen, TextButton, titleText } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { useCategoryList } from '@/features/category/api';
 import {
@@ -291,11 +292,11 @@ export default function ItemDetailScreen() {
           <View style={[st.qtyBox, { backgroundColor: c.card }]}>
             <Text style={[st.fieldLabel, { color: c.textFaint }]}>{t.item.quantity}</Text>
             <View style={st.qtyRow}>
-              <Stepper label="−" onPress={() => onAdjust(-1)} disabled={row.quantity <= 0} />
+              <Stepper kind="minus" onPress={() => onAdjust(-1)} disabled={row.quantity <= 0} />
               <Text style={[st.qtyValue, { color: row.quantity === 0 ? c.danger : c.text }]}>
                 {t.common.qty(row.quantity)}
               </Text>
-              <Stepper label="+" onPress={() => onAdjust(1)} />
+              <Stepper kind="plus" onPress={() => onAdjust(1)} />
             </View>
             {row.quantity === 0 && (
               <Text style={[st.zeroHint, { color: c.danger }]}>{t.item.zeroHint}</Text>
@@ -321,9 +322,12 @@ export default function ItemDetailScreen() {
             onSave={(v) => update.mutateAsync({ purchase_url: v || null })}
             trailing={
               row.purchase_url ? (
-                <Pressable onPress={() => void Linking.openURL(row.purchase_url!)} hitSlop={8}>
-                  <Text style={[st.openLink, { color: c.accentText }]}>{t.shopping.buy}</Text>
-                </Pressable>
+                <TextButton
+                  label={t.shopping.buy}
+                  size="small"
+                  onPress={() => void Linking.openURL(row.purchase_url!)}
+                  style={st.openLink}
+                />
               ) : null
             }
           />
@@ -547,12 +551,12 @@ function CreatedDialog({
                 cachePolicy={IMAGE_CACHE_POLICY}
               />
               <View style={[st.celebMark, { backgroundColor: c.ok, borderColor: c.bg }]}>
-                <Text style={[st.celebMarkText, { color: overlay.fg }]}>✓</Text>
+                <IconCheck size={22} color={overlay.fg} />
               </View>
             </View>
           ) : (
             <View style={[st.celebSolo, { backgroundColor: c.ok }]}>
-              <Text style={[st.celebSoloText, { color: overlay.fg }]}>✓</Text>
+              <IconCheck size={44} color={overlay.fg} />
             </View>
           )}
 
@@ -770,7 +774,6 @@ function CategoryPicker({
   const { c } = useTheme();
   const t = useT();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const list = useCategoryList(householdId);
   const [open, setOpen] = useState(false);
   const rows = list.data ?? [];
@@ -801,110 +804,97 @@ function CategoryPicker({
       </View>
 
       {open && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-          <Pressable style={st.backdrop} onPress={() => setOpen(false)}>
-            <Pressable
-              style={[
-                st.sheet,
-                { backgroundColor: c.bg, borderColor: c.border, paddingBottom: insets.bottom + 16 },
-              ]}
-              onPress={(e) => e.stopPropagation()}
-            >
-              <Text style={[st.sheetTitle, { color: c.textFaint }]}>{t.category.pickTitle}</Text>
-              <ScrollView style={st.sheetScroll}>
-                <Pressable
-                  onPress={() => {
-                    void onPick(null);
-                    setOpen(false);
-                  }}
-                  style={({ pressed }) => [st.option, pressed && { opacity: 0.6 }]}
-                >
-                  {/* ⚠ 타일 자리는 **항상 둔다** — 없으면 이 줄만 글자가 왼쪽으로 튄다 */}
-                  <View style={[st.optionTile, { backgroundColor: c.sunk }]}>
-                    <MaterialCommunityIcons name="minus" size={16} color={c.textFaint} />
+        <BottomSheet label={t.category.pickTitle} onClose={() => setOpen(false)}>
+          <ScrollView style={st.sheetScroll}>
+            {/* ⚠ 타일 자리는 **항상 둔다** — 없으면 이 줄만 글자가 왼쪽으로 튄다 */}
+            <SheetOption
+              label={t.category.pickNone}
+              leading={
+                <View style={[st.optionTile, { backgroundColor: c.sunk }]}>
+                  <IconMinus size={16} color={c.textFaint} />
+                </View>
+              }
+              on={currentId === null}
+              onPress={() => {
+                void onPick(null);
+                setOpen(false);
+              }}
+            />
+            {rows.map((cat) => (
+              /*
+                ⚠ 목록에서 **카테고리 관리 화면과 같은 타일**을 쓴다. 거기서 색과
+                  그림을 골라 놓고 여기서는 글자만 보이면, 고른 것이 어디에 쓰이는지
+                  알 수 없다.
+              */
+              <SheetOption
+                key={cat.id}
+                label={cat.name}
+                leading={
+                  <View style={[st.optionTile, { backgroundColor: cat.color }]}>
+                    <MaterialCommunityIcons name={cat.icon} size={16} color={overlay.fg} />
                   </View>
-                  <Text
-                    style={[st.optionText, { color: currentId === null ? c.accent : c.text }]}
-                  >
-                    {t.category.pickNone}
-                  </Text>
-                  {currentId === null && <Text style={[st.check, { color: c.accentText }]}>✓</Text>}
-                </Pressable>
-                {rows.map((cat) => {
-                  const on = cat.id === currentId;
-                  return (
-                    <Pressable
-                      key={cat.id}
-                      onPress={() => {
-                        void onPick(cat.id);
-                        setOpen(false);
-                      }}
-                      style={({ pressed }) => [
-                        st.option,
-                        { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
-                        pressed && { opacity: 0.6 },
-                      ]}
-                    >
-                      {/*
-                        ⚠ 목록에서 **카테고리 관리 화면과 같은 타일**을 쓴다. 거기서 색과
-                          그림을 골라 놓고 여기서는 글자만 보이면, 고른 것이 어디에 쓰이는지
-                          알 수 없다.
-                      */}
-                      <View style={[st.optionTile, { backgroundColor: cat.color }]}>
-                        <MaterialCommunityIcons name={cat.icon} size={16} color={overlay.fg} />
-                      </View>
-                      <Text style={[st.optionText, { color: on ? c.accent : c.text }]}>
-                        {cat.name}
-                      </Text>
-                      {on && <Text style={[st.check, { color: c.accentText }]}>✓</Text>}
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-              {/* 목록이 비었을 때 막다른 골목이 되지 않게 (R-C3) */}
-              <Pressable
+                }
+                on={cat.id === currentId}
+                divider
                 onPress={() => {
+                  void onPick(cat.id);
                   setOpen(false);
-                  router.push('/categories');
                 }}
-                style={({ pressed }) => [
-                  st.option,
-                  { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
-                  pressed && { opacity: 0.6 },
-                ]}
-              >
-                <Text style={[st.optionText, { color: c.accentText }]}>{t.category.manage}</Text>
-              </Pressable>
-            </Pressable>
-          </Pressable>
-        </Modal>
+              />
+            ))}
+          </ScrollView>
+          {/* 목록이 비었을 때 막다른 골목이 되지 않게 (R-C3) */}
+          <SheetOption
+            label={t.category.manage}
+            accent
+            divider
+            onPress={() => {
+              setOpen(false);
+              router.push('/categories');
+            }}
+          />
+        </BottomSheet>
       )}
     </View>
   );
 }
 
+/**
+ * 수량 ±.
+ *
+ * ⚠ 예전에는 "−" · "+" **문자**를 받아 그렸다. 기기 폰트마다 굵기와 세로 위치가 달라
+ *   `lineHeight` 로 손보정하고 있었다(2026-09-06 점검에서 걷어냈다). 그림으로 그리면
+ *   보정이 필요 없고, 스크린리더에 읽을 이름도 붙일 수 있다.
+ */
 function Stepper({
-  label,
+  kind,
   onPress,
   disabled,
 }: {
-  label: string;
+  kind: 'minus' | 'plus';
   onPress: () => void;
   disabled?: boolean;
 }) {
   const { c } = useTheme();
+  const t = useT();
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={kind === 'minus' ? t.item.qtyDown : t.item.qtyUp}
       style={({ pressed }) => [
         st.stepper,
         { borderColor: c.borderStrong },
         (pressed || disabled) && { opacity: 0.4 },
       ]}
     >
-      <Text style={[st.stepperText, { color: c.text }]}>{label}</Text>
+      {kind === 'minus' ? (
+        <IconMinus size={20} color={c.text} />
+      ) : (
+        <IconPlus size={20} color={c.text} />
+      )}
     </Pressable>
   );
 }
@@ -949,12 +939,12 @@ const st = StyleSheet.create({
     justifyContent: 'center',
   },
   /* ⚠ 기호를 상자 가운데 앉히는 값이다 — 읽는 행간이 아니므로 `leading` 을 쓰지 않는다 */
-  stepperText: { fontSize: type.h2, fontWeight: '600', lineHeight: 26 },
   field: { gap: space.xs },
   fieldHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   fieldLabel: { fontSize: type.tiny, fontWeight: '600', letterSpacing: tracking.wide },
   savedTag: { fontSize: type.tiny, fontWeight: '700' },
-  openLink: { fontSize: type.caption, fontWeight: '700', marginLeft: 'auto' },
+  /** ⚠ 글자 크기·굵기는 TextButton 이 정한다 — 여기서는 자리만 민다 */
+  openLink: { marginLeft: 'auto' },
   selectRow: { flexDirection: 'row', gap: space.sm, alignItems: 'stretch' },
   select: {
     flex: 1,
@@ -967,7 +957,6 @@ const st = StyleSheet.create({
     gap: space.sm,
   },
   selectText: { flex: 1, fontSize: type.bodyStrong },
-  backdrop: { flex: 1, backgroundColor: overlay.scrim, justifyContent: 'flex-end' },
 
   /* 등록 직후 아래에 붙는 띠 — "같은 자리에 또 등록" */
   againBar: {
@@ -1018,7 +1007,6 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  celebMarkText: { fontSize: type.small, fontWeight: '900' },
   /** 사진이 없을 때 — 체크 하나만 크게 */
   celebSolo: {
     width: 64,
@@ -1028,29 +1016,11 @@ const st = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: space.sm,
   },
-  celebSoloText: { fontSize: type.h2, fontWeight: '900' },
   celebTitle: { fontSize: type.title, fontWeight: '800', letterSpacing: tracking.tight },
   celebName: { fontSize: type.body, fontWeight: '700', textAlign: 'center' },
   celebWhere: { fontSize: type.small, textAlign: 'center' },
   celebBtn: { alignSelf: 'stretch', marginTop: space.md },
-  sheet: { borderTopWidth: 1, borderTopLeftRadius: 18, borderTopRightRadius: 18, paddingTop: space.lg },
   sheetScroll: { maxHeight: 320 },
-  sheetTitle: {
-    fontSize: type.tiny,
-    fontWeight: '700',
-    letterSpacing: tracking.wide,
-    textTransform: 'uppercase',
-    paddingHorizontal: space.xl,
-    paddingBottom: space.md,
-  },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.md,
-    paddingHorizontal: space.xl,
-    paddingVertical: space.lg,
-  },
-  optionText: { flex: 1, fontSize: type.bodyStrong, fontWeight: '500' },
   optionTile: {
     width: 28,
     height: 28,
@@ -1058,16 +1028,6 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  check: { fontSize: type.subtitle, fontWeight: '800' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.xs },
-  emptyCat: {
-    borderStyle: 'dashed',
-    borderRadius: radius.sm,
-    paddingVertical: space.lg,
-    alignItems: 'center',
-  },
-  emptyCatText: { fontSize: type.label, fontWeight: '600' },
-  chip: { borderWidth: 1, borderRadius: radius.full, paddingHorizontal: space.md, paddingVertical: space.sm },
   /** 변경 이력으로 들어가는 줄 — 이 화면에서 이력은 목적지이지 내용이 아니다 */
   navRow: {
     borderWidth: 1,

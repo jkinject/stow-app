@@ -15,6 +15,7 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { IconLock, IconMail } from '@/components/Icon';
 import { KeyboardSpacer } from '@/components/KeyboardSpacer';
+import { TextButton } from '@/components/ui';
 import { SIGNIN_HERO_URI } from '@/features/auth/heroImage';
 import { authMessage, useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
@@ -189,15 +190,15 @@ export default function SignIn() {
               <Text style={[s.sentBody, { color: c.textMuted }]}>
                 {sent === 'confirm' ? t.auth.confirmBody(email) : t.auth.sentBody(email)}
               </Text>
-              <Pressable
+              <TextButton
+                label={t.auth.resend}
+                size="small"
                 onPress={() => {
                   setSent(null);
                   setEmailMode(true);
                 }}
-                hitSlop={8}
-              >
-                <Text style={[s.link, { color: c.accentText }]}>{t.auth.resend}</Text>
-              </Pressable>
+                style={s.link}
+              />
             </View>
           ) : emailMode ? (
             <View style={s.actions}>
@@ -247,33 +248,29 @@ export default function SignIn() {
                 filled
               />
 
-              <Pressable
+              <TextButton
+                label={mode === 'signup' ? t.auth.toSignIn : t.auth.toSignUp}
                 onPress={() => setMode(mode === 'signup' ? 'signin' : 'signup')}
-                hitSlop={10}
                 style={s.textBtn}
-              >
-                <Text style={[s.textBtnLabel, { color: c.accentText }]}>
-                  {mode === 'signup' ? t.auth.toSignIn : t.auth.toSignUp}
-                </Text>
-              </Pressable>
+              />
 
               {/* 비밀번호를 잊었거나 만들기 싫은 사람을 위한 길. 가입 화면에서는 숨긴다 */}
               {mode === 'signin' && (
-                <Pressable
+                <TextButton
+                  label={busy === 'magic' ? t.common.loading : t.auth.orMagic}
+                  tone="muted"
                   onPress={onMagic}
-                  hitSlop={10}
-                  style={s.textBtn}
                   disabled={busy !== null}
-                >
-                  <Text style={[s.textBtnLabel, { color: c.textMuted }]}>
-                    {busy === 'magic' ? t.common.loading : t.auth.orMagic}
-                  </Text>
-                </Pressable>
+                  style={s.textBtn}
+                />
               )}
 
-              <Pressable onPress={() => setEmailMode(false)} hitSlop={10} style={s.textBtn}>
-                <Text style={[s.textBtnLabel, { color: c.textFaint }]}>{t.common.back}</Text>
-              </Pressable>
+              <TextButton
+                label={t.common.back}
+                tone="muted"
+                onPress={() => setEmailMode(false)}
+                style={s.textBtn}
+              />
             </View>
           ) : (
             <View style={s.actions}>
@@ -360,8 +357,12 @@ const s = StyleSheet.create({
   pressed: { opacity: 0.72 },
 
   textBtn: { alignSelf: 'center', paddingVertical: space.md, paddingHorizontal: space.lg },
-  textBtnLabel: { fontSize: type.body, fontWeight: '600' },
 
+  /**
+   * ⚠ 이 화면의 입력칸은 **알약**이다(`radius.full`). `ui.tsx` 의 `Field`(radius.sm)와
+   *   다른 것은 실수가 아니라 이 화면의 결이다 — 아래 `Pill` 버튼들과 같은 모양을
+   *   이룬다. 다른 화면에서 이 모양을 베끼지 말 것. (2026-09-06 점검에서 확인)
+   */
   inputWrap: {
     borderWidth: 1,
     borderRadius: radius.full,
@@ -375,5 +376,5 @@ const s = StyleSheet.create({
   sentBox: { gap: space.sm, padding: space.xl, borderRadius: radius.lg },
   sentTitle: { fontSize: type.subtitle, fontWeight: '700' },
   sentBody: { fontSize: type.label, lineHeight: leading.label },
-  link: { fontSize: type.label, fontWeight: '600', marginTop: space.xs },
+  link: { marginTop: space.xs },
 });

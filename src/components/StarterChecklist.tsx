@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui';
+import { IconCheck } from '@/components/Icon';
 import { useT } from '@/lib/i18n';
 import { radius, type, useTheme, space, tracking, leading } from '@/lib/theme';
 
@@ -160,10 +161,12 @@ function Step({
           done && { backgroundColor: c.accent, borderColor: c.accent },
         ]}
       >
-        {/* 체크 기호는 문자열 밖에 둔다 — 번역해도 기호는 그대로여야 한다 */}
-        <Text style={[st.bulletText, { color: done ? c.onAccent : c.textFaint }]}>
-          {done ? '✓' : String(n)}
-        </Text>
+        {/* 체크는 그림이다 — 문자로 그리면 기기 폰트마다 크기·위치가 달라진다 */}
+        {done ? (
+          <IconCheck size={14} color={c.onAccent} />
+        ) : (
+          <Text style={[st.bulletText, { color: c.textFaint }]}>{String(n)}</Text>
+        )}
       </View>
 
       <View style={st.stepMain}>
@@ -205,7 +208,7 @@ const st = StyleSheet.create({
   bullet: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',

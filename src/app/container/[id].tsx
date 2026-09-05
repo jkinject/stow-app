@@ -2,11 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Button, Empty, Field, Loading, Screen, SectionLabel } from '@/components/ui';
+import { IconGear, IconPlus, IconX } from '@/components/Icon';
+import { SettingsCard } from '@/components/SettingsCard';
+import { Button, Empty, IconButton, Loading, Screen, SectionLabel } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { useAudit } from '@/features/history/api';
+import { CardGrid, useCardWidth } from '@/components/CardGrid';
 import { Fab } from '@/components/Fab';
 import { PhotoViewer } from '@/components/PhotoViewer';
 import { useToast } from '@/components/Toast';
@@ -27,7 +30,7 @@ import { BoxMovePicker } from '@/features/storage/BoxMovePicker';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/lib/i18n';
 import { relTime } from '@/lib/time';
-import { useTheme, type, radius, overlay, space, tracking, leading } from '@/lib/theme';
+import { useTheme, type, radius, space, tracking, leading } from '@/lib/theme';
 
 /** 컨테이너 한 건 조회. 목록을 거치지 않고 직접 가져온다 */
 function useContainer(containerId: string) {
@@ -76,19 +79,8 @@ export default function ContainerDetail() {
   const [photoSheet, setPhotoSheet] = useState(false);
   const [viewer, setViewer] = useState(false);
 
-  // 찾기 탭과 같은 2열 격자. 한 박스의 내용물은 많아야 수십 개라
-  // FlatList 없이 감싸기(flexWrap)로 충분하다 — Screen 의 ScrollView 와 중첩되지 않는다.
-  const win = useWindowDimensions();
-  /**
-   * 한 줄에 두 장. 남는 폭을 정확히 반으로 나눈다.
-   *
-   * ⚠⚠ 이 식은 **아래 스타일과 같은 값을 봐야 한다** (body 의 좌우 여백, list 의 gap).
-   *   예전에는 여기에 20 과 10 을 **숫자로 베껴 두고** 스타일에는 따로 적어 뒀다.
-   *   그래서 간격을 척도에 맞추며 스타일의 gap 만 10→12 로 바뀌자, 카드 두 장이
-   *   1px 넘쳐서 **한 줄에 하나씩** 떨어졌다(2026-09-02 사용자 보고).
-   *   토큰을 직접 참조하면 두 값이 다시 어긋날 수 없다. 숫자를 적지 말 것.
-   */
-  const cardW = (win.width - space.xl * 2 - space.md) / 2;
+  // 격자 치수는 `CardGrid` 한 곳에서 온다 — 화면마다 카드 폭이 다르면 안 된다
+  const cardW = useCardWidth();
   // 박스도 모양이 제각각이라 사진이 있으면 찾기가 훨씬 쉽다 (사용자 요청)
   const boxPhoto = useItemPhotoUrl(container.data?.photo_path);
   const setPhoto = useSetPhoto('containers', containerId, activeId);
@@ -150,7 +142,7 @@ export default function ContainerDetail() {
                     cachePolicy={IMAGE_CACHE_POLICY}
                   />
                 ) : (
-                  <Text style={[st.thumbAdd, { color: c.textFaint }]}>＋</Text>
+                  <IconPlus size={28} color={c.textFaint} />
                 )}
               </View>
             </Pressable>
@@ -163,11 +155,17 @@ export default function ContainerDetail() {
                     : (container.data?.name ?? '')}
                 </Text>
                 {/* 설정도 카드 안으로 — 화면 위쪽에 떠 있던 것을 한 덩어리로 모은다 */}
-                <Pressable onPress={() => setSettingsOpen((v) => !v)} hitSlop={12}>
-                  <Text style={[st.gear, { color: c.accentText }]}>
-                    {settingsOpen ? t.common.close : '⚙'}
-                  </Text>
-                </Pressable>
+                <IconButton
+                  icon={
+                    settingsOpen ? (
+                      <IconX size={22} color={c.accentText} />
+                    ) : (
+                      <IconGear size={22} color={c.accentText} />
+                    )
+                  }
+                  onPress={() => setSettingsOpen((v) => !v)}
+                  label={settingsOpen ? t.common.close : t.container.settings}
+                />
               </View>
               {audit.data && (
                 <Text style={[st.audit, { color: c.textFaint }]}>
@@ -182,22 +180,38 @@ export default function ContainerDetail() {
         </View>
 
         {settingsOpen && container.data?.name && (
-          <BoxSettings
+          <SettingsCard
+            label={t.container.name}
+            placeholder={t.container.namePlaceholder}
             initialName={container.data.name}
             busy={updateContainer.isPending}
-            onSave={async (patch) => {
+            onSave={async (name) => {
               try {
-                await updateContainer.mutateAsync(patch);
+                await updateContainer.mutateAsync({ name });
                 setSettingsOpen(false);
               } catch (e) {
                 Alert.alert(t.item.saveFailed, e instanceof Error ? e.message : t.common.tryAgain);
               }
             }}
-            onMove={() => setMoving(true)}
-            locationName={location?.name ?? null}
-            onDelete={onDeleteBox}
-            deleting={deleteContainer.isPending}
-          />
+            danger={{
+              label: t.container.deleteBox,
+              onPress: onDeleteBox,
+              busy: deleteContainer.isPending,
+            }}
+          >
+            {/*
+              박스 옮기기 — 이름 수정과 삭제 사이. 삭제와 붙여 두지 않는다.
+              "옮기기" 는 되돌릴 수 있는 일이고 삭제는 아니라서, 위험한 것끼리 모아 두면
+              손이 미끄러진다. 지금 있는 장소를 함께 적어 어디에서 떠나는지 밝힌다.
+            */}
+            <View style={st.settingsMove}>
+              <Text style={[st.fieldLabel, { color: c.textFaint }]}>{t.container.place}</Text>
+              <Text style={[st.settingsHere, { color: c.text }]} numberOfLines={1}>
+                {location?.name ?? t.common.notFound}
+              </Text>
+              <Button label={t.container.moveBox} onPress={() => setMoving(true)} variant="secondary" />
+            </View>
+          </SettingsCard>
         )}
 
         {/*
@@ -291,7 +305,7 @@ export default function ContainerDetail() {
         ) : list.length === 0 ? (
           <Empty text={t.common.empty} />
         ) : (
-          <View style={st.list}>
+          <CardGrid>
             {list.map((it) => (
               <ItemCard
                 key={it.id}
@@ -304,77 +318,10 @@ export default function ContainerDetail() {
                 onPress={() => router.push(`/item/${it.id}`)}
               />
             ))}
-          </View>
+          </CardGrid>
         )}
       </View>
     </Screen>
-  );
-}
-
-/**
- * 박스 설정 — 이름 수정과 삭제. (메모 칸은 없다 — location/[id].tsx 의 주석 참고)
- *
- * ⚠ 원래 장소 화면에서 길게 눌러 `Alert.prompt` 로 이름을 바꾸게 되어 있었는데,
- *   **`Alert.prompt` 는 iOS 전용이다.** 옵셔널 체이닝(`Alert.prompt?.()`)으로 불렀기
- *   때문에 안드로이드에서는 아무 일도 일어나지 않고 오류도 나지 않았다 — 기능이
- *   없는 게 아니라 조용히 죽어 있었다. 그래서 화면 안의 폼으로 바꿨다.
- */
-function BoxSettings({
-  initialName,
-  locationName,
-  busy,
-  deleting,
-  onSave,
-  onMove,
-  onDelete,
-}: {
-  initialName: string;
-  /** 지금 있는 장소 — 어디에서 어디로 가는지 알아야 옮길 마음이 선다 */
-  locationName: string | null;
-  busy: boolean;
-  deleting: boolean;
-  onSave: (patch: { name: string }) => void;
-  onMove: () => void;
-  onDelete: () => void;
-}) {
-  const { c } = useTheme();
-  const t = useT();
-  // 초기값은 마운트 때 한 번만 잡는다. 재조회에 맞춰 되돌리면 입력하던 게 지워진다.
-  const [name, setName] = useState(initialName);
-
-  const trimmed = name.trim();
-  const nameOk = trimmed.length > 0;
-  const changed = trimmed !== initialName;
-
-  return (
-    <View style={[st.settings, { backgroundColor: c.card }]}>
-      <Text style={[st.fieldLabel, { color: c.textFaint }]}>{t.container.name}</Text>
-      <Field value={name} onChangeText={setName} placeholder={t.container.namePlaceholder} />
-      {!nameOk && <Text style={[st.err, { color: c.danger }]}>{t.item.nameRequired}</Text>}
-
-      <Button
-        label={busy ? t.common.saving : t.common.save}
-        busy={busy}
-        disabled={!nameOk || !changed}
-        onPress={() => onSave({ name: trimmed })}
-      />
-      {/*
-        박스 옮기기 — 이름 수정과 삭제 사이. 삭제와 붙여 두지 않는다.
-        "옮기기" 는 되돌릴 수 있는 일이고 삭제는 아니라서, 위험한 것끼리 모아 두면
-        손이 미끄러진다. 지금 있는 장소를 함께 적어 어디에서 떠나는지 밝힌다.
-      */}
-      <View style={st.settingsMove}>
-        <Text style={[st.fieldLabel, { color: c.textFaint }]}>{t.container.place}</Text>
-        <Text style={[st.settingsHere, { color: c.text }]} numberOfLines={1}>
-          {locationName ?? t.common.notFound}
-        </Text>
-        <Button label={t.container.moveBox} onPress={onMove} variant="secondary" />
-      </View>
-
-      <View style={st.settingsDanger}>
-        <Button label={t.container.deleteBox} onPress={onDelete} variant="danger" busy={deleting} />
-      </View>
-    </View>
   );
 }
 
@@ -382,9 +329,6 @@ function BoxSettings({
 
 const st = StyleSheet.create({
   body: { paddingHorizontal: space.xl, gap: space.md },
-  path: { fontSize: type.small },
-  list: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
-  gear: { fontSize: type.title, fontWeight: '600' },
   audit: { fontSize: type.caption },
   card: { borderRadius: radius.md, padding: space.lg, gap: space.lg },
   cardTop: { flexDirection: 'row', gap: space.lg, alignItems: 'center' },
@@ -397,33 +341,10 @@ const st = StyleSheet.create({
     justifyContent: 'center',
   },
   thumbImg: { width: '100%', height: '100%' },
-  thumbAdd: { fontSize: type.display, fontWeight: '400' },
   cardMain: { flex: 1, gap: space.xs, justifyContent: 'center' },
   cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
   cardTitle: { flex: 1, fontSize: type.h2, fontWeight: '700', letterSpacing: tracking.tight, lineHeight: leading.h2 },
-  photoEdit: {
-    position: 'absolute',
-    right: 10,
-    bottom: 10,
-    backgroundColor: overlay.chip,
-    paddingHorizontal: space.md,
-    paddingVertical: space.sm,
-    borderRadius: radius.full,
-  },
-  photoEditText: { color: overlay.fg, fontSize: type.caption, fontWeight: '600' },
-  photoAdd: {
-    height: 80,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoAddText: { fontSize: type.body, fontWeight: '600' },
-  settings: { borderRadius: radius.md, padding: space.lg, gap: space.sm },
   settingsMove: { marginTop: space.lg, gap: space.sm },
   settingsHere: { fontSize: type.body, fontWeight: '600' },
-  settingsDanger: { marginTop: space.lg },
   fieldLabel: { fontSize: type.tiny, fontWeight: '600', letterSpacing: tracking.wide },
-  err: { fontSize: type.caption },
 });

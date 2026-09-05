@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, Field } from '@/components/ui';
+import { ModalHeader } from '@/components/Sheet';
+import { Button, Field, TextButton } from '@/components/ui';
 import { confirmDestructive } from '@/lib/confirm';
 import { useT } from '@/lib/i18n';
 import { radius, type, useTheme, space } from '@/lib/theme';
@@ -211,25 +212,37 @@ export function LocationSheet({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={requestClose} transparent={false}>
       <View style={[st.root, { backgroundColor: c.bg, paddingTop: insets.top }]}>
-        <View style={[st.head, { borderBottomColor: c.border }]}>
-          <Pressable onPress={requestClose} hitSlop={12} disabled={saving}>
-            <Text style={[st.close, { color: c.textMuted }]}>{t.common.close}</Text>
-          </Pressable>
-          <Text style={[st.title, { color: c.text }]} numberOfLines={1}>
-            {t.locSheet.title}
-          </Text>
-          {/* ⚠ 담아 둔 게 있으면 이 버튼이 곧 저장이다. 몇 곳이 저장되는지 밝힌다 —
-              "완료" 만 있으면 그냥 닫는 것인지 저장인지 또 헷갈린다. */}
-          <Pressable onPress={() => void commit()} hitSlop={12} disabled={saving}>
-            <Text style={[st.save, { color: saving ? c.textFaint : c.accentText }]}>
-              {saving
-                ? t.locSheet.saving
-                : picked.length > 0
-                  ? t.locSheet.saveN(picked.length)
-                  : t.locSheet.done}
-            </Text>
-          </Pressable>
-        </View>
+        {/*
+          ⚠ 머리말은 `ModalHeader` 한 벌을 쓴다 (2026-09-06 점검). 예전에는 제목이
+            가운데 정렬에 16pt 였고, 이동 화면은 왼쪽 정렬에 19pt 였다. 등록 도중
+            이동 화면 → 이 시트로 **연달아** 열리는 경로가 있어 눈에 바로 걸렸다.
+          ⚠ 담아 둔 게 있으면 오른쪽 버튼이 곧 저장이다. 몇 곳이 저장되는지 밝힌다 —
+            "완료" 만 있으면 그냥 닫는 것인지 저장인지 헷갈린다.
+        */}
+        <ModalHeader
+          title={t.locSheet.title}
+          left={
+            <TextButton
+              label={t.common.close}
+              tone="muted"
+              onPress={requestClose}
+              disabled={saving}
+            />
+          }
+          right={
+            <TextButton
+              label={
+                saving
+                  ? t.locSheet.saving
+                  : picked.length > 0
+                    ? t.locSheet.saveN(picked.length)
+                    : t.locSheet.done
+              }
+              onPress={() => void commit()}
+              disabled={saving}
+            />
+          }
+        />
 
         <ScrollView
           ref={scrollRef}
@@ -338,18 +351,6 @@ export function LocationSheet({
 
 const st = StyleSheet.create({
   root: { flex: 1 },
-  head: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: space.xl,
-    paddingVertical: space.lg,
-    borderBottomWidth: 1,
-    gap: space.md,
-  },
-  title: { fontSize: type.bodyStrong, fontWeight: '700', flex: 1, textAlign: 'center' },
-  close: { fontSize: type.body },
-  save: { fontSize: type.body, fontWeight: '700' },
   flex: { flex: 1 },
   body: { paddingHorizontal: space.xl, paddingTop: space.xl, gap: space.xxl },
   block: { gap: space.md },

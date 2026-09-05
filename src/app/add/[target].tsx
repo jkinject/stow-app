@@ -16,7 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { KeyboardSpacer } from '@/components/KeyboardSpacer';
-import { Button, Field } from '@/components/ui';
+import { Button, Field, TextButton } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { CameraCapture } from '@/features/item/CameraCapture';
 import { MovePicker, type MoveTarget } from '@/features/item/MovePicker';
@@ -295,9 +295,7 @@ function FormStep({
   return (
     <KeyboardSpacer style={[st.root, { backgroundColor: c.bg, paddingTop: insets.top }]}>
       <View style={st.topBar}>
-        <Pressable onPress={onClose} hitSlop={12}>
-          <Text style={[st.topAction, { color: c.accentText }]}>{t.common.cancel}</Text>
-        </Pressable>
+        <TextButton label={t.common.cancel} onPress={onClose} style={st.topAction} />
         <Text style={[st.topTitle, { color: c.text }]}>{t.addFlow.step2Title}</Text>
         <View style={st.camActionSpacer} />
       </View>
@@ -436,57 +434,9 @@ async function resolveTarget(target: MoveTarget): Promise<AddContext | null> {
 const st = StyleSheet.create({
   root: { flex: 1 },
   fill: { flex: 1 },
-  center: { alignItems: 'center', justifyContent: 'center' },
 
-  camRoot: { flex: 1, backgroundColor: overlay.bg },
-  camTop: {
-    position: 'absolute',
-    top: 0,
-    left: 16,
-    right: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.md,
-  },
-  camAction: { color: overlay.fg, fontSize: type.h2, fontWeight: '600', width: 40 },
   camActionSpacer: { width: 40 },
-  camPath: {
-    flex: 1,
-    color: overlay.fg,
-    fontSize: type.small,
-    textAlign: 'center',
-    textShadowColor: overlay.shadow,
-    textShadowRadius: 6,
-  },
-  camHint: { color: overlay.faint, fontSize: type.body },
-  camZoom: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
-  camStage: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   // 이 상자가 곧 찍히는 범위다 — 저장 비율과 같게 유지할 것
-  camFrame: { overflow: 'hidden', borderRadius: radius.xs },
-  camBottom: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingTop: space.xl,
-  },
-  camSideBtn: { alignItems: 'center', gap: space.xs, width: 76 },
-  /* ⚠ 기호를 상자 가운데 앉히는 값이다 — 읽는 행간이 아니므로 `leading` 을 쓰지 않는다 */
-  camSideIcon: { color: overlay.fg, fontSize: type.h1, lineHeight: 28 },
-  camSideLabel: { color: overlay.faint, fontSize: type.caption },
-  shutter: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    borderWidth: 4,
-    borderColor: overlay.hairline,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shutterInner: { width: 58, height: 58, borderRadius: 29, backgroundColor: overlay.fg },
 
   topBar: {
     flexDirection: 'row',
@@ -495,7 +445,8 @@ const st = StyleSheet.create({
     paddingHorizontal: space.xl,
     paddingVertical: space.md,
   },
-  topAction: { fontSize: type.body, fontWeight: '600', width: 40 },
+  /** ⚠ 폭만 잡는다 — 반대쪽 빈 자리(actionSpacer)와 같아야 제목이 가운데 온다 */
+  topAction: { width: 40 },
   topTitle: { fontSize: type.subtitle, fontWeight: '700' },
   preview: { width: '100%', aspectRatio: PHOTO_ASPECT, borderRadius: radius.md },
   previewBadge: {

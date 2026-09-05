@@ -6,11 +6,11 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { GRID_GAP, GRID_PADDING, useCardWidth } from '@/components/CardGrid';
 import { Fab } from '@/components/Fab';
 import { IconQr, IconSort } from '@/components/Icon';
 import { DailyMission } from '@/components/DailyMission';
@@ -45,10 +45,11 @@ import { useTheme, type, radius, space } from '@/lib/theme';
  *   가상화는 FlatList 가 기본으로 해 주므로 별도 윈도잉 코드가 필요 없다.
  */
 
-// ⚠ 이 두 값은 격자 스타일과 cardW 계산이 **함께** 본다. 하나만 고치면 카드가
-//   넘쳐서 한 줄에 하나씩 떨어진다 — 박스·장소 상세에서 실제로 그랬다.
-const GAP = space.md;
-const PADDING = space.lg;
+// ⚠ 격자 치수는 `components/CardGrid` 한 곳에서 온다. 폭 계산과 스타일의 gap 이
+//   어긋나면 카드 두 장이 넘쳐 **한 줄에 하나씩** 떨어지고(2026-09-02), 화면마다
+//   여백이 다르면 같은 카드가 다른 폭으로 보인다(2026-09-06). 여기서 값을 적지 않는다.
+const GAP = GRID_GAP;
+const PADDING = GRID_PADDING;
 /**
  * 화면 위쪽에 **고정된 줄들 사이**의 간격 (검색줄 · 장소 필터 · 목록).
  *
@@ -64,7 +65,6 @@ export default function FindTab() {
   const t = useT();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const win = useWindowDimensions();
   const { activeId } = useHousehold();
 
   const { indexed, isLoading, isFetching, dataUpdatedAt } = useSearchIndex(activeId);
@@ -128,7 +128,7 @@ export default function FindTab() {
    */
   const showFilters = (locations.data?.length ?? 0) > 1;
 
-  const cardW = (win.width - PADDING * 2 - GAP) / 2;
+  const cardW = useCardWidth();
 
   /**
    * 첫 실행 안내를 띄울지.

@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { IconBoxes } from '@/components/Icon';
 import { ThumbRow } from '@/components/ThumbRow';
-import { Empty, Loading, Screen, SectionLabel } from '@/components/ui';
+import { Empty, Loading, Screen, SectionLabel, TextButton } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { useLocations } from '@/features/storage/api';
 import { useCoverStacks } from '@/features/storage/covers';
@@ -81,9 +81,7 @@ export default function PlacesTab() {
 
         <SectionLabel
           action={
-            <Pressable onPress={() => setAdding(true)} hitSlop={12}>
-              <Text style={[st.addBtn, { color: c.accentText }]}>{t.places.addLocation}</Text>
-            </Pressable>
+            <TextButton label={t.places.addLocation} onPress={() => setAdding(true)} size="small" />
           }
         >
           {t.places.section(list.length)}
@@ -123,10 +121,8 @@ export default function PlacesTab() {
 
 const st = StyleSheet.create({
   body: { paddingHorizontal: space.xl, gap: space.md },
-  addBtn: { fontSize: type.body, fontWeight: '600' },
   switcher: { flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' },
   chip: { borderWidth: 1, borderRadius: radius.full, paddingHorizontal: space.lg, paddingVertical: space.sm },
   chipText: { fontSize: type.label },
-  hint: { fontSize: type.caption },
   list: { gap: space.sm },
 });
