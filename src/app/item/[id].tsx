@@ -37,6 +37,11 @@ import { CameraCapture } from '@/features/item/CameraCapture';
 import { PHOTO_ASPECT, preparePhoto } from '@/features/item/photo';
 import { useRemovePhoto, useSetPhoto } from '@/features/item/photoApi';
 import { IMAGE_CACHE_POLICY } from '@/features/item/thumbs';
+import {
+  dropPendingPhoto,
+  retryPendingPhoto,
+  usePendingPhoto,
+} from '@/features/item/photoQueue';
 import { useLocations } from '@/features/storage/api';
 import { useT } from '@/lib/i18n';
 import { overlay, radius, type, useTheme, space, tracking, leading } from '@/lib/theme';
@@ -69,6 +74,14 @@ export default function ItemDetailScreen() {
   const move = useMoveItem(itemId);
   const setPhoto = useSetPhoto('items', itemId, activeId);
   const removePhoto = useRemovePhoto('items', itemId);
+  /**
+   * 등록할 때 찍은 사진이 아직 안 올라갔는가 (2026-09-06).
+   *
+   * ⚠ 이 자리가 비어 있으면 "사진 없이 등록했나 보다" 로 읽힌다. 실제로는 올라가는
+   *   중이거나 **실패한 채 방치된 것**이었고, 그래서 사진이 사라진 것으로 보였다.
+   *   상태를 보여주고 다시 시도할 길을 여기 둔다 — 사용자가 도착하는 화면이 여기다.
+   */
+  const pendingPhoto = usePendingPhoto(itemId);
 
   const insets = useSafeAreaInsets();
 
@@ -201,7 +214,15 @@ export default function ItemDetailScreen() {
             사람이 촬영 화면을 만났다(사용자 보고). 바꾸기는 뷰어 아래 줄에 있다.
             사진이 없을 때만 곧장 카메라로 간다 — 그땐 의도가 하나뿐이다.
           */}
-          <Pressable onPress={() => (photo.data ? setViewer(true) : setPhotoSheet(true))}>
+          <Pressable
+            onPress={() => {
+              if (photo.data) return setViewer(true);
+              // 실패한 사진이 기다리고 있으면, 누르는 뜻은 "다시 올려" 다
+              if (pendingPhoto?.state === 'failed') return retryPendingPhoto(itemId);
+              if (pendingPhoto?.state === 'uploading') return; // 올라가는 중엔 할 일이 없다
+              setPhotoSheet(true);
+            }}
+          >
             {photo.data ? (
               <Image
                 source={photo.data}
@@ -214,7 +235,23 @@ export default function ItemDetailScreen() {
               <View
                 style={[st.photoAdd, { borderColor: c.borderStrong, backgroundColor: c.sunk }]}
               >
-                <Text style={[st.photoAddText, { color: c.textMuted }]}>{t.item.addPhoto}</Text>
+                <Text
+                  style={[
+                    st.photoAddText,
+                    { color: pendingPhoto?.state === 'failed' ? c.danger : c.textMuted },
+                  ]}
+                >
+                  {pendingPhoto
+                    ? pendingPhoto.state === 'uploading'
+                      ? t.item.photoUploading
+                      : t.item.photoStuck
+                    : t.item.addPhoto}
+                </Text>
+                {pendingPhoto?.state === 'failed' && (
+                  <Text style={[st.photoAddHint, { color: c.textMuted }]}>
+                    {t.item.photoRetry}
+                  </Text>
+                )}
               </View>
             )}
           </Pressable>
@@ -376,6 +413,7 @@ export default function ItemDetailScreen() {
           setViewer(false);
           try {
             await removePhoto.mutateAsync();
+            dropPendingPhoto(itemId); // 뗐는데 뒤늦게 올라와 되살아나면 안 된다
           } catch (e) {
             Alert.alert(
               t.camera.photoRemoveFailed,
@@ -395,6 +433,9 @@ export default function ItemDetailScreen() {
               try {
                 // 등록 화면과 같다 — 원본을 받아 여기서 처리한다
                 await setPhoto.mutateAsync(await preparePhoto(uri));
+                /* ⚠ 기다리던 옛 사진을 버린다. 안 버리면 나중에 그것이 올라와
+                     방금 고른 사진을 덮어쓴다 — 되돌릴 수 없는 종류의 사고다. */
+                dropPendingPhoto(itemId);
                 setPhotoSheet(false);
               } catch (e) {
                 Alert.alert(
@@ -406,6 +447,7 @@ export default function ItemDetailScreen() {
             onRemove={async () => {
               try {
                 await removePhoto.mutateAsync();
+                dropPendingPhoto(itemId); // 뗐는데 뒤늦게 올라와 되살아나면 안 된다
                 setPhotoSheet(false);
               } catch (e) {
                 Alert.alert(
@@ -887,6 +929,7 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  photoAddHint: { fontSize: type.caption },
   photoAddText: { fontSize: type.body, fontWeight: '600' },
   pathRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
   pathHint: { fontSize: type.tiny, fontWeight: '600', letterSpacing: tracking.wide, marginBottom: space.xs },

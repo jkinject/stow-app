@@ -243,6 +243,10 @@ export const KO = {
     location: '위치',
     loose: ' · 낱개',
     move: '이동',
+    /* ── 등록할 때 찍은 사진이 아직 안 올라간 상태 (2026-09-06) ── */
+    photoUploading: '사진 올리는 중…',
+    photoStuck: '사진을 올리지 못했습니다',
+    photoRetry: '눌러서 다시 시도',
     moving: '옮기는 중…',
     moveFailed: '옮기지 못했습니다',
     moveTitle: '어디로 옮길까요?',
@@ -322,6 +326,9 @@ export const KO = {
       `아직 서버에 저장되지 않은 물건이 ${n}개입니다. 연결이 회복되면 자동으로 저장됩니다.`,
     pendingSync: (n: number) => `동기화 대기 ${n}`,
     cameraPermission: '카메라 권한이 필요합니다',
+    /** 사진 처리(크기 변환)가 실패한 경우. 물건은 저장됐다 */
+    photoLostTitle: '사진은 저장하지 못했습니다',
+    photoLostBody: '물건은 등록됐습니다. 사진은 이 화면에서 다시 추가할 수 있습니다.',
   },
 
   addFlow: {

@@ -41,7 +41,7 @@ npm start
 ```bash
 npm run typecheck        # tsc --noEmit
 npm run lint
-npm test                 # jest (73건)
+npm test                 # jest (80건)
 npm run db:test          # pgTAP (286건) — RLS·트리거·RPC 전수 검증
 npm run db:reset         # 마이그레이션 재적용 + 시드
 

@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 import { recordServerLatency } from './metrics';
-import { uploadPhoto, type PreparedPhoto } from './photo';
+import { type PreparedPhoto } from './photo';
+import { attachPhotoLater } from './photoQueue';
 
 /**
  * 등록 큐 — 계획 §2.4 의 긴장(P1 등록 마찰 최소화 ↔ P4 서버가 진실의 원천) 해소.
@@ -50,7 +51,12 @@ export type DraftItem = {
   note: string | null;
 };
 
-export type PendingState = 'saving' | 'uploading' | 'done' | 'row_failed' | 'photo_failed';
+/**
+ * ⚠ 사진 관련 상태('uploading' · 'photo_failed')는 없앴다 — 사진은 `photoQueue` 가
+ *   맡고, 그 상태는 물건 상세에서 보여준다. 여기 남겨 두면 **아무도 그리지 않는
+ *   상태**가 다시 생긴다(그게 사진 유실의 원인이었다).
+ */
+export type PendingState = 'saving' | 'done' | 'row_failed';
 
 export type Pending = {
   draft: DraftItem;
@@ -80,14 +86,17 @@ async function insertRow(draft: DraftItem) {
   recordServerLatency(Date.now() - t0);
 }
 
-async function attachPhoto(draft: DraftItem, photo: PreparedPhoto) {
-  const { thumbPath, photoPath } = await uploadPhoto(draft.household_id, draft.id, photo);
-  const { error } = await supabase
-    .from('items')
-    .update({ thumb_path: thumbPath, photo_path: photoPath })
-    .eq('id', draft.id);
-  if (error) throw error;
-}
+/**
+ * 사진은 **이 훅이 들고 있지 않는다** (2026-09-06 사용자 보고로 옮겼다).
+ *
+ * ⚠⚠ 예전에는 여기서 직접 올리고, 실패하면 `photo_failed` 상태를 적었다. 그런데
+ *   등록이 끝나면 곧바로 물건 상세로 넘어가면서 **이 훅을 들고 있던 등록 화면이
+ *   언마운트된다.** 그 상태를 그리는 화면도 없었다. 그래서 업로드가 실패하면
+ *   사진이 아무 말 없이 사라졌다 — 찍은 사람은 등록됐다고 믿는데 사진만 없다.
+ *
+ *   이제 `photoQueue` 가 맡는다. 화면 밖(모듈)에 있고 디스크에 적어 두므로
+ *   화면이 사라져도, 앱을 껐다 켜도 이어서 올라간다. 상태는 물건 상세가 보여준다.
+ */
 
 export function useRegisterQueue(onSynced?: () => void) {
   const qc = useQueryClient();
@@ -149,10 +158,6 @@ export function useRegisterQueue(onSynced?: () => void) {
       if (!skipInsert) {
         try {
           await insertRow(draft);
-          patch(draft.id, { state: photo ? 'uploading' : 'done', error: undefined });
-          invalidateLists(draft);
-          onSyncedRef.current?.();
-          onRowSaved?.();
         } catch (e) {
           patch(draft.id, {
             state: 'row_failed',
@@ -162,20 +167,25 @@ export function useRegisterQueue(onSynced?: () => void) {
         }
       }
 
-      // 사진은 행이 생긴 뒤에 붙인다. 실패해도 물건은 이미 저장돼 있다 (AC4)
+      /**
+       * 사진을 끈질긴 큐에 **맡기고 나서** 화면을 넘긴다 (AC4).
+       *
+       * ⚠ 업로드가 끝나기를 기다리지 않는다 — 기다리면 등록이 느려진다(P1).
+       *   다만 **디스크에 적히는 것까지는** 기다린다. 여기서 넘어가는 순간 이 화면은
+       *   사라지므로, 적기 전에 넘기면 사진을 잃을 자리가 다시 생긴다.
+       */
       if (photo) {
         try {
-          await attachPhoto(draft, photo);
-          patch(draft.id, { state: 'done', error: undefined });
-          invalidateLists(draft); // 썸네일 경로가 생겼으므로 목록을 다시 그린다
-          onSyncedRef.current?.();
-        } catch (e) {
-          patch(draft.id, {
-            state: 'photo_failed',
-            error: e instanceof Error ? e.message : '사진 업로드 실패',
-          });
+          await attachPhotoLater(draft.household_id, draft.id, photo);
+        } catch {
+          /* 맡기는 것 자체가 실패해도 물건은 이미 저장됐다 — 등록을 막지 않는다 */
         }
       }
+
+      patch(draft.id, { state: 'done', error: undefined });
+      invalidateLists(draft);
+      onSyncedRef.current?.();
+      onRowSaved?.();
     },
     [invalidateLists, patch],
   );
@@ -214,13 +224,8 @@ export function useRegisterQueue(onSynced?: () => void) {
     (id: string) => {
       const entry = itemsRef.current.get(id);
       if (!entry) return;
-      const wasPhotoOnly = entry.state === 'photo_failed'; // 행은 이미 있다
-      patch(id, {
-        state: wasPhotoOnly ? 'uploading' : 'saving',
-        error: undefined,
-        attempts: entry.attempts + 1,
-      });
-      void processOne(entry.draft, entry.photo, wasPhotoOnly).catch(() => {});
+      patch(id, { state: 'saving', error: undefined, attempts: entry.attempts + 1 });
+      void processOne(entry.draft, entry.photo).catch(() => {});
     },
     [patch, processOne],
   );

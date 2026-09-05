@@ -264,11 +264,18 @@ function FormStep({
     try {
       // 배경에서 돌던 이미지 처리를 여기서 거둔다. 대개 이미 끝나 있다.
       let photo: PreparedPhoto | null = null;
+      /**
+       * ⚠⚠ 여기서 사진을 잃어도 **아무 말도 하지 않았다** (2026-09-06 사용자 보고로 발견).
+       *   `__DEV__` 콘솔 경고뿐이라 릴리스 빌드에서는 흔적조차 없었다. 찍은 사람은
+       *   사진과 함께 등록한 줄 아는데 조용히 사진 없는 물건이 됐다.
+       *   물건은 그대로 저장하되(AC3 — 필수는 이름 하나), **말은 해 준다.**
+       */
+      let photoLost = false;
       if (preparing) {
         try {
           photo = await preparing;
         } catch (e) {
-          // 사진 처리 실패로 등록을 막지 않는다 — 이름만으로도 물건은 저장돼야 한다 (AC3)
+          photoLost = true;
           if (__DEV__) console.warn('[add] 사진 처리 실패, 사진 없이 저장', e);
         }
       }
@@ -276,6 +283,8 @@ function FormStep({
       await queue.enqueueAndWaitForRow(draft, photo);
       abandonCycle();
       onDone(draft.id, draft.name);
+      // 화면을 넘긴 **뒤에** 알린다 — 도착한 상세에서 곧바로 다시 찍을 수 있다
+      if (photoLost) Alert.alert(t.add.photoLostTitle, t.add.photoLostBody);
     } catch (e) {
       Alert.alert(t.add.saveFailed, e instanceof Error ? e.message : t.common.tryAgain);
     } finally {

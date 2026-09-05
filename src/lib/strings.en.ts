@@ -189,6 +189,9 @@ export const EN: Dict = {
     location: 'Location',
     loose: ' · no box',
     move: 'Move',
+    photoUploading: 'Uploading photo…',
+    photoStuck: "Couldn't upload the photo",
+    photoRetry: 'Tap to try again',
     moving: 'Moving…',
     moveFailed: "Couldn't move it",
     moveTitle: 'Move it where?',
@@ -243,6 +246,8 @@ export const EN: Dict = {
       `${n} item${n === 1 ? '' : 's'} are not on the server yet. They will save once you are back online.`,
     pendingSync: (n) => `${n} waiting to sync`,
     cameraPermission: 'Camera permission needed',
+    photoLostTitle: "Couldn't save the photo",
+    photoLostBody: 'The item was added. You can add a photo again from this screen.',
   },
 
   addFlow: {

@@ -10,9 +10,10 @@ import {
 } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, AppState, View } from 'react-native';
 
 import { ToastProvider } from '@/components/Toast';
+import { resumePendingPhotos } from '@/features/item/photoQueue';
 import { useMyHouseholds } from '@/features/household/api';
 import { HouseholdProvider } from '@/features/household/context';
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -54,6 +55,30 @@ function Chrome({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * 못 올린 사진을 이어서 올린다 (2026-09-06 사용자 보고 — 등록했는데 사진이 사라졌다).
+ *
+ * ⚠ **세션이 생긴 뒤에** 부른다. Storage 업로드는 로그인 없이는 반드시 실패하고,
+ *   실패로 적히면 사용자가 다시 누르기 전까지 그대로 남는다. 켜자마자 부르면
+ *   세션 복구보다 먼저 달려서 매번 한 번씩 헛되이 실패한다.
+ *
+ * ⚠ 앱이 앞으로 돌아올 때도 부른다. 전파가 없는 곳에서 등록한 사진은 그때 올라간다 —
+ *   등록하고 화면을 끄고 지하철을 타는 흐름이 실제로 있다.
+ *
+ * ⚠ 타이머로 계속 재시도하지 않는다. 배터리를 태우면서까지 붙잡을 일이 아니고,
+ *   물건 상세에 "다시 시도" 가 있어서 사용자가 언제든 밀 수 있다.
+ */
+function usePhotoQueueDriver(ready: boolean) {
+  useEffect(() => {
+    if (!ready) return;
+    void resumePendingPhotos();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void resumePendingPhotos();
+    });
+    return () => sub.remove();
+  }, [ready]);
+}
+
 function Guard({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
   const households = useMyHouseholds();
@@ -63,6 +88,7 @@ function Guard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const authed = !!session;
+  usePhotoQueueDriver(authed);
   // enabled:false 일 때 isLoading 은 true 로 남는다. isPending+fetchStatus 로 실제 상태를 본다.
   const householdsReady = !authed || households.isFetched;
   const hasHousehold = (households.data?.length ?? 0) > 0;
@@ -106,7 +132,6 @@ function Guard({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
-
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
