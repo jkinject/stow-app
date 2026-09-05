@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Keyboard, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Field } from '@/components/ui';
@@ -65,6 +65,40 @@ export function LocationSheet({
   /** 아직 저장하지 않고 담아 둔 것들. 고른 순서를 지키려고 배열로 둔다 */
   const [picked, setPicked] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+
+  /**
+   * 자판이 가리는 만큼 아래에 여유를 준다 (2026-09-06).
+   *
+   * ⚠ 이 화면도 `Modal` 이라 액티비티의 IME 인셋이 닿지 않는다 — `KeyboardSpacer` 로
+   *   감싸도 **아무 일도 일어나지 않는다**(이동 화면에서 실기기 로그로 확인했다).
+   *   RN 의 `Keyboard` 이벤트는 모달 안에서도 오므로 그것으로 여유를 만들고,
+   *   입력칸은 **화면 좌표를 재서** 가린 만큼만 밀어 올린다.
+   */
+  const scrollRef = useRef<ScrollView | null>(null);
+  const scrollY = useRef(0);
+  const inputRef = useRef<View | null>(null);
+  const [kbPad, setKbPad] = useState(0);
+
+  useEffect(() => {
+    if (!visible) return;
+    const show = Keyboard.addListener('keyboardDidShow', (e) => {
+      const top = e.endCoordinates.screenY;
+      setKbPad(e.endCoordinates.height + 120); // 삼성 자판의 툴바 줄만큼 넉넉히
+      requestAnimationFrame(() =>
+        inputRef.current?.measureInWindow((_x, y, _w, h) => {
+          const overlap = y + h + 16 - top;
+          if (overlap > 0) {
+            scrollRef.current?.scrollTo({ y: Math.max(0, scrollY.current + overlap), animated: true });
+          }
+        }),
+      );
+    });
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKbPad(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, [visible]);
 
   /** 이미 DB 에 있는 곳 — 여기서는 만들 수도 없앨 수도 없다(없애는 건 삭제다) */
   const taken = useMemo(
@@ -198,8 +232,13 @@ export function LocationSheet({
         </View>
 
         <ScrollView
-          contentContainerStyle={[st.body, { paddingBottom: insets.bottom + 32 }]}
+          ref={scrollRef}
+          contentContainerStyle={[st.body, { paddingBottom: insets.bottom + 32 + kbPad }]}
           keyboardShouldPersistTaps="handled"
+          scrollEventThrottle={32}
+          onScroll={(e) => {
+            scrollY.current = e.nativeEvent.contentOffset.y;
+          }}
         >
           {chips.length > 0 && (
             <View style={st.block}>
@@ -228,7 +267,7 @@ export function LocationSheet({
             </View>
           )}
 
-          <View style={st.block}>
+          <View ref={inputRef} style={st.block}>
             <Text style={[st.label, { color: c.textFaint }]}>{t.locSheet.manualHint}</Text>
             <View style={st.manual}>
               <Field
@@ -299,7 +338,6 @@ export function LocationSheet({
 
 const st = StyleSheet.create({
   root: { flex: 1 },
-  flex: { flex: 1 },
   head: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -312,6 +350,7 @@ const st = StyleSheet.create({
   title: { fontSize: type.bodyStrong, fontWeight: '700', flex: 1, textAlign: 'center' },
   close: { fontSize: type.body },
   save: { fontSize: type.body, fontWeight: '700' },
+  flex: { flex: 1 },
   body: { paddingHorizontal: space.xl, paddingTop: space.xl, gap: space.xxl },
   block: { gap: space.md },
   label: { fontSize: type.caption },

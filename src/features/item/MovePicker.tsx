@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Keyboard, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconBox, IconBoxes } from '@/components/Icon';
@@ -109,11 +109,38 @@ export function MovePicker({
   const hereY = useRef<{ group?: number; row?: number }>({});
   const viewH = useRef(0);
   const userMoved = useRef(false);
+  /** 지금 스크롤 위치 — 얼마나 더 끌어올려야 하는지 계산하는 기준점 */
+  const scrollY = useRef(0);
+  /** 열려 있는 "새 박스" 입력칸. 화면 좌표를 직접 재려고 들고 있는다 */
+  const addRef = useRef<View | null>(null);
+
+  /**
+   * ⚠⚠ **자판 높이를 여기서 직접 듣는다** (2026-09-06 실기기 로그로 확인).
+   *
+   *   처음엔 `KeyboardSpacer`(reanimated 의 IME 인셋)로 감쌌는데 **아무 일도 하지
+   *   않았다.** 실기기 로그에서 ScrollView 높이가 자판 전후로 1015.1 그대로였다 —
+   *   즉 인셋이 0 으로 들어온다. `Modal` 은 제 윈도우를 따로 띄우므로 액티비티
+   *   윈도우의 IME 인셋이 닿지 않는다(토스트가 Modal 뒤에 깔리는 것과 같은 뿌리다).
+   *
+   *   RN 의 `Keyboard` 이벤트는 윈도우와 무관하게 IME 수명주기로 오므로 모달
+   *   안에서도 들어온다. 다만 이 프로젝트는 삼성 자판에서 **보고 높이가 실제보다
+   *   작다**는 것을 이미 겪었다(툴바 줄만큼). 그래서 높이를 믿고 계산하지 않고,
+   *   **`screenY`(자판 윗변)와 입력칸의 실측 좌표만 비교한다** — 겹친 만큼만 밀어
+   *   올린다. 어긋날 여지가 없다.
+   *
+   * ⚠ 카테고리 시트(`features/category/CategorySheet`)에서는 `KeyboardSpacer` 가
+   *   **제대로 동작한다**(같은 날 실기기 확인). 그쪽은 `transparent` Modal 이라는
+   *   차이가 있는데, 그것이 원인인지까지는 확인하지 않았다. 그러니 "모달이면 무조건
+   *   안 된다" 고 읽지 말 것 — 확인한 사실은 **이 화면에서 인셋이 0 이었다**는 것뿐이다.
+   */
+  const kbTop = useRef<number | null>(null);
+  const [kbPad, setKbPad] = useState(0);
 
   useEffect(() => {
     if (!visible) {
       hereY.current = {};
       userMoved.current = false;
+      kbTop.current = null;
     }
   }, [visible]);
 
@@ -139,6 +166,54 @@ export function MovePicker({
   }
 
   /**
+   * 열려 있는 "새 박스" 입력칸이 자판에 가리면 **가린 만큼만** 밀어 올린다.
+   *
+   * ⚠ 높이를 계산하지 않고 **화면 좌표를 잰다.** 자판 윗변(screenY)과 입력칸 아랫변을
+   *   비교하면 보고 높이가 얼마나 정확한지와 무관하게 정확히 겹친 만큼이 나온다.
+   * ⚠ 이미 보이면 아무 것도 하지 않는다 — 보고 있는 화면을 끌어당기지 않는다.
+   */
+  function revealAddBox() {
+    const top = kbTop.current;
+    const node = addRef.current;
+    if (top === null || !node) return;
+    node.measureInWindow((_x, y, _w, h) => {
+      const overlap = y + h + 16 - top; // 아래로 조금 남긴다
+      if (overlap > 0) {
+        scrollRef.current?.scrollTo({ y: Math.max(0, scrollY.current + overlap), animated: true });
+      }
+    });
+  }
+
+  /**
+   * 자판이 오르내릴 때: (1) 스크롤 여유를 만들고 (2) 입력칸을 끌어올린다.
+   *
+   * ⚠ **여유(padding)가 없으면 밀어 올릴 수가 없다.** 목록 끝 장소(맨 아래 두세 개)는
+   *   이미 바닥까지 내려온 상태라 더 내려갈 데가 없다 — 실제로 "카페장은 되는데
+   *   컴퓨터방은 잘린다" 가 이것이었다(2026-09-06 사용자 보고, 실기기 로그로 확인).
+   *
+   * ⚠ 보고 높이에 여유분을 얹는다. 삼성 자판은 툴바 줄만큼 작게 보고하는 일이 있는데,
+   *   남는 여백은 스크롤을 조금 더 내릴 수 있다는 뜻일 뿐 해가 없다. 모자라면
+   *   입력칸을 끝내 못 올린다 — 한쪽으로만 틀리게 만든다.
+   */
+  useEffect(() => {
+    if (!visible) return;
+    const show = Keyboard.addListener('keyboardDidShow', (e) => {
+      kbTop.current = e.endCoordinates.screenY;
+      setKbPad(e.endCoordinates.height + 120);
+      // 여유가 붙은 뒤에 밀어야 실제로 밀린다 — 다음 프레임에 잰다
+      requestAnimationFrame(revealAddBox);
+    });
+    const hide = Keyboard.addListener('keyboardDidHide', () => {
+      kbTop.current = null;
+      setKbPad(0);
+    });
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, [visible]);
+
+  /**
    * 장소별 펼침 상태. **현재 물건이 있는 장소만** 열어 둔다.
    *
    * 박스가 늘어나면 목록이 하염없이 길어진다 (사용자 보고). 접어 두면 장소 목록이
@@ -161,6 +236,9 @@ export function MovePicker({
   if (visible !== wasVisible) {
     setWasVisible(visible);
     if (visible) setOpen({ [currentLocationId]: true });
+    // ⚠ 닫힐 때 자판 여유도 함께 턴다. 남겨 두면 다음에 열었을 때 목록 아래가
+    //   이유 없이 비어 있다(자판은 이미 내려갔는데 여백만 남는다).
+    setKbPad(0);
   }
 
   const [boxFor, setBoxFor] = useState<string | null>(null);
@@ -200,13 +278,21 @@ export function MovePicker({
         ) : (
           <ScrollView
             ref={scrollRef}
-            contentContainerStyle={[pickerSt.body, { paddingBottom: insets.bottom + 32 }]}
+            contentContainerStyle={[pickerSt.body, { paddingBottom: insets.bottom + 32 + kbPad }]}
             keyboardShouldPersistTaps="handled"
             onLayout={(e) => {
               viewH.current = e.nativeEvent.layout.height;
               scrollToHere();
             }}
-            onContentSizeChange={scrollToHere}
+            onContentSizeChange={() => {
+              scrollToHere();
+              // 여유가 늘어 스크롤할 수 있게 된 직후다 — 이때 밀어 올린다
+              revealAddBox();
+            }}
+            scrollEventThrottle={32}
+            onScroll={(e) => {
+              scrollY.current = e.nativeEvent.contentOffset.y;
+            }}
             onScrollBeginDrag={() => {
               userMoved.current = true;
             }}
@@ -315,7 +401,7 @@ export function MovePicker({
                           곧 그 물건이 갈 자리라, 목록 맨 아래 버튼 하나로는 알 수 없다. */}
                       <View style={pickerSt.indent}>
                         {boxFor === loc.id ? (
-                          <View style={st.newBox}>
+                          <View ref={addRef} style={st.newBox}>
                             <Field
                               value={boxName}
                               onChangeText={setBoxName}
@@ -338,6 +424,10 @@ export function MovePicker({
                             onPress={() => {
                               setBoxName('');
                               setBoxFor(loc.id);
+                              requestAnimationFrame(revealAddBox);
+                              /* 여기서부터는 사람이 자리를 정한 것이다 — "지금 여기" 로
+                                 되돌리는 자동 스크롤이 입력칸을 도로 밀어내면 안 된다 */
+                              userMoved.current = true;
                             }}
                             disabled={busy}
                             hitSlop={8}
