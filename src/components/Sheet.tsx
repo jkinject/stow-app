@@ -117,9 +117,11 @@ export function BottomSheet({
  *
  *   RN 의 `Keyboard` 이벤트는 Modal 안에서도 온다. 그 높이만큼 시트를 밀어 올린다.
  *
- * ⚠ 안드로이드는 보고 높이에 **삼성 자판의 툴바 줄이 빠진다**(components/KeyboardSpacer
- *   주석 — 실측 100dp 가량). 넉넉하게 더한다. 남으면 시트가 조금 더 올라갈 뿐이고,
- *   모자라면 입력칸이 가려진다 — 틀릴 거면 넉넉한 쪽으로.
+ * ⚠ 보고 높이를 **그대로** 쓴다. 처음엔 안드로이드에 100dp 를 더했다 — KeyboardSpacer 주석의
+ *   "삼성 자판 툴바 줄이 빠진다" 를 믿어서다. 그러자 시트와 자판 사이에 딱 그만큼 빈 띠가
+ *   생겼다(사용자 보고, 캡처로 112dp 실측). 그 계측은 **일반 화면**의 값이었고, Modal 의
+ *   자판 이벤트는 다이얼로그 윈도우의 인셋에서 오므로 툴바까지 포함해 정확하다.
+ *   자판 크기는 기기·자판 앱마다 다르니 상수로 보정할 수 없다 — 보고값이 곧 답이다.
  */
 function useModalKeyboardHeight(enabled: boolean): number {
   const [h, setH] = useState(0);
@@ -127,9 +129,7 @@ function useModalKeyboardHeight(enabled: boolean): number {
     if (!enabled) return;
     const showEv = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEv = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const show = Keyboard.addListener(showEv, (e) =>
-      setH(e.endCoordinates.height + (Platform.OS === 'android' ? 100 : 0)),
-    );
+    const show = Keyboard.addListener(showEv, (e) => setH(e.endCoordinates.height));
     const hide = Keyboard.addListener(hideEv, () => setH(0));
     return () => {
       show.remove();
