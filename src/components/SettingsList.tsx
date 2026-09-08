@@ -107,35 +107,3 @@ export function SettingsSwitchRow({
   );
 }
 
-/**
- * 상태를 보여 주기만 하는 한 줄 — 눌리지 않고 화살표도 없다.
- * ⚠ "알림 권한 허용됨 · 3개 예약됨" 을 `SettingsRow` 로 그렸더니 눌릴 것처럼 보였다
- *   (사용자 지적 2026-09-08). 화살표는 "누르면 어디로 간다" 는 약속이라 정보 줄에 붙이면
- *   거짓말이 된다. 어디로도 안 가는 줄은 이걸 쓴다.
- */
-export function SettingsStatusRow({
-  icon,
-  label,
-  value,
-  first,
-}: {
-  icon?: (color: string) => ReactNode;
-  label: string;
-  value?: string;
-  first?: boolean;
-}) {
-  const { c } = useTheme();
-  return (
-    <View style={[st.row, !first && { borderTopWidth: 1, borderTopColor: c.border }]}>
-      {icon ? <View style={st.icon}>{icon(c.text)}</View> : null}
-      <Text style={[st.label, { color: c.text }]} numberOfLines={1}>
-        {label}
-      </Text>
-      {value ? (
-        <Text style={[st.value, { color: c.textMuted }]} numberOfLines={1}>
-          {value}
-        </Text>
-      ) : null}
-    </View>
-  );
-}

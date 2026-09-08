@@ -220,15 +220,6 @@ async function syncOnce(items: ReminderSource[], texts: Texts): Promise<number> 
   }
 }
 
-/** 지금 걸려 있는 개수 — 설정 화면에서 보여 준다 */
-export async function countScheduled(): Promise<number> {
-  try {
-    return (await Notifications.getAllScheduledNotificationsAsync()).length;
-  } catch {
-    return 0;
-  }
-}
-
 /**
  * 목록이나 설정이 바뀌면, 그리고 앱으로 돌아올 때마다 알림을 다시 건다.
  * 탭 레이아웃 한 곳에서만 부른다 — 화면마다 부르면 같은 일을 여러 번 한다.
