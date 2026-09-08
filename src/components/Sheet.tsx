@@ -1,9 +1,8 @@
-import type { ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Keyboard, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconCheck, IconX } from '@/components/Icon';
-import { KeyboardSpacer } from '@/components/KeyboardSpacer';
 import { IconButton } from '@/components/ui';
 import { useT } from '@/lib/i18n';
 import { overlay, radius, space, tracking, type, useTheme } from '@/lib/theme';
@@ -55,13 +54,13 @@ export function BottomSheet({
   const Body = scroll ? ScrollView : View;
   const Backdrop = dismissOnBackdrop ? Pressable : View;
   const Card = dismissOnBackdrop ? Pressable : View;
-  const Lift = keyboard ? KeyboardSpacer : View;
+  const kb = useModalKeyboardHeight(keyboard);
 
   return (
     <Modal visible transparent animationType={title ? 'slide' : 'fade'} onRequestClose={onClose}>
       {/* 밖을 누르면 닫힌다. 안쪽 누름이 새어 나가지 않게 stopPropagation 한다 */}
       <Backdrop style={st.backdrop} onPress={dismissOnBackdrop ? onClose : undefined}>
-        <Lift style={st.flexEnd}>
+        <View style={[st.flexEnd, { paddingBottom: kb }]}>
         <Card
           style={[
             st.sheet,
@@ -100,10 +99,44 @@ export function BottomSheet({
           */}
           <Body style={scroll ? st.flex : st.shrink}>{children}</Body>
         </Card>
-        </Lift>
+        </View>
       </Backdrop>
     </Modal>
   );
+}
+
+/**
+ * Modal 안에서 자판 높이를 **직접 듣는다** (2026-09-08 사용자 보고: 소비기한 날짜를 직접
+ * 입력하려는데 자판이 시트를 통째로 덮었다).
+ *
+ * ⚠⚠ 왜 `KeyboardSpacer` 가 아닌가. 그건 reanimated 의 IME 인셋을 읽는데, Modal 은 제
+ *   윈도우를 따로 띄우므로 액티비티 윈도우의 인셋이 닿지 않아 **0** 이다 — 2026-09-06
+ *   이동 화면에서 계측으로 확인한 사실이다. 카테고리 시트가 "잘 되는" 것처럼 보였던 건
+ *   입력칸이 맨 위에 있어 자판이 덮어도 안 가려졌기 때문이지, 인셋이 왔기 때문이 아니다.
+ *   실기기(Galaxy, Android 16)에서 소비기한 시트는 입력칸이 아래쪽이라 바로 드러났다.
+ *
+ *   RN 의 `Keyboard` 이벤트는 Modal 안에서도 온다. 그 높이만큼 시트를 밀어 올린다.
+ *
+ * ⚠ 안드로이드는 보고 높이에 **삼성 자판의 툴바 줄이 빠진다**(components/KeyboardSpacer
+ *   주석 — 실측 100dp 가량). 넉넉하게 더한다. 남으면 시트가 조금 더 올라갈 뿐이고,
+ *   모자라면 입력칸이 가려진다 — 틀릴 거면 넉넉한 쪽으로.
+ */
+function useModalKeyboardHeight(enabled: boolean): number {
+  const [h, setH] = useState(0);
+  useEffect(() => {
+    if (!enabled) return;
+    const showEv = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEv = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const show = Keyboard.addListener(showEv, (e) =>
+      setH(e.endCoordinates.height + (Platform.OS === 'android' ? 100 : 0)),
+    );
+    const hide = Keyboard.addListener(hideEv, () => setH(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, [enabled]);
+  return h;
 }
 
 /**
