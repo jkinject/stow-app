@@ -97,7 +97,7 @@ export function BottomSheet({
               밀려난다** — 보이지도, 눌리지도 않는다. 줄어들게 두면 안쪽 ScrollView 가
               남는 높이 안에서 스크롤하고 버튼은 바닥에 남는다.
           */}
-          <Body style={scroll ? st.flex : st.shrink}>{children}</Body>
+          <Body style={st.shrink}>{children}</Body>
         </Card>
         </View>
       </Backdrop>
@@ -229,7 +229,12 @@ export function ModalHeader({
 }
 
 const st = StyleSheet.create({
-  /** 위 주석 참조 — minHeight: 0 이 없으면 내용 높이가 최소 높이가 되어 줄지 않는다 */
+  /**
+   * 위 주석 참조 — minHeight: 0 이 없으면 내용 높이가 최소 높이가 되어 줄지 않는다.
+   * ⚠ scroll 모드도 `flex: 1` 이 아니라 이것이다. 카드 높이는 내용이 정하는데(maxHeight 만
+   *   있다) 그 안에서 flex: 1 은 기준 높이 0 에서 "남는 공간" 을 채우는 것이라 **0** 이 된다 —
+   *   달 고르기 시트가 라벨 한 줄만 남기고 사라졌다(실기기 2026-09-08).
+   */
   shrink: { flexShrink: 1, minHeight: 0 },
   flex: { flex: 1 },
   backdrop: { flex: 1, backgroundColor: overlay.scrim },

@@ -530,6 +530,8 @@ export const KO = {
     year: '년',
     month: '월',
     day: '일',
+    yearLabel: '연도',
+    monthLabel: '월',
     invalid: '없는 날짜입니다',
     clear: '기한 없애기',
     until: (ymd: string) => {

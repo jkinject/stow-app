@@ -441,9 +441,11 @@ export const EN: Dict = {
     quickHint: 'From today',
     manualHint: 'Type a date',
     quick: { week: '1 week', month1: '1 month', month3: '3 months', month6: '6 months', year1: '1 year', year2: '2 years' },
-    year: 'Y',
-    month: 'M',
+    year: '',
+    month: '',
     day: 'D',
+    yearLabel: 'Year',
+    monthLabel: 'Month',
     invalid: 'Not a valid date',
     clear: 'Remove expiry',
     until: (ymd: string) => {

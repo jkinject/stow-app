@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ChoiceSheet } from '@/components/ChoiceSheet';
+import { IconChevron } from '@/components/Icon';
 import { BottomSheet } from '@/components/Sheet';
 import { Button, Field, TextButton } from '@/components/ui';
 import { useT } from '@/lib/i18n';
@@ -14,9 +16,10 @@ import { buildYmd, daysUntil, expiryTone, shiftYmd, todayYmd, type ExpiryTone } 
  * 두 길을 다 둔다:
  *   · **빠른 선택** — "1개월·6개월·1년·2년" 처럼 오늘부터 얼마. 포장에 기한이 없는
  *     것(직접 만든 반찬, 개봉한 것)은 대개 이렇게 정한다.
- *   · **직접 입력** — 포장에 찍힌 날짜를 년·월·일로 옮겨 적는다. 기기마다 다른
- *     네이티브 달력 대신 숫자 세 칸이다. 2027 년 3 월을 달력에서 스크롤로 찾는 것보다
- *     그냥 치는 게 빠르다.
+ *   · **직접 입력** — 포장에 찍힌 날짜를 옮겨 적는다. 연도·월은 **고르고**(select),
+ *     일만 숫자로 친다(사용자 요청 2026-09-08). 처음엔 셋 다 숫자 칸이었는데 자판이
+ *     올라오면 시트가 좁아지고 연도를 네 자리나 쳐야 했다. 연도는 올해부터 5년 뒤까지면
+ *     충분하다 — 소비기한이 그보다 먼 물건은 사실상 없다.
  *
  * 저장 전에 **D-N 을 미리 보여 준다.** 오타로 2072 년을 넣으면 "D-16000" 이 보여서 바로 안다.
  */
@@ -43,18 +46,26 @@ export function ExpirySheet({
   const [y, setY] = useState('');
   const [m, setM] = useState('');
   const [d, setD] = useState('');
+  const [pick, setPick] = useState<'year' | 'month' | null>(null);
   if (nowSeed !== seed) {
     setSeed(nowSeed);
-    const [yy, mm, dd] = (value ?? '').split('-');
-    setY(yy ?? '');
-    setM(mm ? String(Number(mm)) : '');
-    setD(dd ? String(Number(dd)) : '');
+    const [yy, mm, dd] = (value ?? todayYmd()).split('-');
+    setY(yy);
+    setM(String(Number(mm)));
+    setD(value && dd ? String(Number(dd)) : '');
+    setPick(null);
   }
 
   if (!visible) return null;
 
+  /** 올해부터 5년 뒤까지. 지금 값이 그 밖이면(옛 데이터) 그것도 목록에 넣는다 */
+  const thisYear = new Date().getFullYear();
+  const years = Array.from({ length: 6 }, (_, i) => String(thisYear + i));
+  if (y && !years.includes(y)) years.unshift(y);
+  const months = Array.from({ length: 12 }, (_, i) => String(i + 1));
+
   const ymd = buildYmd(y, m, d);
-  const touched = !!(y || m || d);
+  const touched = !!d;
   const days = ymd ? daysUntil(ymd) : null;
   const tone: ExpiryTone | null = days === null ? null : expiryTone(days);
 
@@ -101,24 +112,24 @@ export function ExpirySheet({
 
         <Text style={[st.label, { color: c.textFaint }]}>{t.expiry.manualHint}</Text>
         <View style={st.row}>
-          <Field
-            value={y}
-            onChangeText={(v) => setY(v.replace(/\D/g, '').slice(0, 4))}
-            placeholder="2027"
-            keyboardType="number-pad"
-            maxLength={4}
-            wrapStyle={st.year}
+          <SelectBox
+            value={`${y}${t.expiry.year}`}
+            label={t.expiry.yearLabel}
+            onPress={() => {
+              Keyboard.dismiss();
+              setPick('year');
+            }}
+            style={st.year}
           />
-          <Text style={[st.unit, { color: c.textMuted }]}>{t.expiry.year}</Text>
-          <Field
-            value={m}
-            onChangeText={(v) => setM(v.replace(/\D/g, '').slice(0, 2))}
-            placeholder="3"
-            keyboardType="number-pad"
-            maxLength={2}
-            wrapStyle={st.small}
+          <SelectBox
+            value={`${m}${t.expiry.month}`}
+            label={t.expiry.monthLabel}
+            onPress={() => {
+              Keyboard.dismiss();
+              setPick('month');
+            }}
+            style={st.small}
           />
-          <Text style={[st.unit, { color: c.textMuted }]}>{t.expiry.month}</Text>
           <Field
             value={d}
             onChangeText={(v) => setD(v.replace(/\D/g, '').slice(0, 2))}
@@ -149,7 +160,66 @@ export function ExpirySheet({
           <TextButton label={t.expiry.clear} tone="danger" onPress={() => onSave(null)} style={st.clear} />
         ) : null}
       </View>
+
+      {/* 연도·월 고르기 — 시트 위에 한 겹 더 (Modal 은 겹쳐 뜬다) */}
+      {pick === 'year' && (
+        <ChoiceSheet
+          title={t.expiry.yearLabel}
+          options={years.map((v) => ({ key: v, label: `${v}${t.expiry.year}`, on: v === y }))}
+          onPick={(k) => {
+            setY(k);
+            setPick(null);
+          }}
+          onClose={() => setPick(null)}
+        />
+      )}
+      {pick === 'month' && (
+        <ChoiceSheet
+          title={t.expiry.monthLabel}
+          options={months.map((v) => ({ key: v, label: `${v}${t.expiry.month}`, on: v === m }))}
+          onPick={(k) => {
+            setM(k);
+            setPick(null);
+          }}
+          onClose={() => setPick(null)}
+          scroll
+          maxHeightRatio="70%"
+        />
+      )}
     </BottomSheet>
+  );
+}
+
+/** 연도·월 한 칸 — 물건 상세의 카테고리 줄과 같은 생김새(테두리 상자 + 오른쪽 화살표) */
+function SelectBox({
+  value,
+  label,
+  onPress,
+  style,
+}: {
+  value: string;
+  label: string;
+  onPress: () => void;
+  style?: object;
+}) {
+  const { c } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [
+        st.select,
+        { borderColor: c.border, backgroundColor: c.card },
+        style,
+        pressed && { opacity: 0.7 },
+      ]}
+    >
+      <Text style={[st.selectText, { color: c.text }]} numberOfLines={1}>
+        {value}
+      </Text>
+      <IconChevron size={16} color={c.textFaint} style={st.chevronDown} />
+    </Pressable>
   );
 }
 
@@ -165,8 +235,20 @@ const st = StyleSheet.create({
   },
   chipText: { fontSize: type.label, fontWeight: '600' },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  year: { flex: 1.6 },
-  small: { flex: 1 },
+  year: { flex: 1.5 },
+  small: { flex: 1.1 },
+  select: {
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingHorizontal: space.md,
+    paddingVertical: space.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
+  },
+  selectText: { flex: 1, fontSize: type.bodyStrong },
+  /** 오른쪽 화살표(›)를 아래로 돌려 "펼쳐진다" 로 읽히게 — Icon 은 `style` 로 돌려 쓴다 */
+  chevronDown: { transform: [{ rotate: '90deg' }] },
   unit: { fontSize: type.body },
   preview: { fontSize: type.body, fontWeight: '600', marginTop: space.xs },
   clear: { alignSelf: 'center' },
