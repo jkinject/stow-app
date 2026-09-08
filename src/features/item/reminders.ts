@@ -108,7 +108,13 @@ export async function getReminderPermission(): Promise<PermissionState> {
   try {
     const p = await Notifications.getPermissionsAsync();
     if (p.granted) return 'granted';
-    return p.canAskAgain && p.status === 'undetermined' ? 'undetermined' : 'denied';
+    /**
+     * ⚠ 안드로이드(13+)는 **한 번도 안 물어본 상태**를 status 'denied' 로 보고한다
+     *   (canAskAgain 만 true). status 로만 가르면 "권한이 꺼져 있습니다 → 기기 설정" 으로
+     *   보내 버려서 앱이 물어볼 기회를 잃는다 — 실기기(Galaxy, Android 16)에서 그랬다.
+     *   "다시 물어볼 수 있다" 가 곧 "아직 안 정했다" 다.
+     */
+    return p.canAskAgain ? 'undetermined' : 'denied';
   } catch {
     return 'denied';
   }
@@ -117,6 +123,15 @@ export async function getReminderPermission(): Promise<PermissionState> {
 export async function requestReminderPermission(): Promise<boolean> {
   try {
     const p = await Notifications.requestPermissionsAsync();
+    if (p.granted) {
+      /**
+       * ⚠ 허용된 순간 **다시 걸어야** 한다. 동기화는 목록·설정이 바뀔 때만 도는데, 권한만
+       *   바뀐 지금은 둘 다 그대로라 아무것도 안 걸린다 — 앱을 껐다 켜기 전까지 "0개 예약".
+       *   설정 객체를 새로 만들어 구독자를 깨운다(값은 같다).
+       */
+      settings = { ...settings };
+      emit();
+    }
     return p.granted;
   } catch {
     return false;
