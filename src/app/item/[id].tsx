@@ -38,6 +38,9 @@ import { PhotoViewer } from '@/components/PhotoViewer';
 import { CameraCapture } from '@/features/item/CameraCapture';
 import { MAX_ITEM_PHOTOS, preparePhoto } from '@/features/item/photo';
 import { PhotoGallery, type GallerySlide } from '@/features/item/PhotoGallery';
+import { ExpirySheet } from '@/features/item/ExpirySheet';
+import { daysUntil, expiryTone } from '@/features/item/expiry';
+import { nudgeReminderPermission } from '@/features/item/reminders';
 import { useAddItemPhotos, useRemoveItemPhoto, useSetItemCover } from '@/features/item/photoApi';
 import { IMAGE_CACHE_POLICY, useThumbUrls } from '@/features/item/thumbs';
 import {
@@ -107,6 +110,7 @@ export default function ItemDetailScreen() {
   const [moving, setMoving] = useState(false);
   const [photoSheet, setPhotoSheet] = useState(false);
   const [viewer, setViewer] = useState(false);
+  const [expirySheet, setExpirySheet] = useState(false);
 
   /**
    * **등록 직후인가** (2026-09-02 사용자 요청).
@@ -387,6 +391,9 @@ export default function ItemDetailScreen() {
             onPick={(id) => update.mutateAsync({ category_id: id })}
           />
 
+          {/* 소비기한 (2026-09-08) — 카테고리처럼 한 줄 select. 누르면 시트에서 고른다 */}
+          <ExpiryRow value={row.expires_on} onPress={() => setExpirySheet(true)} />
+
           <AutoField
             label={t.item.purchaseUrl}
             value={row.purchase_url ?? ''}
@@ -518,6 +525,23 @@ export default function ItemDetailScreen() {
           />
         </Modal>
       )}
+
+      <ExpirySheet
+        visible={expirySheet}
+        value={row.expires_on}
+        busy={update.isPending}
+        onClose={() => setExpirySheet(false)}
+        onSave={async (ymd) => {
+          try {
+            await update.mutateAsync({ expires_on: ymd });
+            setExpirySheet(false);
+            // 기한을 넣는 순간이 알림이 필요한 순간이다 — 아직 안 물어봤으면 여기서 묻는다
+            if (ymd) void nudgeReminderPermission();
+          } catch (e) {
+            Alert.alert(t.item.savedFailed, e instanceof Error ? e.message : t.common.tryAgain);
+          }
+        }}
+      />
 
       <CreatedDialog
         visible={celebrate}
@@ -910,6 +934,38 @@ function CategoryPicker({
           />
         </BottomSheet>
       )}
+    </View>
+  );
+}
+
+/**
+ * 소비기한 한 줄 — "2027. 3. 15.까지 · 188일 남음 (D-188)". 급할수록 붉다.
+ * 기한이 없으면 "기한 없음" 을 흐리게 — 누르면 넣을 수 있다는 것이 보여야 한다.
+ */
+function ExpiryRow({ value, onPress }: { value: string | null; onPress: () => void }) {
+  const { c } = useTheme();
+  const t = useT();
+  const days = value ? daysUntil(value) : null;
+  const tone = days === null ? null : expiryTone(days);
+  const color =
+    tone === null ? c.textFaint : tone === 'far' ? c.text : tone === 'soon' ? c.accentText : c.danger;
+  return (
+    <View style={st.field}>
+      <Text style={[st.fieldLabel, { color: c.textFaint }]}>{t.expiry.title}</Text>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        style={({ pressed }) => [
+          st.select,
+          { borderColor: c.border, backgroundColor: c.card },
+          pressed && { opacity: 0.7 },
+        ]}
+      >
+        <Text style={[st.selectText, { color }]} numberOfLines={1}>
+          {value && days !== null ? `${t.expiry.until(value)} · ${t.expiry.dLabel(days)}` : t.expiry.none}
+        </Text>
+        <IconChevron color={c.textFaint} />
+      </Pressable>
     </View>
   );
 }

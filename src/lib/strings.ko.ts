@@ -134,6 +134,7 @@ export const KO = {
     /** 정렬 토글. **지금 어떤 순서인지**를 보여 준다 — 누르면 다른 쪽으로 바뀐다 */
     sortShuffle: '랜덤순',
     sortRecent: '최근 등록순',
+    sortExpiry: '소비기한 순',
     syncing: '동기화 중…',
     offline: (when: string) => `오프라인 — 마지막 동기화 ${when}`,
     noItems: '아직 등록된 물건이 없습니다',
@@ -438,6 +439,7 @@ export const KO = {
     family: '가족',
     familyValue: (n: number) => `${n}명`,
     trash: '휴지통',
+    expiryReminders: '소비기한 알림',
     trashHint: '지운 물건·박스·장소를 30일 안에 되돌릴 수 있습니다.',
     account: '계정',
     signOut: '로그아웃',
@@ -517,6 +519,45 @@ export const KO = {
       `이 앱은 오픈소스 소프트웨어 ${n}개를 사용합니다. 각 항목을 누르면 원본 저장소가 열립니다.`,
   },
 
+  /** 소비기한 (2026-09-08) */
+  expiry: {
+    title: '소비기한',
+    none: '기한 없음',
+    empty: '날짜를 고르거나 적어 주세요',
+    quickHint: '오늘부터',
+    manualHint: '직접 입력',
+    quick: { week: '1주', month1: '1개월', month3: '3개월', month6: '6개월', year1: '1년', year2: '2년' },
+    year: '년',
+    month: '월',
+    day: '일',
+    invalid: '없는 날짜입니다',
+    clear: '기한 없애기',
+    until: (ymd: string) => {
+      const [y, m, d] = ymd.split('-').map(Number);
+      return `${y}. ${m}. ${d}.까지`;
+    },
+    /** 상세·시트의 긴 표시 */
+    dLabel: (days: number) =>
+      days < 0 ? `${-days}일 지남` : days === 0 ? '오늘까지 (D-day)' : `${days}일 남음 (D-${days})`,
+    /** 격자 카드의 짧은 뱃지 */
+    badge: (days: number) => (days < 0 ? '만료' : days === 0 ? 'D-day' : `D-${days}`),
+  },
+  /** 소비기한 알림 설정 (2026-09-08) */
+  reminders: {
+    title: '소비기한 알림',
+    master: '알림 받기',
+    masterHint: '소비기한이 다가오면 이 기기로 알려 드립니다.',
+    whenLabel: '언제 알릴까요',
+    before: (n: number) => `만료 ${n}일 전`,
+    hourHint: '알림은 그날 오전 9시에 옵니다. 앱을 열 때마다 가까운 알림부터 최대 60개를 걸어 둡니다.',
+    permissionGranted: '알림 권한 허용됨',
+    permissionAsk: '알림 권한 허용하기',
+    permissionDenied: '알림 권한이 꺼져 있습니다',
+    openSettings: '기기 설정 열기',
+    scheduled: (n: number) => `${n}개 예약됨`,
+    notifTitle: (name: string, days: number) => `${name} · D-${days}`,
+    notifBody: (date: string, path: string) => (path ? `${date}까지 · ${path}` : `${date}까지`),
+  },
   photo: {
     change: '사진 바꾸기',
     remove: '사진 제거',

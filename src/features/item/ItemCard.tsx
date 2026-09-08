@@ -5,6 +5,7 @@ import { IconImage } from '@/components/Icon';
 import { useT } from '@/lib/i18n';
 import { useTheme, type, radius, overlay, space, tracking } from '@/lib/theme';
 
+import { daysUntil, expiryTone } from './expiry';
 import { PHOTO_ASPECT } from './photo';
 import { IMAGE_CACHE_POLICY } from './thumbs';
 
@@ -25,6 +26,7 @@ export function ItemCard({
   quantity,
   width,
   thumb,
+  expiresOn,
   onPress,
   onLongPress,
 }: {
@@ -52,6 +54,8 @@ export function ItemCard({
    *   `useThumbUrls().get()` 이 만들어 주는 값을 그대로 넘길 것.
    */
   thumb?: ImageSource;
+  /** 소비기한 — 있으면 사진 **왼쪽 아래**에 D-N 뱃지 (2026-09-08) */
+  expiresOn?: string | null;
   onPress: () => void;
   /** 박스 카드의 이름·삭제 메뉴 */
   onLongPress?: () => void;
@@ -106,6 +110,10 @@ export function ItemCard({
             아래에 회색 글씨가 한 줄 더 붙으니 카드가 글자로 빽빽해 보였다.
             수량 배지와 짝을 이루는 자리라 눈이 먼저 가고 자리도 안 먹는다.
             ⚠ 재고 없음 가림막 **뒤에** 그린다 — 가림막에 덮이면 안 된다. */}
+        {/* 소비기한 — 왼쪽 아래. 급할수록 진하다 (30일 안 주황, 5일 안·만료 빨강).
+            ⚠ 사진 위라 테마 색을 쓰지 않는다 — 분류 뱃지와 같은 이유. */}
+        {expiresOn ? <ExpiryBadge expiresOn={expiresOn} /> : null}
+
         {category ? (
           <View style={[st.catBadge, categoryColor ? { backgroundColor: categoryColor } : null]}>
             <Text
@@ -130,6 +138,22 @@ export function ItemCard({
     </Pressable>
   );
 }
+
+function ExpiryBadge({ expiresOn }: { expiresOn: string }) {
+  const t = useT();
+  const days = daysUntil(expiresOn);
+  const tone = expiryTone(days);
+  const bg = tone === 'far' ? overlay.chip : tone === 'soon' ? EXPIRY_SOON : EXPIRY_URGENT;
+  return (
+    <View style={[st.expBadge, { backgroundColor: bg }]}>
+      <Text style={st.expText}>{t.expiry.badge(days)}</Text>
+    </View>
+  );
+}
+
+/** 사진 위의 경고색 — 밑이 이미지라 테마와 무관하게 늘 같은 값 (overlay 주석과 같은 이유) */
+const EXPIRY_SOON = '#D9821F';
+const EXPIRY_URGENT = '#D93A4A';
 
 const st = StyleSheet.create({
   /**
@@ -161,6 +185,15 @@ const st = StyleSheet.create({
     paddingVertical: space.xs,
   },
   catText: { color: overlay.faint, fontSize: type.tiny, fontWeight: '600' },
+  expBadge: {
+    position: 'absolute',
+    left: 6,
+    bottom: 6,
+    borderRadius: radius.full,
+    paddingHorizontal: space.sm,
+    paddingVertical: space.xs,
+  },
+  expText: { color: overlay.fg, fontSize: type.tiny, fontWeight: '800', fontVariant: ['tabular-nums'] },
   /**
    * 다 떨어진 물건은 격자에서 **멀리서도** 구분돼야 한다.
    * 구석의 작은 배지로는 훑어볼 때 놓친다 — 사진을 짙게 덮고 가운데 크게 쓴다.

@@ -87,6 +87,7 @@ export const EN: Dict = {
     total: (n) => `${n} item${n === 1 ? '' : 's'}`,
     hits: (n) => `${n} found`,
     sortShuffle: 'Shuffled',
+    sortExpiry: 'By expiry',
     sortRecent: 'Newest first',
     syncing: 'Syncing…',
     offline: (when) => `Offline — last synced ${when}`,
@@ -356,6 +357,7 @@ export const EN: Dict = {
     family: 'Household',
     familyValue: (n) => (n === 1 ? '1 person' : `${n} people`),
     trash: 'Trash',
+    expiryReminders: 'Expiry reminders',
     trashHint: 'Restore deleted items, boxes and places within 30 days.',
     account: 'Account',
     signOut: 'Sign out',
@@ -432,6 +434,45 @@ export const EN: Dict = {
       `This app uses ${n} open source packages. Tap any entry to open its repository.`,
   },
 
+  expiry: {
+    title: 'Expiry date',
+    none: 'No expiry',
+    empty: 'Pick or type a date',
+    quickHint: 'From today',
+    manualHint: 'Type a date',
+    quick: { week: '1 week', month1: '1 month', month3: '3 months', month6: '6 months', year1: '1 year', year2: '2 years' },
+    year: 'Y',
+    month: 'M',
+    day: 'D',
+    invalid: 'Not a valid date',
+    clear: 'Remove expiry',
+    until: (ymd: string) => {
+      const [y, m, d] = ymd.split('-').map(Number);
+      return `Until ${y}. ${m}. ${d}.`;
+    },
+    dLabel: (days: number) =>
+      days < 0
+        ? `${-days} day${-days === 1 ? '' : 's'} past`
+        : days === 0
+          ? 'Today (D-day)'
+          : `${days} day${days === 1 ? '' : 's'} left (D-${days})`,
+    badge: (days: number) => (days < 0 ? 'Expired' : days === 0 ? 'D-day' : `D-${days}`),
+  },
+  reminders: {
+    title: 'Expiry reminders',
+    master: 'Remind me',
+    masterHint: 'Get a notification on this device when an expiry date is near.',
+    whenLabel: 'When',
+    before: (n: number) => `${n} day${n === 1 ? '' : 's'} before`,
+    hourHint: 'Reminders arrive at 9 AM. Each time you open the app, the nearest 60 are scheduled.',
+    permissionGranted: 'Notifications allowed',
+    permissionAsk: 'Allow notifications',
+    permissionDenied: 'Notifications are off',
+    openSettings: 'Open settings',
+    scheduled: (n: number) => `${n} scheduled`,
+    notifTitle: (name: string, days: number) => `${name} · D-${days}`,
+    notifBody: (date: string, path: string) => (path ? `${date} · ${path}` : date),
+  },
   photo: {
     change: 'Change photo',
     remove: 'Remove photo',

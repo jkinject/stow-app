@@ -453,6 +453,7 @@ export type Database = {
           created_at: string
           created_by: string
           deleted_at: string | null
+          expires_on: string | null
           household_id: string
           id: string
           location_id: string
@@ -474,6 +475,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           deleted_at?: string | null
+          expires_on?: string | null
           household_id: string
           id: string
           location_id: string
@@ -495,6 +497,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           deleted_at?: string | null
+          expires_on?: string | null
           household_id?: string
           id?: string
           location_id?: string
@@ -912,6 +915,7 @@ export type Database = {
           created_at: string
           created_by: string
           deleted_at: string | null
+          expires_on: string | null
           household_id: string
           id: string
           location_id: string

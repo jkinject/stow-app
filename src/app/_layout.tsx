@@ -13,6 +13,8 @@ import { useEffect } from 'react';
 import { ActivityIndicator, AppState, View } from 'react-native';
 
 import { ToastProvider } from '@/components/Toast';
+import * as Notifications from 'expo-notifications';
+
 import { resumePendingPhotos } from '@/features/item/photoQueue';
 import { useMyHouseholds } from '@/features/household/api';
 import { HouseholdProvider } from '@/features/household/context';
@@ -131,6 +133,22 @@ function Guard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * 알림을 누르면 그 물건으로 간다 (2026-09-08).
+ * ⚠ 앱이 꺼져 있다가 알림으로 켜진 경우도 `useLastNotificationResponse` 가 잡는다.
+ *   로그인 전이면 Guard 가 먼저 로그인으로 보내고, 그 뒤 목적지는 잃는다 — 드문 경우라
+ *   두었다(알림은 로그인된 기기에만 걸린다).
+ */
+function NotificationTapHandler() {
+  const router = useRouter();
+  const response = Notifications.useLastNotificationResponse();
+  useEffect(() => {
+    const itemId = response?.notification.request.content.data?.itemId;
+    if (typeof itemId === 'string' && itemId) router.push(`/item/${itemId}`);
+  }, [response, router]);
+  return null;
+}
+
 export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -143,6 +161,7 @@ export default function RootLayout() {
           <ToastProvider>
             <HouseholdProvider>
               <Guard>
+                <NotificationTapHandler />
                 <Stack screenOptions={{ headerShown: false }} />
               </Guard>
             </HouseholdProvider>

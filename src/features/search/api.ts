@@ -25,6 +25,8 @@ export type SearchRow = {
   quantity: number;
   unit: string | null;
   thumb_path: string | null;
+  /** 소비기한 YYYY-MM-DD. 격자 뱃지·정렬·알림이 쓴다 (2026-09-08) */
+  expires_on: string | null;
   location_id: string;
   container_id: string | null;
   updated_at: string;
@@ -57,7 +59,7 @@ export function useAllItems(householdId: string | null) {
     queryFn: async (): Promise<SearchRow[]> => {
       const { data, error } = await supabase
         .from('items')
-        .select('id, name, quantity, unit, thumb_path, location_id, container_id, updated_at, created_at, category:categories!items_category_id_fkey(name, color)')
+        .select('id, name, quantity, unit, thumb_path, expires_on, location_id, container_id, updated_at, created_at, category:categories!items_category_id_fkey(name, color)')
         .eq('household_id', householdId!)
         .is('deleted_at', null)
         .order('updated_at', { ascending: false });
