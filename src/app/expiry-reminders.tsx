@@ -1,6 +1,6 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { AppState, Linking, StyleSheet, Text, View } from 'react-native';
 
 import { IconBell } from '@/components/Icon';
 import { SettingsGroup, SettingsSwitchRow } from '@/components/SettingsList';
@@ -38,8 +38,18 @@ export default function ExpiryRemindersScreen() {
   const refresh = useCallback(() => {
     void getReminderPermission().then(setPerm);
   }, []);
-  // 기기 설정에서 권한을 바꾸고 돌아오면 다시 읽는다
   useFocusEffect(refresh);
+  /**
+   * ⚠ 기기 설정에서 권한을 켜고 돌아오면 **같은 화면**이라 focus 가 다시 오지 않는다 —
+   *   다른 화면에 갔다 와야 배너가 사라졌다(사용자 보고 2026-09-09). 앱이 다시 활성화되는
+   *   순간(AppState active)에도 읽는다. 알림 예약은 reminders.ts 가 같은 시점에 다시 건다.
+   */
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (st) => {
+      if (st === 'active') refresh();
+    });
+    return () => sub.remove();
+  }, [refresh]);
 
   const onMaster = async (on: boolean) => {
     await save({ ...s, enabled: on });
