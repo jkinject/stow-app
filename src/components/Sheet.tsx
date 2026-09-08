@@ -91,7 +91,14 @@ export function BottomSheet({
               />
             </View>
           )}
-          <Body style={scroll ? st.flex : undefined}>{children}</Body>
+          {/*
+            ⚠ 본문은 **줄어들 수 있어야** 한다 (2026-09-08 사용자 보고: "카테고리 만들 때
+              저장 버튼이 없다"). RN 의 View 는 기본이 flexShrink: 0 이라, 내용이
+              maxHeight 를 넘으면 본문이 그대로 커지고 **그 아래 버튼이 시트 밖으로
+              밀려난다** — 보이지도, 눌리지도 않는다. 줄어들게 두면 안쪽 ScrollView 가
+              남는 높이 안에서 스크롤하고 버튼은 바닥에 남는다.
+          */}
+          <Body style={scroll ? st.flex : st.shrink}>{children}</Body>
         </Card>
         </Lift>
       </Backdrop>
@@ -189,6 +196,8 @@ export function ModalHeader({
 }
 
 const st = StyleSheet.create({
+  /** 위 주석 참조 — minHeight: 0 이 없으면 내용 높이가 최소 높이가 되어 줄지 않는다 */
+  shrink: { flexShrink: 1, minHeight: 0 },
   flex: { flex: 1 },
   backdrop: { flex: 1, backgroundColor: overlay.scrim },
   /** 시트는 항상 아래에 붙는다 — 자판이 올라오면 KeyboardSpacer 가 그만큼 밀어 올린다 */
