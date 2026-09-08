@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { Linking, StyleSheet, Text, View } from 'react-native';
 
 import { IconBell } from '@/components/Icon';
-import { SettingsGroup, SettingsRow, SettingsSwitchRow } from '@/components/SettingsList';
+import { SettingsGroup, SettingsRow, SettingsStatusRow, SettingsSwitchRow } from '@/components/SettingsList';
 import { Screen } from '@/components/ui';
 import { REMINDER_DAYS } from '@/features/item/expiry';
 import {
@@ -83,12 +83,12 @@ export default function ExpiryRemindersScreen() {
         {/* 권한 — 여기서 말하지 않으면 "켰는데 안 온다" 가 된다 */}
         <SettingsGroup>
           {perm === 'granted' ? (
-            <SettingsRow
+            /* 정보만 — 누를 것이 없으니 화살표도 없다 (SettingsStatusRow 주석) */
+            <SettingsStatusRow
               first
               icon={(color) => <IconBell color={color} />}
               label={t.reminders.permissionGranted}
               value={scheduled === null ? undefined : t.reminders.scheduled(scheduled)}
-              onPress={refresh}
             />
           ) : perm === 'undetermined' ? (
             <SettingsRow
