@@ -16,15 +16,23 @@ export function confirmDestructive({
   confirmLabel,
   cancelLabel,
   onConfirm,
+  onCancel,
 }: {
   title: string;
   body: string;
   confirmLabel: string;
   cancelLabel: string;
   onConfirm: () => void;
+  /** 취소했을 때 — 버튼의 잠금을 풀어야 하는 곳에서 쓴다 */
+  onCancel?: () => void;
 }) {
-  Alert.alert(title, body, [
-    { text: cancelLabel, style: 'cancel' },
-    { text: confirmLabel, style: 'destructive', onPress: onConfirm },
-  ]);
+  Alert.alert(
+    title,
+    body,
+    [
+      { text: cancelLabel, style: 'cancel', onPress: onCancel },
+      { text: confirmLabel, style: 'destructive', onPress: onConfirm },
+    ],
+    { cancelable: true, onDismiss: onCancel },
+  );
 }

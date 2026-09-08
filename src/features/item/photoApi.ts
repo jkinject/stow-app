@@ -4,13 +4,19 @@ import * as Crypto from 'expo-crypto';
 import { supabase } from '@/lib/supabase';
 
 import { deletePhotoObjects, uploadEntityPhoto, type PreparedPhoto } from './photo';
+import { attachPhotosLater } from './photoQueue';
 
 /**
  * 사진 붙이기 · 바꾸기 · 지우기 (사용자 요청 2026-08-30).
  *
- * 물건과 박스가 **같은 구현**을 쓴다. 둘 다 `photo_path` / `thumb_path` 컬럼을 갖고,
- * Storage 정책도 경로의 첫 조각(가구 id)만 보므로 테이블만 다를 뿐 동작이 같다.
- * 두 벌로 만들면 한쪽만 고쳐진다.
+ * ══ 두 종류가 있다 (2026-09-08) ═══════════════════════════════════
+ *   · **박스** — 한 장. `photo_path` / `thumb_path` 컬럼을 직접 갈아끼운다.
+ *   · **물건** — 여러 장. `item_photos` 행을 넣고 빼고 순서를 바꾼다. items 의 두 컬럼은
+ *     **손대지 않는다** — 서버 트리거(t61)가 첫 장을 대표로 복사한다.
+ *
+ *   ⚠ 물건에 사진을 **덧붙이는** 것은 여기가 아니라 `photoQueue.attachPhotosLater` 다.
+ *     등록 때와 같은 끈질긴 큐를 거쳐야 "사진이 사라지는" 버그를 다시 얻지 않는다.
+ *     여기의 `useAddItemPhotos` 는 그 큐에 맡기는 얇은 껍데기다.
  *
  * 등록할 때 사진을 안 찍고 나중에 붙일 수 있어야 한다 — AC3 가 "필수 입력은 이름 하나" 라
  * 사진 없는 물건이 정상적으로 생긴다. 그런데 나중에 붙일 방법이 없으면
@@ -35,13 +41,20 @@ function invalidatePhotoViews(qc: ReturnType<typeof useQueryClient>, owner: Phot
   void qc.invalidateQueries({ queryKey: ['item-photo'] });
 }
 
+/* ───────────────────────────── 박스 — 한 장 ───────────────────────────── */
+
 async function currentPaths(owner: PhotoOwner, id: string) {
   const { data } = await supabase.from(owner).select('photo_path, thumb_path').eq('id', id).maybeSingle();
   return { photo_path: data?.photo_path ?? null, thumb_path: data?.thumb_path ?? null };
 }
 
-/** 사진을 새로 붙이거나 기존 것을 갈아끼운다 */
-export function useSetPhoto(owner: PhotoOwner, id: string, householdId: string | null) {
+/**
+ * 사진을 새로 붙이거나 기존 것을 갈아끼운다.
+ *
+ * ⚠ 물건에는 쓰지 않는다. items 의 두 컬럼은 트리거가 채우는 자리라, 여기서 덮어쓰면
+ *   다음 사진 변경 때 트리거가 도로 되돌린다 — "바꿨는데 안 바뀐다" 가 된다.
+ */
+export function useSetPhoto(owner: 'containers', id: string, householdId: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (photo: PreparedPhoto) => {
@@ -76,8 +89,8 @@ export function useSetPhoto(owner: PhotoOwner, id: string, householdId: string |
   });
 }
 
-/** 사진을 뗀다. 물건·박스 자체는 남는다 */
-export function useRemovePhoto(owner: PhotoOwner, id: string) {
+/** 사진을 뗀다. 박스 자체는 남는다 */
+export function useRemovePhoto(owner: 'containers', id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
@@ -93,3 +106,64 @@ export function useRemovePhoto(owner: PhotoOwner, id: string) {
   });
 }
 
+/* ──────────────────────────── 물건 — 여러 장 ──────────────────────────── */
+
+export type ItemPhotoRef = { id: string; photo_path: string; thumb_path: string };
+
+/**
+ * 물건에 사진을 덧붙인다 — 끈질긴 큐에 맡긴다. 업로드가 끝나기를 기다리지 않는다.
+ * 큐가 끝나면 스스로 목록을 무효화하므로 여기서는 하지 않는다.
+ *
+ * @param nextOrder 마지막 장의 sort_order + 1. 부르는 쪽이 지금 목록에서 계산한다.
+ */
+export function useAddItemPhotos(itemId: string, householdId: string | null) {
+  return useMutation({
+    mutationFn: async ({ photos, nextOrder }: { photos: PreparedPhoto[]; nextOrder: number }) => {
+      if (!householdId) throw new Error('가구를 찾을 수 없습니다.');
+      await attachPhotosLater(householdId, itemId, photos, nextOrder);
+    },
+  });
+}
+
+/**
+ * 사진 한 장을 뗀다.
+ *
+ * ⚠ `.select()` 로 **영향 행 수**를 본다. RLS 거부는 오류가 아니라 0행이다(README 의 함정).
+ *   0행인데 파일을 지우면 행은 남고 파일만 없어져 목록에 깨진 칸이 남는다.
+ */
+export function useRemoveItemPhoto(itemId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (photo: ItemPhotoRef) => {
+      const { data, error } = await supabase.from('item_photos').delete().eq('id', photo.id).select('id');
+      if (error) throw error;
+      if ((data ?? []).length === 0) throw new Error('사진을 찾을 수 없습니다.');
+      // 행이 사라진 뒤에 파일을 치운다 — 반대면 실패 시 깨진 칸이 남는다
+      await deletePhotoObjects([photo.photo_path, photo.thumb_path]);
+    },
+    onSuccess: () => invalidatePhotoViews(qc, 'items', itemId),
+  });
+}
+
+/**
+ * 이 사진을 **대표**로 — 맨 앞으로 보낸다.
+ *
+ * sort_order 를 (지금 가장 작은 값 − 1) 로 둔다. 전체를 다시 번호 매기지 않는다 —
+ * 행 하나만 바뀌니 트리거도 한 번만 돌고, 동시에 다른 사람이 만진 것과 부딪히지 않는다.
+ * 값이 계속 음수로 내려가도 int 범위에서는 문제가 되지 않는다.
+ */
+export function useSetItemCover(itemId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ photoId, minOrder }: { photoId: string; minOrder: number }) => {
+      const { data, error } = await supabase
+        .from('item_photos')
+        .update({ sort_order: minOrder - 1 })
+        .eq('id', photoId)
+        .select('id');
+      if (error) throw error;
+      if ((data ?? []).length === 0) throw new Error('사진을 찾을 수 없습니다.');
+    },
+    onSuccess: () => invalidatePhotoViews(qc, 'items', itemId),
+  });
+}

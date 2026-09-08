@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
-import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -21,17 +20,22 @@ import { useHousehold } from '@/features/household/context';
 import { CameraCapture } from '@/features/item/CameraCapture';
 import { MovePicker, type MoveTarget } from '@/features/item/MovePicker';
 import { abandonCycle, markFirstInput } from '@/features/item/metrics';
-import { PHOTO_ASPECT, preparePhoto, type PreparedPhoto } from '@/features/item/photo';
+import { MAX_ITEM_PHOTOS, preparePhoto, type PreparedPhoto } from '@/features/item/photo';
+import { PhotoGallery } from '@/features/item/PhotoGallery';
 import { QUEUE_LIMIT, useRegisterQueue, type DraftItem } from '@/features/item/queue';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, overlay, space, tracking } from '@/lib/theme';
+import { useTheme, type, radius, space, tracking } from '@/lib/theme';
 
 /**
  * 물건 등록 — **2단계** (2026-08-30 사용자 요청).
  *
  *   1단계: 카메라가 화면을 꽉 채운다. 찍거나 · 사진첩에서 고르거나 · 사진 없이 넘어간다.
  *   2단계: 사진을 확인하며 이름과 추가 정보를 넣고, "등록" 을 눌러야 저장된다.
+ *
+ * 사진 여러 장 (2026-09-08 사용자 요청): 첫 장은 지금처럼 찍자마자 2단계로 간다(P1 —
+ * 등록은 빨라야 한다). 2단계의 썸네일 줄 끝 + 를 누르면 카메라로 **돌아가서** 여러 장
+ * 모드로 계속 찍고, "완료" 로 돌아온다. 첫 장이 대표다.
  *
  * 왜 나눴나: 사진을 **항상 그 자리에서 찍는 것은 아니다.** 이미 찍어 둔 사진을
  * 사진첩에서 불러오는 경우가 있고, 한 화면에 카메라와 폼을 같이 두면 카메라도 작고
@@ -109,17 +113,16 @@ export default function AddItem() {
    *
    *   원본 uri 만 받아 **즉시 2단계로 넘기고**, 처리는 배경에서 돌린다.
    *   등록 버튼을 누르는 시점에는 대개 이미 끝나 있고, 아니면 그때 기다린다.
-   *   미리보기는 원본을 1:1 로 잘라 보여주므로 최종 결과와 같은 화면이 나온다.
+   *   미리보기는 원본을 보여주므로 최종 결과와 같은 화면이 나온다.
+   *
+   * 여러 장이라 원본 uri 와 처리 약속을 **장마다** 쌓는다. 순서가 곧 사진 순서다.
    */
-  const [rawUri, setRawUri] = useState<string | null>(null);
-  const [preparing, setPreparing] = useState<Promise<PreparedPhoto> | null>(null);
+  const [shots, setShots] = useState<Shot[]>([]);
   /**
-   * ⚠ 이름은 **부모가** 들고 있는다. "다시 찍기" 로 1단계에 다녀오면 FormStep 이
+   * ⚠ 이름은 **부모가** 들고 있는다. "더 찍기" 로 1단계에 다녀오면 FormStep 이
    *   언마운트되므로, 여기 없으면 입력하던 이름이 사라진다.
    */
   const [name, setName] = useState('');
-  /** ⚠ 이름은 **부모가** 들고 있는다. "다시 찍기" 로 1단계에 다녀오면 FormStep 이
-   *   언마운트되므로, 여기 없으면 입력하던 이름이 사라진다. */
   /** 2단계에서 고른 목적지. `/add/new` 로 들어왔을 때만 쓰인다 */
   const [picked, setPicked] = useState<AddContext | null>(null);
 
@@ -130,30 +133,32 @@ export default function AddItem() {
   return step === 1 ? (
     <CameraCapture
       title={dest ? pathOf(dest, t) : ''}
-      onClose={() => router.back()}
+      /*
+        첫 장이면 X 는 등록을 그만두는 것, 이미 찍은 게 있으면 "완료" 로 2단계로 돌아간다.
+        여러 장 모드(shotCount)에서는 찍어도 카메라가 남아 계속 찍는다.
+      */
+      shotCount={shots.length > 0 ? shots.length : undefined}
+      busy={shots.length >= MAX_ITEM_PHOTOS}
+      onClose={() => (shots.length > 0 ? setStep(2) : router.back())}
       onPhoto={(uri) => {
-        setRawUri(uri);
+        const first = shots.length === 0;
         // 처리를 시작만 하고 기다리지 않는다. 실패는 등록 시점에 드러난다.
-        setPreparing(preparePhoto(uri));
-        setStep(2);
+        setShots((prev) => [...prev, { key: Crypto.randomUUID(), uri, prepared: preparePhoto(uri) }]);
+        if (first) setStep(2); // 첫 장은 찍자마자 폼으로 (P1). 그 뒤는 "완료" 로 돌아온다
       }}
-      onSkip={() => {
-        setRawUri(null);
-        setPreparing(null);
-        setStep(2);
-      }}
+      onSkip={shots.length === 0 ? () => setStep(2) : undefined}
     />
   ) : (
     <FormStep
-      previewUri={rawUri}
-      preparing={preparing}
+      shots={shots}
       name={name}
       onName={setName}
       dest={dest}
       canPickDest={target === NEW}
       householdId={activeId}
       queue={queue}
-      onRetake={() => setStep(1)}
+      onAddMore={() => setStep(1)}
+      onDropShot={(i) => setShots((prev) => prev.filter((_, j) => j !== i))}
       onPickDest={setPicked}
       onDone={(id) => {
         /**
@@ -171,6 +176,9 @@ export default function AddItem() {
   );
 }
 
+/** 찍은 한 장 — 원본 uri 와, 배경에서 도는 처리 결과 */
+type Shot = { key: string; uri: string; prepared: Promise<PreparedPhoto> };
+
 function pathOf(d: AddContext, t: ReturnType<typeof useT>): string {
   return d.containerName ? `${d.locationName} › ${d.containerName}` : `${d.locationName}${t.add.noBox}`;
 }
@@ -178,28 +186,28 @@ function pathOf(d: AddContext, t: ReturnType<typeof useT>): string {
 /* ───────────────────────────── 2단계: 폼 ───────────────────────────── */
 
 function FormStep({
-  previewUri,
-  preparing,
+  shots,
   name,
   onName,
   dest,
   canPickDest,
   householdId,
   queue,
-  onRetake,
+  onAddMore,
+  onDropShot,
   onPickDest,
   onDone,
   onClose,
 }: {
-  previewUri: string | null;
-  preparing: Promise<PreparedPhoto> | null;
+  shots: Shot[];
   name: string;
   onName: (v: string) => void;
   dest: AddContext | null;
   canPickDest: boolean;
   householdId: string | null;
   queue: ReturnType<typeof useRegisterQueue>;
-  onRetake: () => void;
+  onAddMore: () => void;
+  onDropShot: (i: number) => void;
   onPickDest: (d: AddContext) => void;
   onDone: (itemId: string, name: string) => void;
   onClose: () => void;
@@ -218,7 +226,7 @@ function FormStep({
    * "다시 찍기" 로 돌아왔다 와도 부모가 목적지를 들고 있어 다시 묻지 않는다.
    */
   const [pickerOpen, setPickerOpen] = useState(canPickDest && !dest);
-
+  const [photoIndex, setPhotoIndex] = useState(0);
 
   async function onSave() {
     const n = name.trim();
@@ -263,24 +271,25 @@ function FormStep({
     setSaving(true);
     try {
       // 배경에서 돌던 이미지 처리를 여기서 거둔다. 대개 이미 끝나 있다.
-      let photo: PreparedPhoto | null = null;
       /**
        * ⚠⚠ 여기서 사진을 잃어도 **아무 말도 하지 않았다** (2026-09-06 사용자 보고로 발견).
        *   `__DEV__` 콘솔 경고뿐이라 릴리스 빌드에서는 흔적조차 없었다. 찍은 사람은
        *   사진과 함께 등록한 줄 아는데 조용히 사진 없는 물건이 됐다.
        *   물건은 그대로 저장하되(AC3 — 필수는 이름 하나), **말은 해 준다.**
+       *   여러 장이면 처리에 실패한 장만 빠지고 나머지는 순서대로 간다.
        */
+      const settled = await Promise.allSettled(shots.map((s) => s.prepared));
+      const photos: PreparedPhoto[] = [];
       let photoLost = false;
-      if (preparing) {
-        try {
-          photo = await preparing;
-        } catch (e) {
+      for (const r of settled) {
+        if (r.status === 'fulfilled') photos.push(r.value);
+        else {
           photoLost = true;
-          if (__DEV__) console.warn('[add] 사진 처리 실패, 사진 없이 저장', e);
+          if (__DEV__) console.warn('[add] 사진 처리 실패, 그 장은 빼고 저장', r.reason);
         }
       }
       // 행 저장만 기다린다. 사진 업로드는 배경에서 이어진다 (AC4)
-      await queue.enqueueAndWaitForRow(draft, photo);
+      await queue.enqueueAndWaitForRow(draft, photos);
       abandonCycle();
       onDone(draft.id, draft.name);
       // 화면을 넘긴 **뒤에** 알린다 — 도착한 상세에서 곧바로 다시 찍을 수 있다
@@ -307,32 +316,22 @@ function FormStep({
         contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: space.xxl, gap: space.md }}
         keyboardShouldPersistTaps="handled"
       >
-        {/* 찍은 사진. 누르면 1단계로 돌아가 다시 찍는다 */}
-        <Pressable onPress={onRetake}>
-          {previewUri ? (
-            <>
-              <Image
-                source={{ uri: previewUri }}
-                style={[st.preview, { backgroundColor: c.sunk }]}
-                contentFit="cover"
-              />
-              <View style={st.previewBadge}>
-                <Text style={st.previewBadgeText}>{t.addFlow.retake}</Text>
-              </View>
-            </>
-          ) : (
-            <View
-              style={[
-                st.previewEmpty,
-                { borderColor: c.borderStrong, backgroundColor: c.sunk },
-              ]}
-            >
-              <Text style={[st.previewEmptyText, { color: c.textMuted }]}>
-                {t.addFlow.noPhoto} · {t.item.addPhoto}
-              </Text>
-            </View>
-          )}
-        </Pressable>
+        {/*
+          찍은 사진들 — 상세 화면과 **같은 갤러리**. 큰 사진 구석의 "빼기" 로 한 장을
+          목록에서 빼고, 썸네일 줄 끝 + 로 카메라에 돌아가 더 찍는다.
+          아직 저장 전이라 로컬 원본을 그대로 보여 준다.
+        */}
+        <PhotoGallery
+          slides={shots.map((s) => ({ key: s.key, source: { uri: s.uri } }))}
+          index={photoIndex}
+          onIndexChange={setPhotoIndex}
+          onAdd={onAddMore}
+          canAdd={shots.length < MAX_ITEM_PHOTOS}
+          onDropSlide={(i) => {
+            setPhotoIndex((cur) => Math.max(0, Math.min(cur, shots.length - 2)));
+            onDropShot(i);
+          }}
+        />
 
         {/* 어디에 둘지. `/add/new` 로 들어오면 여기서 정한다 */}
         <Pressable
@@ -448,26 +447,6 @@ const st = StyleSheet.create({
   /** ⚠ 폭만 잡는다 — 반대쪽 빈 자리(actionSpacer)와 같아야 제목이 가운데 온다 */
   topAction: { width: 40 },
   topTitle: { fontSize: type.subtitle, fontWeight: '700' },
-  preview: { width: '100%', aspectRatio: PHOTO_ASPECT, borderRadius: radius.md },
-  previewBadge: {
-    position: 'absolute',
-    right: 10,
-    bottom: 10,
-    backgroundColor: overlay.chip,
-    borderRadius: radius.full,
-    paddingHorizontal: space.md,
-    paddingVertical: space.sm,
-  },
-  previewBadgeText: { color: overlay.fg, fontSize: type.caption, fontWeight: '600' },
-  previewEmpty: {
-    height: 84,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  previewEmptyText: { fontSize: type.label, fontWeight: '600' },
   destRow: {
     borderRadius: radius.sm,
     paddingHorizontal: space.lg,

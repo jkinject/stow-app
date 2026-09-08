@@ -52,6 +52,12 @@ export function CameraCapture({
   onSkip,
   /** 기존 사진을 지우기 — 사진 바꾸기에서만 쓴다 */
   onRemove,
+  /**
+   * **여러 장 모드** (2026-09-08). 넘기면 찍은 뒤에도 이 화면에 남아 계속 찍을 수 있다는
+   * 뜻이고, 그 장수를 오른쪽 위에 보여 준다. 닫기가 "완료" 로 읽히도록 X 대신 글자를 쓴다.
+   * ⚠ 찍은 뒤에 닫을지 말지는 여전히 부르는 쪽이 정한다 — 여기는 표시만 바꾼다.
+   */
+  shotCount,
   busy = false,
 }: {
   title?: string;
@@ -59,6 +65,7 @@ export function CameraCapture({
   onClose: () => void;
   onSkip?: () => void;
   onRemove?: () => void;
+  shotCount?: number;
   busy?: boolean;
 }) {
   const t = useT();
@@ -201,15 +208,25 @@ export function CameraCapture({
           hitSlop={14}
           disabled={busy}
           accessibilityRole="button"
-          accessibilityLabel={t.common.close}
+          accessibilityLabel={shotCount ? t.common.done : t.common.close}
           style={st.actionSpacer}
         >
-          <IconX size={24} color={overlay.fg} />
+          {shotCount ? (
+            <Text style={st.doneText}>{t.common.done}</Text>
+          ) : (
+            <IconX size={24} color={overlay.fg} />
+          )}
         </Pressable>
         <Text style={st.title} numberOfLines={1}>
           {title ?? ''}
         </Text>
-        <View style={st.actionSpacer} />
+        <View style={st.actionSpacer}>
+          {shotCount ? (
+            <View style={st.countChip}>
+              <Text style={st.countText}>{t.photo.shotCount(shotCount)}</Text>
+            </View>
+          ) : null}
+        </View>
       </View>
 
       <View style={[st.zoom, { top: insets.top + 56 }]}>
@@ -224,7 +241,14 @@ export function CameraCapture({
       </View>
 
       <View style={[st.bottom, { paddingBottom: insets.bottom + 22 }]}>
-        <Pressable onPress={() => void fromGallery()} style={st.side} hitSlop={10} disabled={busy}>
+        <Pressable
+          onPress={() => void fromGallery()}
+          style={st.side}
+          hitSlop={10}
+          disabled={busy}
+          accessibilityRole="button"
+          accessibilityLabel={t.addFlow.fromGallery}
+        >
           <IconImage size={26} color={overlay.fg} />
           <Text style={st.sideLabel}>{t.addFlow.fromGallery}</Text>
         </Pressable>
@@ -232,6 +256,8 @@ export function CameraCapture({
         <Pressable
           onPress={() => void shoot()}
           disabled={shooting || busy || !ready}
+          accessibilityRole="button"
+          accessibilityLabel={t.camera.photo}
           style={[st.shutter, (shooting || busy || !ready) && { opacity: 0.4 }]}
         >
           {shooting || busy ? (
@@ -243,7 +269,14 @@ export function CameraCapture({
 
         {/* 오른쪽 자리는 화면에 따라 다르다: 등록이면 "사진 없이", 교체면 "사진 제거" */}
         {onSkip ? (
-          <Pressable onPress={onSkip} style={st.side} hitSlop={10} disabled={busy}>
+          <Pressable
+            onPress={onSkip}
+            style={st.side}
+            hitSlop={10}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel={t.addFlow.skipPhoto}
+          >
             <IconChevron size={26} color={overlay.fg} />
             <Text style={st.sideLabel}>{t.addFlow.skipPhoto}</Text>
           </Pressable>
@@ -308,7 +341,15 @@ const st = StyleSheet.create({
     alignItems: 'center',
     gap: space.md,
   },
-  actionSpacer: { width: 40 },
+  actionSpacer: { width: 40, alignItems: 'flex-end', justifyContent: 'center' },
+  doneText: { color: overlay.fg, fontSize: type.bodyStrong, fontWeight: '700' },
+  countChip: {
+    backgroundColor: overlay.chip,
+    borderRadius: radius.full,
+    paddingHorizontal: space.sm,
+    paddingVertical: space.xs,
+  },
+  countText: { color: overlay.fg, fontSize: type.tiny, fontWeight: '700' },
   title: {
     flex: 1,
     color: overlay.fg,

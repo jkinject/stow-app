@@ -44,11 +44,15 @@ export const supabase = createClient<Database>(url, anonKey, {
 /**
  * 사진 경로 규약 (계획 §4.9).
  * 목록은 항상 thumb 을 읽고, 원본은 상세 화면에서만 읽는다.
+ *
+ * `{household_id}/{owner_id}/{file_id}.jpg` — owner 는 물건 또는 박스, file_id 는
+ * **사진마다 다른 uuid** 다(물건은 여러 장을 가질 수 있다, 2026-09-08).
+ * Storage 정책은 첫 조각(가구 id)만 본다.
  */
 export const photoPaths = {
   bucket: 'item-photos',
-  full: (householdId: string, itemId: string, uuid: string) =>
-    `${householdId}/${itemId}/${uuid}.jpg`,
-  thumb: (householdId: string, itemId: string, uuid: string) =>
-    `${householdId}/${itemId}/${uuid}_t.jpg`,
+  full: (householdId: string, ownerId: string, fileId: string) =>
+    `${householdId}/${ownerId}/${fileId}.jpg`,
+  thumb: (householdId: string, ownerId: string, fileId: string) =>
+    `${householdId}/${ownerId}/${fileId}_t.jpg`,
 } as const;
