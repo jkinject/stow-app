@@ -14,6 +14,8 @@ export type LocationSummary = {
 
 export type ContainerSummary = {
   id: string;
+  /** 어느 공간의 박스인가 — QR 로 다른 공간의 박스를 열면 그 공간으로 바꾸는 데 쓴다 (2026-09-09) */
+  household_id: string;
   location_id: string;
   name: string;
   qr_token: string;
@@ -257,7 +259,7 @@ export function useContainerByToken(token: string | null) {
         .from('container_summary')
         // ⚠ 뷰가 이미 `deleted_at is null` 로 걸러져 있고 그 컬럼을 노출하지도 않는다.
         //   여기서 .is('deleted_at', null) 을 걸면 없는 컬럼이라 쿼리가 통째로 실패한다.
-        .select('id, location_id, name, qr_token, thumb_path, item_count, updated_at')
+        .select('id, household_id, location_id, name, qr_token, thumb_path, item_count, updated_at')
         .eq('qr_token', token!)
         .maybeSingle();
       if (error) throw error;

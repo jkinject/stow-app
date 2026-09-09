@@ -8,6 +8,7 @@ import { IconGear, IconPlus, IconX } from '@/components/Icon';
 import { SettingsCard } from '@/components/SettingsCard';
 import { Button, Empty, IconButton, Loading, Screen, SectionLabel } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
+import { useEnsureActive } from '@/features/household/useEnsureActive';
 import { useAudit } from '@/features/history/api';
 import { CardGrid, useCardWidth } from '@/components/CardGrid';
 import { Fab } from '@/components/Fab';
@@ -40,7 +41,8 @@ function useContainer(containerId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('container_summary')
-        .select('id, location_id, name, qr_token, photo_path, thumb_path, item_count')
+        // household_id: 다른 공간의 박스를 열었으면 그 공간으로 바꾸려고 (useEnsureActive)
+        .select('id, household_id, location_id, name, qr_token, photo_path, thumb_path, item_count')
         .eq('id', containerId)
         .single();
       if (error) throw error;
@@ -59,6 +61,8 @@ export default function ContainerDetail() {
   const toast = useToast();
 
   const container = useContainer(containerId);
+  // 다른 공간의 박스면(QR·딥링크) 그 공간으로 바꾼다 — 아래 장소 목록·이동이 activeId 를 쓴다 (2026-09-09)
+  useEnsureActive(container.data?.household_id, (h) => toast(t.space.switched(h.name)));
   const items = useContainerItems(containerId);
   const audit = useAudit('containers', containerId);
   const locations = useLocations(activeId);

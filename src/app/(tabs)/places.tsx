@@ -1,16 +1,17 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { IconBoxes } from '@/components/Icon';
 import { ThumbRow } from '@/components/ThumbRow';
 import { Empty, Loading, Screen, SectionLabel, TextButton } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
+import { SpaceChip } from '@/features/household/SpaceSheet';
 import { useLocations } from '@/features/storage/api';
 import { useCoverStacks } from '@/features/storage/covers';
 import { LocationSheet } from '@/features/storage/LocationSheet';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, space } from '@/lib/theme';
+import { useTheme, space } from '@/lib/theme';
 
 /**
  * 보관 장소 — 정리 작업용 탭.
@@ -23,7 +24,7 @@ export default function PlacesTab() {
   const { c } = useTheme();
   const t = useT();
   const router = useRouter();
-  const { households, active, activeId, setActiveId } = useHousehold();
+  const { activeId } = useHousehold();
 
   const locations = useLocations(activeId);
 
@@ -51,33 +52,10 @@ export default function PlacesTab() {
   const list = locations.data ?? [];
 
   return (
-    <Screen title={active?.name ?? t.places.title}>
+    <Screen title={t.places.title}>
       <View style={st.body}>
-        {households.length > 1 && (
-          <View style={st.switcher}>
-            {households.map((h) => (
-              <Pressable
-                key={h.id}
-                onPress={() => setActiveId(h.id)}
-                style={[
-                  st.chip,
-                  { borderColor: c.border },
-                  h.id === activeId && { backgroundColor: c.accent, borderColor: c.accent },
-                ]}
-              >
-                <Text
-                  style={[
-                    st.chipText,
-                    { color: c.text },
-                    h.id === activeId && { color: c.onAccent, fontWeight: '600' },
-                  ]}
-                >
-                  {h.name}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
+        {/* 공간이 둘 이상이면 어느 공간인지 보여 주고, 누르면 바꾼다 — 전환 UI 는 SpaceSheet 한 벌 (2026-09-09) */}
+        <SpaceChip />
 
         <SectionLabel
           action={
@@ -121,8 +99,5 @@ export default function PlacesTab() {
 
 const st = StyleSheet.create({
   body: { paddingHorizontal: space.xl, gap: space.md },
-  switcher: { flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' },
-  chip: { borderWidth: 1, borderRadius: radius.full, paddingHorizontal: space.lg, paddingVertical: space.sm },
-  chipText: { fontSize: type.label },
   list: { gap: space.sm },
 });

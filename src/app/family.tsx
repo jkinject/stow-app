@@ -75,8 +75,9 @@ export default function FamilyScreen() {
     ]);
   }
 
+  // 부제에 공간 이름 — 공간이 여럿이면 "가족" 만으로는 어느 공간의 구성원인지 모른다 (2026-09-09)
   return (
-    <Screen back title={t.family.title}>
+    <Screen back title={t.family.title} subtitle={active?.name}>
       <View style={st.body}>
         <HouseCard
           householdId={activeId}

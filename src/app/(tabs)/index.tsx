@@ -18,6 +18,7 @@ import { StarterChecklist } from '@/components/StarterChecklist';
 import { useCategoryList } from '@/features/category/api';
 import { Empty, Field, Loading } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
+import { SpaceChip } from '@/features/household/SpaceSheet';
 import { useTodayMission } from '@/features/mission/api';
 import { useAuth } from '@/lib/auth';
 import { useStarterState } from '@/features/onboarding/checklist';
@@ -65,7 +66,7 @@ export default function FindTab() {
   const t = useT();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { activeId } = useHousehold();
+  const { activeId, households } = useHousehold();
 
   const { indexed, isLoading, isFetching, dataUpdatedAt } = useSearchIndex(activeId);
   const locations = useLocations(activeId);
@@ -76,11 +77,12 @@ export default function FindTab() {
 
   /**
    * 첫 실행 안내.
-   * ⚠ **사용자별**이다. 기기별로 두면 같은 폰에서 새 계정으로 가입한 사람에게
+   * ⚠ **사용자별·공간별**이다. 기기별로 두면 같은 폰에서 새 계정으로 가입한 사람에게
    *   안내가 안 뜬다 — 가족이 폰을 돌려 쓰는 앱이라 실제로 그런 일이 있었다.
+   *   공간별인 이유: 새로 만든 빈 공간(사무실)에서도 "장소부터 만드세요" 가 떠야 한다 (2026-09-09).
    */
   const { session } = useAuth();
-  const starter = useStarterState(session?.user.id ?? null);
+  const starter = useStarterState(session?.user.id ?? null, activeId);
   const [creatingPlace, setCreatingPlace] = useState(false);
 
   /**
@@ -94,7 +96,13 @@ export default function FindTab() {
    * 물건이 수백 개가 되면 "어느 방" 만으로도 후보가 확 줄어든다 — 검색어를 떠올리기
    * 전에 쓸 수 있는 가장 싼 필터다.
    */
-  const [place, setPlace] = useState<string | null>(null);
+  /**
+   * ⚠ 어느 공간에서 골랐는지를 같이 둔다 (2026-09-09). 공간을 바꾸면 고른 장소는 그 공간에
+   *   없는 id 라 전체로 되돌려야 하는데, effect 에서 setState 하면 한 프레임 옛 필터로
+   *   그려진다(그리고 lint 가 막는다). 렌더에서 비교해 파생시키면 즉시 전체가 된다.
+   */
+  const [placePick, setPlacePick] = useState<{ hh: string | null; id: string | null }>({ hh: null, id: null });
+  const place = placePick.hh === activeId ? placePick.id : null;
 
   /**
    * 정렬 (2026-09-02 사용자 요청).
@@ -229,10 +237,13 @@ export default function FindTab() {
     setSort((v) => (v === 'shuffle' ? 'recent' : v === 'recent' ? 'expiry' : 'shuffle'));
     setLimit(PAGE); // 순서가 통째로 바뀌므로 처음부터 다시 본다
   }, []);
-  const onPlace = useCallback((id: string | null) => {
-    setPlace(id);
-    setLimit(PAGE);
-  }, []);
+  const onPlace = useCallback(
+    (id: string | null) => {
+      setPlacePick({ hh: activeId, id });
+      setLimit(PAGE);
+    },
+    [activeId],
+  );
 
   useEffect(() => {
     thumbs.ensure(visible.map((r) => r.thumb_path));
@@ -269,6 +280,12 @@ export default function FindTab() {
 
   return (
     <View style={[st.root, { backgroundColor: c.bg, paddingTop: insets.top }]}>
+      {/* 공간이 둘 이상일 때만 — 지금 어느 공간을 찾고 있는지 (2026-09-09) */}
+      {households.length > 1 && (
+        <View style={st.spaceRow}>
+          <SpaceChip />
+        </View>
+      )}
       {/* 검색창과 스캔은 항상 맨 위에 고정된다 — 이 화면의 두 시작점이다 */}
       <View style={st.head}>
         <Field
@@ -494,6 +511,8 @@ const st = StyleSheet.create({
    *   전에는 필터가 있을 때만 4(space.xs)였는데, 필터 아래(16)와 짝이 안 맞아
    *   위아래가 어긋나 보였다(2026-09-02 사용자 지적, 실측 4dp vs 16dp).
    */
+  /** 칩이 없으면(공간 하나) 높이 0 — 여백을 남기지 않는다 */
+  spaceRow: { paddingHorizontal: PADDING, paddingTop: space.sm },
   head: {
     flexDirection: 'row',
     gap: space.sm,

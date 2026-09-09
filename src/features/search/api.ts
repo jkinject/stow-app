@@ -45,6 +45,7 @@ export type Indexed = SearchRow & {
 
 export const searchKeys = {
   all: (householdId: string | null) => ['search', 'items', householdId] as const,
+  names: (householdId: string | null) => ['search', 'names', householdId] as const,
 };
 
 /**
@@ -56,37 +57,58 @@ export function useAllItems(householdId: string | null) {
     queryKey: searchKeys.all(householdId),
     enabled: !!householdId,
     staleTime: 30_000,
-    queryFn: async (): Promise<SearchRow[]> => {
-      const { data, error } = await supabase
-        .from('items')
-        .select('id, name, quantity, unit, thumb_path, expires_on, location_id, container_id, updated_at, created_at, category:categories!items_category_id_fkey(name, color)')
-        .eq('household_id', householdId!)
-        .is('deleted_at', null)
-        .order('updated_at', { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as SearchRow[];
-    },
+    queryFn: () => fetchAllItems(householdId!),
   });
+}
+
+/**
+ * 훅 밖으로 뺀 조회 (2026-09-09). 소비기한 알림이 **모든 공간**의 물건을 `useQueries` 로
+ * 돌리는데, 훅은 루프에서 못 부른다. 키(`searchKeys.all`)와 함수를 같이 쓰므로 찾기 탭이
+ * 이미 읽어 둔 활성 공간의 목록은 캐시를 공유한다 — 한 벌, 중복 요청 없음.
+ */
+export async function fetchAllItems(householdId: string): Promise<SearchRow[]> {
+  const { data, error } = await supabase
+    .from('items')
+    .select('id, name, quantity, unit, thumb_path, expires_on, location_id, container_id, updated_at, created_at, category:categories!items_category_id_fkey(name, color)')
+    .eq('household_id', householdId)
+    .is('deleted_at', null)
+    .order('updated_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as SearchRow[];
+}
+
+export type LocationNames = { locations: Map<string, string>; containers: Map<string, string> };
+
+export async function fetchLocationNames(householdId: string): Promise<LocationNames> {
+  const [loc, con] = await Promise.all([
+    supabase.from('locations').select('id, name').eq('household_id', householdId).is('deleted_at', null),
+    supabase.from('containers').select('id, name').eq('household_id', householdId).is('deleted_at', null),
+  ]);
+  if (loc.error) throw loc.error;
+  if (con.error) throw con.error;
+  return {
+    locations: new Map((loc.data ?? []).map((l) => [l.id, l.name])),
+    containers: new Map((con.data ?? []).map((c) => [c.id, c.name])),
+  };
+}
+
+/**
+ * "현관 팬트리 › 3번 박스" — 물건이 어디 있는지 한 줄. 박스에 안 들어간 물건은 장소만.
+ * 순수 함수라 검색 인덱스와 알림이 같은 것을 쓴다.
+ */
+export function itemPath(r: Pick<SearchRow, 'location_id' | 'container_id'>, names: LocationNames | undefined): string {
+  const loc = names?.locations.get(r.location_id) ?? '';
+  const con = r.container_id ? names?.containers.get(r.container_id) : null;
+  return con ? `${loc} › ${con}` : loc;
 }
 
 /** 장소·컨테이너 이름 사전 — 경로 문자열을 만드는 데 쓴다 */
 export function useLocationNames(householdId: string | null) {
   return useQuery({
-    queryKey: ['search', 'names', householdId],
+    queryKey: searchKeys.names(householdId),
     enabled: !!householdId,
     staleTime: 60_000,
-    queryFn: async () => {
-      const [loc, con] = await Promise.all([
-        supabase.from('locations').select('id, name').eq('household_id', householdId!).is('deleted_at', null),
-        supabase.from('containers').select('id, name').eq('household_id', householdId!).is('deleted_at', null),
-      ]);
-      if (loc.error) throw loc.error;
-      if (con.error) throw con.error;
-      return {
-        locations: new Map((loc.data ?? []).map((l) => [l.id, l.name])),
-        containers: new Map((con.data ?? []).map((c) => [c.id, c.name])),
-      };
-    },
+    queryFn: () => fetchLocationNames(householdId!),
   });
 }
 
@@ -100,14 +122,9 @@ export function useSearchIndex(householdId: string | null) {
 
   const indexed = useMemo<Indexed[]>(() => {
     const rows = items.data ?? [];
-    const locMap = names.data?.locations;
-    const conMap = names.data?.containers;
 
     return rows.map((r) => {
-      const loc = locMap?.get(r.location_id) ?? '';
-      const con = r.container_id ? conMap?.get(r.container_id) : null;
-      // 박스에 안 들어간 물건은 장소만 표시한다 (container_id 가 nullable 인 이유)
-      const path = con ? `${loc} › ${con}` : loc;
+      const path = itemPath(r, names.data);
       // 카테고리 이름도 검색 대상에 넣는다 — "화장품" 으로 그 분류의 물건들을 찾을 수 있다
       return { ...r, entry: buildEntry(r.name, r.category?.name ?? null), path };
     });

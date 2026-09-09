@@ -64,20 +64,32 @@ export const EN: Dict = {
 
   onboarding: {
     chooseTitle: "Let's get started",
-    chooseSub: 'Create a household, or join one with an invite code.',
-    createCta: 'Create a household',
+    chooseSub: 'Create a space, or join one with an invite code.',
+    createCta: 'Create your first space',
     joinCta: 'Join with an invite code',
-    nameTitle: 'Household name',
+    nameTitle: 'Space name',
     nameSub: 'You can change this later.',
     namePlaceholder: 'Our home',
     nameDefault: 'Our home',
     create: 'Create',
-    createFailed: "Couldn't create the household",
+    createFailed: "Couldn't create the space",
     codeTitle: 'Invite code',
     codeSub: 'Enter the 8-character code your family sent you.',
     join: 'Join',
     joinFailed: "Couldn't join",
     joinFailedBody: 'Please check the code and try again.',
+  },
+
+  space: {
+    title: 'Spaces',
+    switch: 'Switch space',
+    add: 'Add a space',
+    create: 'Create a new space',
+    join: 'Join with an invite code',
+    current: 'Current',
+    count: (n: number) => `${n} space${n === 1 ? '' : 's'}`,
+    namePlaceholder: 'e.g. Office, Parents\' home, Garage',
+    switched: (name: string) => `Switched to ${name}`,
   },
 
   tabs: { find: 'Find', places: 'Places', shopping: 'To buy', more: 'More' },
@@ -301,7 +313,7 @@ export const EN: Dict = {
     loadFailed: "Couldn't load the box",
     loadFailedHint: 'Check your connection and try again.',
     unregistered: 'No box for this code',
-    unregisteredHint: 'Nothing is linked to this QR code.\nIt may belong to another household, or the box was deleted.',
+    unregisteredHint: 'Nothing is linked to this QR code.\nIt may belong to a space you are not in, or the box was deleted.',
   },
 
   labels: {
@@ -339,7 +351,7 @@ export const EN: Dict = {
   more: {
     title: 'More',
     profile: 'You',
-    household: 'Household',
+    household: 'Space',
     role: (r) => (r === 'owner' ? 'Owner' : 'Member'),
     memberSince: (when) => `Since ${when}`,
     theme: 'Appearance',
@@ -365,7 +377,7 @@ export const EN: Dict = {
 
   family: {
     title: 'Household',
-    houseName: 'Household name',
+    houseName: 'Space name',
     renameFailed: "Couldn't rename",
     members: 'Members',
     memberCount: (n) => (n === 1 ? '1 person' : `${n} people`),
@@ -381,10 +393,10 @@ export const EN: Dict = {
     roleFailed: "Couldn't change the role",
     remove: 'Remove',
     removeTitle: (name) => `Remove ${name}?`,
-    removeBody: 'They will lose access to this household. Everything they added stays.',
+    removeBody: 'They will lose access to this space. Everything they added stays.',
     removeFailed: "Couldn't remove them",
     invite: 'Invite code',
-    inviteHint: 'Give this code to your family and they can join. It never expires.',
+    inviteHint: 'Share this code and they can join this space. It never expires.',
     inviteCopy: 'Copy code',
     inviteCopied: 'Copied',
     rotate: 'Change code',
@@ -396,9 +408,9 @@ export const EN: Dict = {
     afterRemoveBody: (name) =>
       `If ${name} knows the invite code they can rejoin with it. Changing the code now prevents that.`,
     afterRemoveKeep: 'Leave it',
-    leave: 'Leave this household',
+    leave: 'Leave this space',
     leaveTitle: (house) => `Leave "${house}"?`,
-    leaveBody: 'You will lose access to this household. You need a new invite code to come back.',
+    leaveBody: 'You will lose access to this space. You need a new invite code to come back.',
     leaveBlocked: 'The last owner cannot leave',
     leaveBlockedHint: 'Make someone else an owner first.',
     leaveFailed: "Couldn't leave",
@@ -408,10 +420,10 @@ export const EN: Dict = {
     title: 'Delete account',
     confirmTitle: 'Delete your account?',
     summaryDoomed: (n) =>
-      `${n} household${n === 1 ? '' : 's'} only you use will be erased, along with every item and photo.`,
+      `${n} space${n === 1 ? '' : 's'} only you use will be erased, along with every item and photo.`,
     summaryLeaving: (n) =>
-      `You will simply leave ${n} household${n === 1 ? '' : 's'} you share. Their items stay.`,
-    summaryHandover: 'Households you own are handed over to another family member.',
+      `You will simply leave ${n} space${n === 1 ? '' : 's'} you share. Their items stay.`,
+    summaryHandover: 'Spaces you own are handed over to another member.',
     irreversible: 'This cannot be undone.',
     confirm: 'Delete',
     failed: "Couldn't delete your account",

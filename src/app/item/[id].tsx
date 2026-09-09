@@ -23,6 +23,7 @@ import { BottomSheet, SheetOption } from '@/components/Sheet';
 import { useToast } from '@/components/Toast';
 import { Button, Field, Loading, Screen, TextButton, titleText } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
+import { useEnsureActive } from '@/features/household/useEnsureActive';
 import { useCategoryList } from '@/features/category/api';
 import {
   useAdjustQuantity,
@@ -75,6 +76,8 @@ export default function ItemDetailScreen() {
   const { activeId } = useHousehold();
 
   const item = useItem(itemId);
+  // 다른 공간의 물건이면(알림 탭·딥링크) 그 공간으로 바꾼다 — 장소 목록·이동이 activeId 를 쓴다 (2026-09-09)
+  useEnsureActive(item.data?.household_id, (h) => toast(t.space.switched(h.name)));
   const locations = useLocations(activeId);
   const adjust = useAdjustQuantity(itemId);
   const update = useUpdateItem(itemId);

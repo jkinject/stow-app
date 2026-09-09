@@ -579,3 +579,28 @@ dev 빌드에서 화면이 죽기 때문**이었다. 지금은 릴리스 APK 를
   위아래로 조금 움직이면 상세 화면 스크롤이 터치를 가져가 끌기가 취소됐다. 갤러리가
   onDragStateChange 로 알리고 부모(상세·등록)가 그동안 scrollEnabled 를 끈다. 썸네일은
   48 그대로(키우지 말라는 요청). 격자 뱃지의 "만료" 는 "N일 지남" 으로.
+
+## 2026-09-09 — 여러 공간(집·사무실…) 등록과 분리 관리
+- 요청: "집 1개에만 소속된다는 보장이 없음. 사무실이나 다른 공간도 등록하고 분리해서 관리."
+- 결정(ralplan 합의, .omc/plans/multi-space.md ADR): **서버는 손대지 않는다.** household_members 가 이미 다대다이고
+  HouseholdProvider 에 activeId/setActiveId 가 있었다. 앱에 "활성 공간 전환 시트" 와 "공간 추가(만들기/참여)" 입구만 만든다.
+  한 번에 한 공간만 보고 전환은 명시적(요청이 "분리"). 합쳐 보기(B)·가구 안 상위 계층(C)은 기각.
+- 용어는 "공간". 관리 UI 의 "우리 집" 을 전부 바꿨다(더보기·온보딩·가족·초대 힌트). 앱 소개의 "집 안 물건" 은 브랜드 문구라 그대로.
+- 한 벌:
+  · features/household/JoinOrCreate.tsx — 온보딩과 /space/new 가 같은 폼. 온보딩은 이 컴포넌트를 쓰는 껍데기만 남았다.
+  · features/household/SpaceSheet.tsx — SpaceSheet(전환 + 추가) 와 SpaceChip(헤더 칩, 공간 둘 이상일 때만).
+    더보기 프로필 카드·찾기 탭·보관 장소 탭이 전부 이걸 연다. **보관 장소 탭에 있던 인라인 칩 행은 지웠다**(Critic 지적 — 계획 초안이 몰랐다).
+  · features/household/useEnsureActive.ts — 물건·박스 상세가 자기 공간으로 activeId 를 맞춘다(QR·알림·딥링크 어느 진입로든 한 곳에서).
+- ⚠⚠ **전 공간이어야 하는 것 목록** — 새 훅을 (tabs)/_layout.tsx 에 붙일 때 대조한다. 빠뜨리면 조용히 어긋난다:
+  1. 휴면 터치 useTouchHouseholds(ids, Promise.all) — 안 하면 비활성 공간이 90일 뒤 삭제된다 (이번 기능의 가장 큰 위험)
+  2. 사진 수거 큐 useDrainStorageGc(ids, 순차) — 안 하면 비활성 공간의 고아 파일이 쌓인다
+  3. 소비기한 알림 useExpiryReminderSync(households) — useQueries 로 공간마다 searchKeys.all 키 재사용(찾기 탭과 캐시 공유).
+     공간 둘 이상이면 알림 경로 앞에 공간 이름("사무실 › 책상 › 서랍"). 60 상한은 합친 목록 기준(mergeSpaceSources, jest).
+  4. 상세 진입 시 공간 맞추기 useEnsureActive — 상세 화면 안에서
+  5. 시작 체크리스트 키 starter.v2:{userId}:{householdId} — 새 빈 공간에서도 안내가 뜬다. 옛 키 진행 상태는 옮기지 않는다.
+- 전환 시 뒷정리: ['add-context'] 캐시만 지운다(가구 키가 없는 유일한 목록 캐시). 찾기 탭 place 필터는 {hh,id} 로 저장해
+  렌더에서 파생(effect 의 setState 는 react-hooks/set-state-in-effect 가 막는다 — useEnsureActive 도 같은 이유로 콜백 방식).
+- ids 배열은 useMemo 로 안정화 — 렌더마다 새 배열이면 effect 가 매번 돌아 RPC 가 반복된다. useQueries 결과는 dataUpdatedAt 을
+  접은 version 문자열로 의존성 삼는다(공간 수가 바뀌면 스프레드 의존성은 길이가 달라진다).
+- 가구 id 없는 AsyncStorage 키 중 category-tip-hidden(일회성 팁)·mission-hidden(자정 리셋)·expiry-reminders(사용자 단위 의도)는 그대로.
+- 후속: 공간이 많아지면 touch_households(uuid[]) 배치 RPC. 공간별 알림 끄기는 요청이 오면.

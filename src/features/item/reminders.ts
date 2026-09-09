@@ -1,14 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useQueries } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
 
-import { useSearchIndex } from '@/features/search/api';
+import type { Household } from '@/features/household/api';
+import { fetchAllItems, fetchLocationNames, itemPath, searchKeys } from '@/features/search/api';
 import { useT } from '@/lib/i18n';
 
 import {
   DEFAULT_REMINDER_SETTINGS,
   fromYmd,
+  mergeSpaceSources,
   planReminders,
   type ReminderSettings,
   type ReminderSource,
@@ -223,15 +226,55 @@ async function syncOnce(items: ReminderSource[], texts: Texts): Promise<number> 
 /**
  * 목록이나 설정이 바뀌면, 그리고 앱으로 돌아올 때마다 알림을 다시 건다.
  * 탭 레이아웃 한 곳에서만 부른다 — 화면마다 부르면 같은 일을 여러 번 한다.
+ *
+ * ⚠ **내가 속한 모든 공간**의 물건이다 (2026-09-09). 활성 공간만 걸면 집을 보는 동안
+ *   사무실 물건의 기한은 알림이 안 온다. 공간마다 찾기 탭과 같은 키(`searchKeys.all`)·같은
+ *   조회로 돌려 활성 공간은 캐시를 공유하고, 나머지는 여기서 처음 읽는다.
  */
-export function useExpiryReminderSync(householdId: string | null) {
-  const index = useSearchIndex(householdId);
+export function useExpiryReminderSync(households: Household[]) {
+  const itemQueries = useQueries({
+    queries: households.map((h) => ({
+      queryKey: searchKeys.all(h.id),
+      queryFn: () => fetchAllItems(h.id),
+      staleTime: 30_000,
+    })),
+  });
+  const nameQueries = useQueries({
+    queries: households.map((h) => ({
+      queryKey: searchKeys.names(h.id),
+      queryFn: () => fetchLocationNames(h.id),
+      staleTime: 60_000,
+    })),
+  });
   const [s] = useReminderSettings();
   const t = useT();
-  const items = index.indexed;
+
+  const isLoading = itemQueries.some((q) => q.isLoading) || nameQueries.some((q) => q.isLoading);
+  /**
+   * ⚠ 데이터가 실제로 바뀔 때만 다시 합친다. `useQueries` 결과 배열은 렌더마다 새것이라
+   *   그대로 의존성에 넣으면 매 렌더 합치고, 그러면 아래 effect 가 매 렌더 알림을 다시 건다.
+   *   공간 수가 바뀌면 의존성 길이가 바뀌므로 스프레드 대신 갱신 시각을 한 문자열로 접는다.
+   */
+  const version = [...itemQueries, ...nameQueries].map((q) => q.dataUpdatedAt).join(',');
+  const items = useMemo<ReminderSource[]>(
+    () =>
+      mergeSpaceSources(
+        households.map((h, i) => ({
+          name: h.name,
+          items: (itemQueries[i]?.data ?? []).map((r) => ({
+            id: r.id,
+            name: r.name,
+            expires_on: r.expires_on,
+            path: itemPath(r, nameQueries[i]?.data),
+          })),
+        })),
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- version 이 두 결과 배열을 대신한다
+    [households, version],
+  );
 
   useEffect(() => {
-    if (items.length === 0 && index.isLoading) return; // 아직 안 읽었으면 지금 걸린 것을 지우지 않는다
+    if (items.length === 0 && isLoading) return; // 아직 안 읽었으면 지금 걸린 것을 지우지 않는다
     const texts: Texts = {
       title: t.reminders.notifTitle,
       body: t.reminders.notifBody,
@@ -244,5 +287,5 @@ export function useExpiryReminderSync(householdId: string | null) {
       if (st === 'active') run();
     });
     return () => sub.remove();
-  }, [items, index.isLoading, s, t]);
+  }, [items, isLoading, s, t]);
 }

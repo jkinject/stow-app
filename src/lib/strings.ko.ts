@@ -110,19 +110,36 @@ export const KO = {
   onboarding: {
     chooseTitle: '시작해볼까요',
     chooseSub: '새로 만들거나, 가족이 준 초대 코드로 참여하세요.',
-    createCta: '우리 집 만들기',
+    createCta: '첫 공간 만들기',
     joinCta: '초대 코드로 참여하기',
-    nameTitle: '집 이름',
+    nameTitle: '공간 이름',
     nameSub: '나중에 바꿀 수 있습니다.',
     namePlaceholder: '우리집',
     nameDefault: '우리집',
     create: '만들기',
-    createFailed: '집을 만들지 못했습니다',
+    createFailed: '공간을 만들지 못했습니다',
     codeTitle: '초대 코드',
     codeSub: '가족이 보내준 8자리 코드를 입력하세요.',
     join: '참여하기',
     joinFailed: '참여하지 못했습니다',
     joinFailedBody: '코드를 다시 확인해 주세요.',
+  },
+
+  /**
+   * 공간 (2026-09-09). 집·사무실·본가처럼 **따로 관리하는 단위**다. 서버의 `households` 와 같은 것이지만
+   * 관리 UI 에서 "집" 이라 부르면 사무실이 "우리 집" 아래 있게 되어 어색하다. 브랜드 문구(앱 소개)의
+   * "집 안 물건" 은 그대로 둔다.
+   */
+  space: {
+    title: '공간',
+    switch: '공간 바꾸기',
+    add: '공간 추가',
+    create: '새 공간 만들기',
+    join: '초대 코드로 참여',
+    current: '지금 여기',
+    count: (n: number) => `${n}개 공간`,
+    namePlaceholder: '예: 사무실, 본가, 창고',
+    switched: (name: string) => `${name}(으)로 바꿨습니다`,
   },
 
   tabs: { find: '찾기', places: '보관 장소', shopping: '살 것', more: '더보기' },
@@ -383,7 +400,7 @@ export const KO = {
     loadFailed: '박스를 불러오지 못했습니다',
     loadFailedHint: '네트워크를 확인하고 다시 시도해 주세요.',
     unregistered: '등록되지 않은 박스입니다',
-    unregisteredHint: '이 QR 에 연결된 박스가 없습니다.\n다른 가족의 박스이거나, 삭제된 박스일 수 있습니다.',
+    unregisteredHint: '이 QR 에 연결된 박스가 없습니다.\n내가 속하지 않은 공간의 박스이거나, 삭제된 박스일 수 있습니다.',
   },
 
   labels: {
@@ -421,7 +438,7 @@ export const KO = {
   more: {
     title: '더보기',
     profile: '내 정보',
-    household: '우리 집',
+    household: '공간',
     role: (r: string): string => (r === 'owner' ? '관리자' : '구성원'),
     memberSince: (when: string) => `${when}부터`,
     theme: '테마',
@@ -447,7 +464,7 @@ export const KO = {
 
   family: {
     title: '가족',
-    houseName: '집 이름',
+    houseName: '공간 이름',
     renameFailed: '이름을 바꾸지 못했습니다',
     members: '구성원',
     memberCount: (n: number) => `${n}명`,
@@ -464,10 +481,10 @@ export const KO = {
     roleFailed: '역할을 바꾸지 못했습니다',
     remove: '내보내기',
     removeTitle: (name: string) => `${name} 님을 내보낼까요?`,
-    removeBody: '이 집의 물건을 더 이상 볼 수 없게 됩니다. 그동안 등록한 물건은 그대로 남습니다.',
+    removeBody: '이 공간의 물건을 더 이상 볼 수 없게 됩니다. 그동안 등록한 물건은 그대로 남습니다.',
     removeFailed: '내보내지 못했습니다',
     invite: '초대 코드',
-    inviteHint: '이 코드를 가족에게 알려 주면 우리 집에 들어옵니다. 만료되지 않습니다.',
+    inviteHint: '이 코드를 알려 주면 이 공간에 들어옵니다. 만료되지 않습니다.',
     inviteCopy: '코드 복사',
     inviteCopied: '복사했습니다',
     rotate: '코드 바꾸기',
@@ -480,9 +497,9 @@ export const KO = {
     afterRemoveBody: (name: string) =>
       `${name} 님이 초대 코드를 알고 있으면 그 코드로 다시 들어올 수 있습니다. 지금 코드를 바꾸면 막을 수 있습니다.`,
     afterRemoveKeep: '그대로 두기',
-    leave: '이 집에서 나가기',
+    leave: '이 공간에서 나가기',
     leaveTitle: (house: string) => `"${house}" 에서 나갈까요?`,
-    leaveBody: '이 집의 물건을 더 이상 볼 수 없게 됩니다. 다시 들어오려면 초대 코드가 필요합니다.',
+    leaveBody: '이 공간의 물건을 더 이상 볼 수 없게 됩니다. 다시 들어오려면 초대 코드가 필요합니다.',
     leaveBlocked: '마지막 관리자는 나갈 수 없습니다',
     leaveBlockedHint: '다른 구성원을 관리자로 지정한 뒤에 나갈 수 있습니다.',
     leaveFailed: '나가지 못했습니다',
@@ -493,9 +510,9 @@ export const KO = {
     // 무엇이 사라지는지 **세어서** 보여준다. "정말 삭제하시겠습니까?" 만으로는
     // 집이 통째로 없어진다는 걸 알 수 없다.
     confirmTitle: '정말 탈퇴할까요?',
-    summaryDoomed: (n: number) => `혼자 쓰던 집 ${n}곳이 물건·사진과 함께 완전히 사라집니다.`,
-    summaryLeaving: (n: number) => `가족이 있는 집 ${n}곳에서는 나가기만 합니다. 그 집의 물건은 남습니다.`,
-    summaryHandover: '내가 관리자인 집은 다른 가족에게 관리자가 넘어갑니다.',
+    summaryDoomed: (n: number) => `혼자 쓰던 공간 ${n}곳이 물건·사진과 함께 완전히 사라집니다.`,
+    summaryLeaving: (n: number) => `다른 구성원이 있는 공간 ${n}곳에서는 나가기만 합니다. 그 공간의 물건은 남습니다.`,
+    summaryHandover: '내가 관리자인 공간은 다른 구성원에게 관리자가 넘어갑니다.',
     irreversible: '되돌릴 수 없습니다.',
     confirm: '탈퇴',
     failed: '탈퇴하지 못했습니다',

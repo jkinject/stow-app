@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button, Loading, Screen } from '@/components/ui';
+import { useHousehold } from '@/features/household/context';
 import { parseQrPayload } from '@/features/qr/payload';
 import { useContainerByToken } from '@/features/storage/api';
 import { useT } from '@/lib/i18n';
@@ -27,6 +28,7 @@ export default function QrLanding() {
   const token = parsed.kind === 'token' ? parsed.token : null;
 
   const container = useContainerByToken(token);
+  const { activeId, setActiveId } = useHousehold();
   // ⚠ useRef(Date.now()) 는 렌더 중에 불순 함수를 부르는 것이라 react-hooks/purity 가 막는다.
   //   측정 시작점은 마운트 이펙트로 옮긴다 — 렌더 직후라 오차는 1프레임 안쪽이다.
   const startedAt = useRef<number | null>(null);
@@ -44,8 +46,11 @@ export default function QrLanding() {
     const ms = Date.now() - (startedAt.current ?? Date.now());
     setElapsed(ms);
     if (__DEV__) console.log(`[qr] 토큰 해석 ${ms}ms → ${container.data.name}`);
+    // 다른 공간의 박스면 먼저 그 공간으로 바꾼다 (2026-09-09). 박스 상세도 스스로 맞추지만
+    // (useEnsureActive) 여기서 미리 바꾸면 상세가 처음부터 맞는 장소 목록으로 열린다.
+    if (container.data.household_id !== activeId) setActiveId(container.data.household_id);
     router.replace(`/container/${container.data.id}`);
-  }, [container.data, router]);
+  }, [container.data, router, activeId, setActiveId]);
 
   if (parsed.kind !== 'token') {
     return (

@@ -4,6 +4,7 @@ import {
   buildYmd,
   daysUntil,
   expiryTone,
+  mergeSpaceSources,
   planReminders,
   shiftYmd,
 } from '../expiry';
@@ -84,4 +85,42 @@ test('planReminders — 상한(iOS 64)을 넘지 않고 가까운 것부터 남�
   for (let i = 1; i < plans.length; i++) {
     expect(plans[i].fireAt.getTime()).toBeGreaterThanOrEqual(plans[i - 1].fireAt.getTime());
   }
+});
+
+describe('mergeSpaceSources — 여러 공간 (2026-09-09)', () => {
+  const a = { id: 'a', name: '우유', expires_on: '2026-10-01', path: '냉장고' };
+  const b = { id: 'b', name: '토너', expires_on: '2026-10-02', path: '책상 › 서랍' };
+  const c = { id: 'c', name: '무경로', expires_on: '2026-10-03' };
+
+  it('공간이 하나면 경로에 공간 이름을 붙이지 않는다', () => {
+    const out = mergeSpaceSources([{ name: '우리집', items: [a, c] }]);
+    expect(out.map((x) => x.path)).toEqual(['냉장고', '']);
+  });
+
+  it('공간이 둘 이상이면 경로 앞에 공간 이름이 붙는다 (경로 없으면 공간 이름만)', () => {
+    const out = mergeSpaceSources([
+      { name: '우리집', items: [a] },
+      { name: '사무실', items: [b, c] },
+    ]);
+    expect(out.map((x) => x.path)).toEqual(['우리집 › 냉장고', '사무실 › 책상 › 서랍', '사무실']);
+    expect(out.map((x) => x.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('상한은 합친 목록 기준 — 공간 무관하게 가까운 순으로 자른다', () => {
+    const now = new Date('2026-09-01T00:00:00');
+    const settings = { ...DEFAULT_REMINDER_SETTINGS, enabled: true, days: { 30: false, 10: false, 5: false, 1: true } };
+    // 집 40개(먼 기한) + 사무실 40개(가까운 기한) — 하루 전 알림 하나씩이면 80개 > 60
+    const home = Array.from({ length: 40 }, (_, i) => ({ id: `h${i}`, name: 'h', expires_on: `2026-12-${String(i + 1).padStart(2, '0')}` }));
+    const office = Array.from({ length: 40 }, (_, i) => ({ id: `o${i}`, name: 'o', expires_on: `2026-10-${String(i + 1).padStart(2, '0')}` }));
+    const plans = planReminders(
+      mergeSpaceSources([{ name: '집', items: home }, { name: '사무실', items: office }]),
+      settings,
+      now,
+    );
+    expect(plans).toHaveLength(MAX_SCHEDULED);
+    // 가까운 사무실 40개가 전부 들어가고, 집은 가까운 20개만
+    expect(plans.filter((p) => p.itemId.startsWith('o'))).toHaveLength(40);
+    expect(plans.filter((p) => p.itemId.startsWith('h'))).toHaveLength(20);
+    expect(plans.every((p) => p.path.startsWith('집') || p.path.startsWith('사무실'))).toBe(true);
+  });
 });

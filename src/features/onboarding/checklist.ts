@@ -23,9 +23,16 @@ import { useCallback, useMemo, useSyncExternalStore } from 'react';
  *   켠 앱 때문에 새로 들어온 사람의 안내까지 사라진다. 기기 안에, 사람별로 둔다.
  */
 
-/** ⚠ v1 은 기기 단위였다. 키를 바꿔 옛 값이 새 규칙에 섞이지 않게 한다 */
+/**
+ * ⚠ v1 은 기기 단위였다. 키를 바꿔 옛 값이 새 규칙에 섞이지 않게 한다.
+ * ⚠ 공간(가구) id 도 붙인다 (2026-09-09). 여러 공간을 쓰게 되면서, 새로 만든 빈 공간에서도
+ *   안내가 떠야 한다 — 사용자 단위로만 두면 첫 공간에서 닫은 안내가 사무실에서는 안 뜬다.
+ *   옛 키(`starter.v2:{userId}`)의 진행 상태는 옮기지 않는다. 첫 공간에서 안내가 한 번 더
+ *   뜰 뿐이고, 옮기는 코드는 그 한 번을 막으려고 영원히 남는다.
+ */
 const PREFIX = 'starter.v2:';
-const keyFor = (userId: string | null) => PREFIX + (userId ?? 'anon');
+const keyFor = (userId: string | null, householdId: string | null) =>
+  `${PREFIX}${userId ?? 'anon'}:${householdId ?? 'none'}`;
 
 type State = { searched: boolean; dismissed: boolean };
 const EMPTY: State = { searched: false, dismissed: false };
@@ -82,8 +89,8 @@ function patch(key: string, next: Partial<State>) {
   void AsyncStorage.setItem(key, JSON.stringify(merged)).catch(() => undefined);
 }
 
-export function useStarterState(userId: string | null) {
-  const key = keyFor(userId);
+export function useStarterState(userId: string | null, householdId: string | null) {
+  const key = keyFor(userId, householdId);
   ensureLoaded(key);
 
   const state = useSyncExternalStore(

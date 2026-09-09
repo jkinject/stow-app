@@ -53,11 +53,20 @@ export async function drainStorageGc(householdId: string): Promise<number> {
  * 서버가 하루에 한 번만 실제로 쓴다 — 앱을 열 때마다 UPDATE 하면 같은 행을 하루에도
  * 수십 번 갱신한다. 실패해도 조용히 넘긴다(다음에 열 때 다시 한다).
  */
-export function useTouchHousehold(householdId: string | null) {
+/**
+ * ⚠ **내가 속한 모든 공간**을 터치한다 (2026-09-09). 활성 공간만 터치하면, 집을 활성으로 두고
+ *   쓰는 동안 사무실은 아무도 안 온 것으로 보여 90일 뒤 삭제 예고가 간다. 앱을 켰다는 건
+ *   그 사람의 모든 공간이 살아 있다는 뜻이다.
+ *   병렬로 부른다 — 서버가 하루 한 번만 실제로 쓰므로 비용은 왕복뿐이다.
+ *
+ * ⚠ `ids` 는 부르는 쪽이 `useMemo` 로 안정시킨 배열이어야 한다. 렌더마다 새 배열을 넘기면
+ *   이 effect 가 매 렌더 돌아 RPC 가 반복된다.
+ */
+export function useTouchHouseholds(ids: readonly string[]) {
   useEffect(() => {
-    if (!householdId) return;
-    void supabase.rpc('touch_household', { p_household: householdId }).then(() => {});
-  }, [householdId]);
+    if (ids.length === 0) return;
+    void Promise.all(ids.map((id) => supabase.rpc('touch_household', { p_household: id }))).catch(() => {});
+  }, [ids]);
 }
 
 /**
@@ -87,21 +96,29 @@ export function useReportLocale(userId: string | null) {
  * ⚠ 화면마다 부르지 않는다. 탭 레이아웃 한 곳에서만 부른다 — 여러 곳에서 부르면
  *   같은 배치를 동시에 지우려 들고, 요청만 늘고 얻는 것이 없다.
  */
-export function useDrainStorageGc(householdId: string | null) {
+/**
+ * ⚠ **모든 공간**의 큐를 비운다 (2026-09-09). 활성 공간만 비우면 비활성 공간의 고아 파일이
+ *   그 공간을 다시 열 때까지 쌓인다 — 파일은 비용이다.
+ *   공간마다 **순서대로** 돈다. 배치 100건 삭제를 공간 수만큼 동시에 던지지 않는다.
+ * ⚠ `ids` 는 `useMemo` 로 안정시킨 배열이어야 한다 (useTouchHouseholds 와 같은 이유).
+ */
+export function useDrainStorageGc(ids: readonly string[]) {
   useEffect(() => {
-    if (!householdId) return;
+    if (ids.length === 0) return;
     let alive = true;
     void (async () => {
-      try {
-        // 한 번에 다 비우지 않는다. 밀린 게 많아도 앱을 켤 때마다 조금씩 줄어든다.
-        const n = await drainStorageGc(householdId);
-        if (!alive || n === 0) return;
-      } catch {
-        // 조용히 넘긴다 — 위 주석의 이유
+      for (const id of ids) {
+        if (!alive) return;
+        try {
+          // 한 번에 다 비우지 않는다. 밀린 게 많아도 앱을 켤 때마다 조금씩 줄어든다.
+          await drainStorageGc(id);
+        } catch {
+          // 조용히 넘긴다 — 위 주석의 이유. 다음 공간은 계속한다
+        }
       }
     })();
     return () => {
       alive = false;
     };
-  }, [householdId]);
+  }, [ids]);
 }

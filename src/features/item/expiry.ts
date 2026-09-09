@@ -115,6 +115,27 @@ export const MAX_SCHEDULED = 60;
  * 이미 지난 단계(D-30 이 어제였던 것)는 걸지 않는다 — 과거 시각으로 걸면 iOS 는 즉시
  * 울리는데, 기한을 방금 넣은 물건이 D-3 이라고 30·10·5 알림이 한꺼번에 오면 안 된다.
  */
+/** 한 공간의 알림 재료 — 공간 이름과 그 공간의 물건들 */
+export type SpaceSources = { name: string; items: ReminderSource[] };
+
+/**
+ * 여러 공간의 물건을 한 목록으로 합친다 (2026-09-09).
+ * 공간이 둘 이상이면 경로 앞에 공간 이름을 붙인다("사무실 › 책상 › 서랍") — 알림만 보고
+ * 어느 공간의 물건인지 알아야 한다. 하나뿐이면 붙이지 않는다(늘 같은 말이라 소음이다).
+ * 상한(MAX_SCHEDULED)은 `planReminders` 가 **합친 목록**에 건다 — 공간 무관하게 가까운 순.
+ */
+export function mergeSpaceSources(spaces: SpaceSources[]): ReminderSource[] {
+  const multi = spaces.length > 1;
+  const out: ReminderSource[] = [];
+  for (const sp of spaces) {
+    for (const it of sp.items) {
+      const path = multi ? [sp.name, it.path].filter(Boolean).join(' › ') : (it.path ?? '');
+      out.push({ ...it, path });
+    }
+  }
+  return out;
+}
+
 export function planReminders(
   items: ReminderSource[],
   settings: ReminderSettings,

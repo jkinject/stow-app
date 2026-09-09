@@ -4,11 +4,12 @@ import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ChoiceSheet } from '@/components/ChoiceSheet';
 import {
   IconBell,
+  IconChevron,
   IconGlobe,
   IconMoon,
   IconPrinter,
@@ -24,6 +25,7 @@ import { Screen } from '@/components/ui';
 import { useMembers } from '@/features/household/api';
 import { useDeleteAccount, useDeletionPreview } from '@/features/household/deleteAccount';
 import { useHousehold } from '@/features/household/context';
+import { SpaceSheet } from '@/features/household/SpaceSheet';
 import { useLocations } from '@/features/storage/api';
 import { useAuth } from '@/lib/auth';
 import { useI18n, type Lang } from '@/lib/i18n';
@@ -80,7 +82,7 @@ export default function MoreTab() {
   const { choice: themeChoice, setChoice: setThemeChoice } = useThemeChoice();
   const router = useRouter();
   const { session, signOut } = useAuth();
-  const { active, activeId } = useHousehold();
+  const { active, activeId, households } = useHousehold();
 
   const profile = useMyProfile(session?.user?.id);
   const locations = useLocations(activeId);
@@ -90,6 +92,8 @@ export default function MoreTab() {
   const remove = useDeleteAccount();
 
   const [picker, setPicker] = useState<'lang' | 'theme' | null>(null);
+  // 공간 전환 시트 (2026-09-09) — 프로필 카드의 공간 줄을 누르면 연다
+  const [spaceOpen, setSpaceOpen] = useState(false);
   const hasPlaces = (locations.data?.length ?? 0) > 0;
   const info = useVersionInfo();
 
@@ -171,13 +175,28 @@ export default function MoreTab() {
                 {email}
               </Text>
             )}
+            {/* 공간 줄 — 누르면 전환 시트. 공간이 하나뿐이어도 "추가" 입구라서 늘 눌린다 (2026-09-09) */}
             {!!active && (
-              <Text style={[st.sub, { color: c.textMuted }]} numberOfLines={1}>
-                {active.name} · {t.more.role(active.role)}
-              </Text>
+              <Pressable
+                onPress={() => setSpaceOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={t.space.switch}
+                style={({ pressed }) => [st.spaceRow, pressed && { opacity: 0.6 }]}
+              >
+                <View style={st.flex}>
+                  <Text style={[st.sub, { color: c.textMuted }]} numberOfLines={1}>
+                    {active.name} · {t.more.role(active.role)}
+                  </Text>
+                  <Text style={[st.sub, { color: c.textFaint }]} numberOfLines={1}>
+                    {t.space.count(households.length)}
+                  </Text>
+                </View>
+                <IconChevron color={c.textFaint} size={16} />
+              </Pressable>
             )}
           </View>
         </View>
+        {spaceOpen && <SpaceSheet onClose={() => setSpaceOpen(false)} />}
 
         {/* 표시 설정 */}
         <SettingsGroup>
@@ -316,6 +335,8 @@ const st = StyleSheet.create({
   },
   avatarText: { fontSize: type.h2, fontWeight: '700' },
   profileMain: { flex: 1, gap: space.xs, justifyContent: 'center' },
+  flex: { flex: 1, gap: space.xs },
+  spaceRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   name: { fontSize: type.title, fontWeight: '700', letterSpacing: tracking.tight },
   sub: { fontSize: type.small },
 });
