@@ -28,20 +28,25 @@ import {
   useAdjustQuantity,
   useDeleteItem,
   useItem,
-  useItemPhotoUrl,
+  useItemPhotoUrls,
   useMoveItem,
   useUpdateItem,
+  type ItemPhoto,
 } from '@/features/item/api';
 import { MovePicker, type MoveTarget } from '@/features/item/MovePicker';
 import { PhotoViewer } from '@/components/PhotoViewer';
 import { CameraCapture } from '@/features/item/CameraCapture';
-import { PHOTO_ASPECT, preparePhoto } from '@/features/item/photo';
-import { useRemovePhoto, useSetPhoto } from '@/features/item/photoApi';
-import { IMAGE_CACHE_POLICY } from '@/features/item/thumbs';
+import { MAX_ITEM_PHOTOS, preparePhoto } from '@/features/item/photo';
+import { PhotoGallery, type GallerySlide } from '@/features/item/PhotoGallery';
+import { ExpirySheet } from '@/features/item/ExpirySheet';
+import { daysUntil, expiryTone } from '@/features/item/expiry';
+import { nudgeReminderPermission } from '@/features/item/reminders';
+import { useAddItemPhotos, useRemoveItemPhoto, useSetItemCover } from '@/features/item/photoApi';
+import { IMAGE_CACHE_POLICY, useThumbUrls } from '@/features/item/thumbs';
 import {
   dropPendingPhoto,
   retryPendingPhoto,
-  usePendingPhoto,
+  usePendingPhotos,
 } from '@/features/item/photoQueue';
 import { useLocations } from '@/features/storage/api';
 import { useT } from '@/lib/i18n';
@@ -57,6 +62,9 @@ import { overlay, radius, type, useTheme, space, tracking, leading } from '@/lib
  * ⚠ 저장 뒤 재조회가 와도 폼을 되돌리지 않는다. 되돌리면 입력 중이던 내용이 사라진다
  *   (이 프로젝트에서 이미 한 번 겪은 함정).
  */
+/** ⚠ 렌더마다 새 배열을 만들면 위 `useEffect([photos])` 가 매번 돈다 */
+const NO_PHOTOS: ItemPhoto[] = [];
+
 export default function ItemDetailScreen() {
   const { id, justCreated } = useLocalSearchParams<{ id: string; justCreated?: string }>();
   const itemId = String(id);
@@ -67,14 +75,24 @@ export default function ItemDetailScreen() {
   const { activeId } = useHousehold();
 
   const item = useItem(itemId);
-  const photo = useItemPhotoUrl(item.data?.photo_path);
   const locations = useLocations(activeId);
   const adjust = useAdjustQuantity(itemId);
   const update = useUpdateItem(itemId);
   const remove = useDeleteItem(itemId);
   const move = useMoveItem(itemId);
-  const setPhoto = useSetPhoto('items', itemId, activeId);
-  const removePhoto = useRemovePhoto('items', itemId);
+
+  /* ── 사진 여러 장 (2026-09-08) ─────────────────────────────────────
+     서버에 있는 장들(`photos`) + 아직 올라가는 중인 장들(큐) + 방금 찍어 처리 중인 장들.
+     셋을 **한 줄**에 그린다 — 따로 그리면 "사진이 사라졌다" 가 되돌아온다. */
+  const photos = item.data?.photos ?? NO_PHOTOS;
+  const fullUrls = useItemPhotoUrls(photos.map((p) => p.photo_path));
+  const thumbs = useThumbUrls();
+  useEffect(() => {
+    thumbs.ensure(photos.map((p) => p.thumb_path));
+  }, [photos, thumbs]);
+  const addPhotos = useAddItemPhotos(itemId, activeId);
+  const removeItemPhoto = useRemoveItemPhoto(itemId);
+  const setCover = useSetItemCover(itemId);
   /**
    * 등록할 때 찍은 사진이 아직 안 올라갔는가 (2026-09-06).
    *
@@ -82,13 +100,17 @@ export default function ItemDetailScreen() {
    *   중이거나 **실패한 채 방치된 것**이었고, 그래서 사진이 사라진 것으로 보였다.
    *   상태를 보여주고 다시 시도할 길을 여기 둔다 — 사용자가 도착하는 화면이 여기다.
    */
-  const pendingPhoto = usePendingPhoto(itemId);
+  const pending = usePendingPhotos(itemId);
+  /** 셔터를 누른 뒤 `preparePhoto` 가 도는 장수 — 그동안도 자리를 보여 준다 */
+  const [preparing, setPreparing] = useState(0);
+  const [photoIndex, setPhotoIndex] = useState(0);
 
   const insets = useSafeAreaInsets();
 
   const [moving, setMoving] = useState(false);
   const [photoSheet, setPhotoSheet] = useState(false);
   const [viewer, setViewer] = useState(false);
+  const [expirySheet, setExpirySheet] = useState(false);
 
   /**
    * **등록 직후인가** (2026-09-02 사용자 요청).
@@ -132,6 +154,75 @@ export default function ItemDetailScreen() {
   }
 
   const row = item.data;
+
+  // 큐가 끝나 서버 목록에 들어온 장은 큐 쪽을 그리지 않는다 (재조회와 큐 정리 사이의 겹침)
+  const known = new Set(photos.map((p) => p.id));
+  const waiting = pending.filter((j) => !known.has(j.photoId));
+  const slides: GallerySlide[] = [
+    ...photos.map((p) => ({
+      key: p.id,
+      // 큰 사진이 아직 서명 전이면 썸네일로 먼저 그린다 — 빈 칸보다 낫다
+      source: fullUrls.data?.[p.photo_path] ?? thumbs.get(p.thumb_path),
+    })),
+    ...waiting.map((j) => ({ key: j.photoId, source: { uri: j.thumbUri }, status: j.state })),
+    ...Array.from({ length: preparing }, (_, i) => ({
+      key: `preparing-${i}`,
+      status: 'uploading' as const,
+    })),
+  ];
+  const total = slides.length;
+  const canAdd = total < MAX_ITEM_PHOTOS;
+  /** 다음에 붙일 장의 순서 — 서버·큐를 통틀어 마지막 뒤 */
+  const nextOrder =
+    Math.max(-1, ...photos.map((p) => p.sort_order), ...waiting.map((j) => j.sortOrder)) + 1;
+  /** 뷰어는 서버에 있는 장만 넘긴다 — 큐의 장은 크게 볼 원본이 아직 없다 */
+  const viewerSources = photos
+    .map((p) => fullUrls.data?.[p.photo_path] ?? thumbs.get(p.thumb_path))
+    .filter((x): x is NonNullable<typeof x> => !!x);
+
+  function openCamera() {
+    if (!canAdd) {
+      Alert.alert(t.photo.limitTitle, t.photo.limitBody(MAX_ITEM_PHOTOS));
+      return;
+    }
+    setPhotoSheet(true);
+  }
+
+  /** 찍은 원본 → 처리 → 끈질긴 큐에. 카메라는 열어 둔 채 계속 찍을 수 있다 */
+  function onShot(uri: string) {
+    const order = nextOrder + preparing; // 처리 중인 장 뒤에 붙는다
+    setPreparing((n) => n + 1);
+    void (async () => {
+      try {
+        const prepared = await preparePhoto(uri);
+        await addPhotos.mutateAsync({ photos: [prepared], nextOrder: order });
+      } catch (e) {
+        Alert.alert(t.camera.photoSaveFailed, e instanceof Error ? e.message : t.common.tryAgain);
+      } finally {
+        setPreparing((n) => n - 1);
+      }
+    })();
+  }
+
+  async function onRemovePhoto(p: ItemPhoto) {
+    try {
+      await removeItemPhoto.mutateAsync(p);
+      setPhotoIndex((i) => Math.max(0, Math.min(i, photos.length - 2)));
+    } catch (e) {
+      Alert.alert(t.camera.photoRemoveFailed, e instanceof Error ? e.message : t.common.tryAgain);
+    }
+  }
+
+  async function onSetCover(p: ItemPhoto) {
+    try {
+      const minOrder = Math.min(...photos.map((x) => x.sort_order));
+      await setCover.mutateAsync({ photoId: p.id, minOrder });
+      setPhotoIndex(0);
+    } catch (e) {
+      Alert.alert(t.item.savedFailed, e instanceof Error ? e.message : t.common.tryAgain);
+    }
+  }
+
   const locName = (locations.data ?? []).find((l) => l.id === row.location_id)?.name ?? '';
   const path = row.container?.name ? `${locName} › ${row.container.name}` : `${locName}${t.item.loose}`;
   /**
@@ -212,50 +303,37 @@ export default function ItemDetailScreen() {
         >
           {/*
             사진을 누르면 **크게 본다.** 전에는 곧장 카메라가 떠서, 자세히 보려던
-            사람이 촬영 화면을 만났다(사용자 보고). 바꾸기는 뷰어 아래 줄에 있다.
+            사람이 촬영 화면을 만났다(사용자 보고). 추가·대표·지우기는 뷰어와 썸네일 줄에 있다.
             사진이 없을 때만 곧장 카메라로 간다 — 그땐 의도가 하나뿐이다.
           */}
-          <Pressable
-            onPress={() => {
-              if (photo.data) return setViewer(true);
-              // 실패한 사진이 기다리고 있으면, 누르는 뜻은 "다시 올려" 다
-              if (pendingPhoto?.state === 'failed') return retryPendingPhoto(itemId);
-              if (pendingPhoto?.state === 'uploading') return; // 올라가는 중엔 할 일이 없다
-              setPhotoSheet(true);
+          <PhotoGallery
+            slides={slides}
+            index={photoIndex}
+            onIndexChange={setPhotoIndex}
+            onPressSlide={(i) => {
+              setPhotoIndex(i);
+              setViewer(true);
             }}
-          >
-            {photo.data ? (
-              <Image
-                source={photo.data}
-                style={[st.photo, { backgroundColor: c.sunk }]}
-                contentFit="cover"
-                transition={150}
-                cachePolicy={IMAGE_CACHE_POLICY}
-              />
-            ) : (
-              <View
-                style={[st.photoAdd, { borderColor: c.borderStrong, backgroundColor: c.sunk }]}
-              >
-                <Text
-                  style={[
-                    st.photoAddText,
-                    { color: pendingPhoto?.state === 'failed' ? c.danger : c.textMuted },
-                  ]}
-                >
-                  {pendingPhoto
-                    ? pendingPhoto.state === 'uploading'
-                      ? t.item.photoUploading
-                      : t.item.photoStuck
-                    : t.item.addPhoto}
-                </Text>
-                {pendingPhoto?.state === 'failed' && (
-                  <Text style={[st.photoAddHint, { color: c.textMuted }]}>
-                    {t.item.photoRetry}
-                  </Text>
-                )}
-              </View>
-            )}
-          </Pressable>
+            onAdd={openCamera}
+            canAdd={canAdd}
+            onRetry={(key) => retryPendingPhoto(key)}
+          />
+          {/* 실패한 채 남은 장은 포기할 길도 있어야 한다 — 없으면 "실패" 가 영원히 붙어 있다 */}
+          {waiting.some((j) => j.state === 'failed') && (
+            <View style={st.failedRow}>
+              {waiting
+                .filter((j) => j.state === 'failed')
+                .map((j) => (
+                  <TextButton
+                    key={j.photoId}
+                    label={t.photo.discard}
+                    size="small"
+                    tone="danger"
+                    onPress={() => dropPendingPhoto(j.photoId)}
+                  />
+                ))}
+            </View>
+          )}
 
           {/* 위치 — 제목급. 눌러서 그 박스로, 옆 버튼으로 이동 */}
           <View style={st.pathRow}>
@@ -312,6 +390,9 @@ export default function ItemDetailScreen() {
             currentIcon={row.category?.icon ? safeIcon(row.category.icon) : null}
             onPick={(id) => update.mutateAsync({ category_id: id })}
           />
+
+          {/* 소비기한 (2026-09-08) — 카테고리처럼 한 줄 select. 누르면 시트에서 고른다 */}
+          <ExpiryRow value={row.expires_on} onPress={() => setExpirySheet(true)} />
 
           <AutoField
             label={t.item.purchaseUrl}
@@ -404,71 +485,69 @@ export default function ItemDetailScreen() {
         )}
       </KeyboardSpacer>
 
-      {/* 크게 보기 — 박스 상세와 **같은 컴포넌트** */}
+      {/* 크게 보기 — 박스 상세와 **같은 컴포넌트**. 여기서 넘기면 아래 썸네일 줄도 따라온다 */}
       <PhotoViewer
         visible={viewer}
-        source={photo.data}
+        sources={viewerSources}
+        index={Math.min(photoIndex, Math.max(0, viewerSources.length - 1))}
+        onIndexChange={setPhotoIndex}
         onClose={() => setViewer(false)}
-        onChange={() => {
+        onAdd={() => {
           setViewer(false);
-          setPhotoSheet(true);
+          openCamera();
         }}
-        onRemove={async () => {
-          setViewer(false);
-          try {
-            await removePhoto.mutateAsync();
-            dropPendingPhoto(itemId); // 뗐는데 뒤늦게 올라와 되살아나면 안 된다
-          } catch (e) {
-            Alert.alert(
-              t.camera.photoRemoveFailed,
-              e instanceof Error ? e.message : t.common.tryAgain,
-            );
-          }
+        onSetCover={(i) => {
+          const p = photos[i];
+          if (p) void onSetCover(p);
+        }}
+        onRemove={(i) => {
+          const p = photos[i];
+          if (!p) return;
+          if (photos.length <= 1) setViewer(false); // 마지막 장을 지우면 볼 것이 없다
+          void onRemovePhoto(p);
         }}
       />
 
       {photoSheet && (
         <Modal visible animationType="slide" onRequestClose={() => setPhotoSheet(false)}>
+          {/*
+            여러 장 모드 — 찍어도 카메라가 닫히지 않고 오른쪽 위에 장수가 쌓인다.
+            "완료" 로 돌아온다. 처리·업로드는 배경에서 돌고 상세가 그 상태를 보여 준다.
+            ⚠ 10장이 차면 셔터를 막는다(busy) — 서버(t60)가 11장째를 튕기지만, 찍고 나서
+              튕기면 그 사진은 버려진다.
+          */}
           <CameraCapture
             title={row.name}
-            busy={setPhoto.isPending || removePhoto.isPending}
+            shotCount={total}
+            busy={!canAdd}
             onClose={() => setPhotoSheet(false)}
-            onPhoto={async (uri) => {
-              try {
-                // 등록 화면과 같다 — 원본을 받아 여기서 처리한다
-                await setPhoto.mutateAsync(await preparePhoto(uri));
-                /* ⚠ 기다리던 옛 사진을 버린다. 안 버리면 나중에 그것이 올라와
-                     방금 고른 사진을 덮어쓴다 — 되돌릴 수 없는 종류의 사고다. */
-                dropPendingPhoto(itemId);
-                setPhotoSheet(false);
-              } catch (e) {
-                Alert.alert(
-                  t.camera.photoSaveFailed,
-                  e instanceof Error ? e.message : t.common.tryAgain,
-                );
-              }
-            }}
-            onRemove={async () => {
-              try {
-                await removePhoto.mutateAsync();
-                dropPendingPhoto(itemId); // 뗐는데 뒤늦게 올라와 되살아나면 안 된다
-                setPhotoSheet(false);
-              } catch (e) {
-                Alert.alert(
-                  t.camera.photoRemoveFailed,
-                  e instanceof Error ? e.message : t.common.tryAgain,
-                );
-              }
-            }}
+            onPhoto={onShot}
           />
         </Modal>
       )}
+
+      <ExpirySheet
+        visible={expirySheet}
+        value={row.expires_on}
+        busy={update.isPending}
+        onClose={() => setExpirySheet(false)}
+        onSave={async (ymd) => {
+          try {
+            await update.mutateAsync({ expires_on: ymd });
+            setExpirySheet(false);
+            // 기한을 넣는 순간이 알림이 필요한 순간이다 — 아직 안 물어봤으면 여기서 묻는다
+            if (ymd) void nudgeReminderPermission();
+          } catch (e) {
+            Alert.alert(t.item.savedFailed, e instanceof Error ? e.message : t.common.tryAgain);
+          }
+        }}
+      />
 
       <CreatedDialog
         visible={celebrate}
         name={row.name}
         path={here}
-        photo={photo.data}
+        photo={slides[0]?.source ?? null}
         onClose={() => setCelebrate(false)}
       />
 
@@ -860,6 +939,38 @@ function CategoryPicker({
 }
 
 /**
+ * 소비기한 한 줄 — "2027. 3. 15.까지 · 188일 남음 (D-188)". 급할수록 붉다.
+ * 기한이 없으면 "기한 없음" 을 흐리게 — 누르면 넣을 수 있다는 것이 보여야 한다.
+ */
+function ExpiryRow({ value, onPress }: { value: string | null; onPress: () => void }) {
+  const { c } = useTheme();
+  const t = useT();
+  const days = value ? daysUntil(value) : null;
+  const tone = days === null ? null : expiryTone(days);
+  const color =
+    tone === null ? c.textFaint : tone === 'far' ? c.text : tone === 'soon' ? c.accentText : c.danger;
+  return (
+    <View style={st.field}>
+      <Text style={[st.fieldLabel, { color: c.textFaint }]}>{t.expiry.title}</Text>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        style={({ pressed }) => [
+          st.select,
+          { borderColor: c.border, backgroundColor: c.card },
+          pressed && { opacity: 0.7 },
+        ]}
+      >
+        <Text style={[st.selectText, { color }]} numberOfLines={1}>
+          {value && days !== null ? `${t.expiry.until(value)} · ${t.expiry.dLabel(days)}` : t.expiry.none}
+        </Text>
+        <IconChevron color={c.textFaint} />
+      </Pressable>
+    </View>
+  );
+}
+
+/**
  * 수량 ±.
  *
  * ⚠ 예전에는 "−" · "+" **문자**를 받아 그렸다. 기기 폰트마다 굵기와 세로 위치가 달라
@@ -910,17 +1021,8 @@ const st = StyleSheet.create({
   /** ⚠ 제목 줄의 밑선 맞춤에서 이 버튼만 빠져나온다. 위 주석 참조 */
   trashBtn: { alignSelf: 'center' },
   body: { paddingHorizontal: space.xl, paddingBottom: space.giant, gap: space.lg },
-  photo: { width: '100%', aspectRatio: PHOTO_ASPECT, borderRadius: radius.md },
-  photoAdd: {
-    height: 96,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoAddHint: { fontSize: type.caption },
-  photoAddText: { fontSize: type.body, fontWeight: '600' },
+  /** 실패한 채 남은 장의 "이 사진 취소" 들 — 갤러리 바로 아래 한 줄 */
+  failedRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: -space.sm },
   pathRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
   pathHint: { fontSize: type.tiny, fontWeight: '600', letterSpacing: tracking.wide, marginBottom: space.xs },
   path: { fontSize: type.title, fontWeight: '700', letterSpacing: tracking.tight, lineHeight: leading.title },

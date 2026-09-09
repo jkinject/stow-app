@@ -390,6 +390,61 @@ export type Database = {
           },
         ]
       }
+      item_photos: {
+        Row: {
+          created_at: string
+          created_by: string
+          household_id: string
+          id: string
+          item_id: string
+          photo_path: string
+          sort_order: number
+          thumb_path: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          household_id: string
+          id: string
+          item_id: string
+          photo_path: string
+          sort_order?: number
+          thumb_path: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          household_id?: string
+          id?: string
+          item_id?: string
+          photo_path?: string
+          sort_order?: number
+          thumb_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_photos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_photos_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_photos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       items: {
         Row: {
           category: string | null
@@ -398,6 +453,7 @@ export type Database = {
           created_at: string
           created_by: string
           deleted_at: string | null
+          expires_on: string | null
           household_id: string
           id: string
           location_id: string
@@ -419,6 +475,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           deleted_at?: string | null
+          expires_on?: string | null
           household_id: string
           id: string
           location_id: string
@@ -440,6 +497,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           deleted_at?: string | null
+          expires_on?: string | null
           household_id?: string
           id?: string
           location_id?: string
@@ -857,6 +915,7 @@ export type Database = {
           created_at: string
           created_by: string
           deleted_at: string | null
+          expires_on: string | null
           household_id: string
           id: string
           location_id: string
@@ -914,12 +973,17 @@ export type Database = {
           owners: Json
         }[]
       }
+      enqueue_storage_gc: {
+        Args: { p_household: string; p_paths: string[] }
+        Returns: undefined
+      }
       gen_invite_code: { Args: never; Returns: string }
       is_household_member: { Args: { hid: string }; Returns: boolean }
       is_household_owner: { Args: { hid: string }; Returns: boolean }
       mark_dormant_households: { Args: never; Returns: number }
       mark_household_warned: { Args: { p_ids: string[] }; Returns: number }
       purge_expired_soft_deletes: { Args: never; Returns: undefined }
+      report_orphan_photos: { Args: { p_paths: string[] }; Returns: number }
       resolve_shopping_item: {
         Args: { p_id: string; p_new_quantity: number }
         Returns: {

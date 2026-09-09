@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { IconChevron } from './Icon';
 import { useTheme, type, radius, space } from '@/lib/theme';
@@ -68,3 +68,42 @@ const st = StyleSheet.create({
   label: { flex: 1, fontSize: type.bodyStrong, fontWeight: '500' },
   value: { fontSize: type.body },
 });
+
+/**
+ * 켜고 끄는 한 줄. 눌러서 어디로 가는 줄(`SettingsRow`)과 모양을 맞추되 오른쪽이 스위치다.
+ * ⚠ 스위치 자체가 곧 동작이라 줄 전체를 누르게 두지 않는다 — 실수로 스치기만 해도 바뀐다.
+ */
+export function SettingsSwitchRow({
+  icon,
+  label,
+  value,
+  onValueChange,
+  disabled,
+  first,
+}: {
+  icon?: (color: string) => ReactNode;
+  label: string;
+  value: boolean;
+  onValueChange: (v: boolean) => void;
+  disabled?: boolean;
+  first?: boolean;
+}) {
+  const { c } = useTheme();
+  const tint = disabled ? c.textFaint : c.text;
+  return (
+    <View style={[st.row, !first && { borderTopWidth: 1, borderTopColor: c.border }]}>
+      {icon ? <View style={st.icon}>{icon(tint)}</View> : null}
+      <Text style={[st.label, { color: tint }]} numberOfLines={1}>
+        {label}
+      </Text>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        disabled={disabled}
+        trackColor={{ true: c.accent }}
+        accessibilityLabel={label}
+      />
+    </View>
+  );
+}
+

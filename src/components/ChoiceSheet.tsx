@@ -28,14 +28,19 @@ export function ChoiceSheet({
   options,
   onPick,
   onClose,
+  scroll = false,
+  maxHeightRatio,
 }: {
   title: string;
   options: Choice[];
   onPick: (key: string) => void;
   onClose: () => void;
+  /** 열두 달처럼 긴 목록 — 시트 안에서 스크롤한다 */
+  scroll?: boolean;
+  maxHeightRatio?: `${number}%`;
 }) {
   return (
-    <BottomSheet label={title} onClose={onClose}>
+    <BottomSheet label={title} onClose={onClose} scroll={scroll} maxHeightRatio={maxHeightRatio}>
       {options.map((o, i) => (
         <SheetOption
           key={o.key}

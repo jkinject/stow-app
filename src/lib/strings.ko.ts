@@ -134,6 +134,7 @@ export const KO = {
     /** 정렬 토글. **지금 어떤 순서인지**를 보여 준다 — 누르면 다른 쪽으로 바뀐다 */
     sortShuffle: '랜덤순',
     sortRecent: '최근 등록순',
+    sortExpiry: '소비기한 순',
     syncing: '동기화 중…',
     offline: (when: string) => `오프라인 — 마지막 동기화 ${when}`,
     noItems: '아직 등록된 물건이 없습니다',
@@ -438,6 +439,7 @@ export const KO = {
     family: '가족',
     familyValue: (n: number) => `${n}명`,
     trash: '휴지통',
+    expiryReminders: '소비기한 알림',
     trashHint: '지운 물건·박스·장소를 30일 안에 되돌릴 수 있습니다.',
     account: '계정',
     signOut: '로그아웃',
@@ -517,6 +519,46 @@ export const KO = {
       `이 앱은 오픈소스 소프트웨어 ${n}개를 사용합니다. 각 항목을 누르면 원본 저장소가 열립니다.`,
   },
 
+  /** 소비기한 (2026-09-08) */
+  expiry: {
+    title: '소비기한',
+    none: '기한 없음',
+    empty: '날짜를 고르거나 적어 주세요',
+    quickHint: '오늘부터',
+    manualHint: '직접 입력',
+    quick: { week: '1주', month1: '1개월', month3: '3개월', month6: '6개월', year1: '1년', year2: '2년' },
+    year: '년',
+    month: '월',
+    day: '일',
+    yearLabel: '연도',
+    monthLabel: '월',
+    invalid: '없는 날짜입니다',
+    clear: '기한 없애기',
+    until: (ymd: string) => {
+      const [y, m, d] = ymd.split('-').map(Number);
+      return `${y}. ${m}. ${d}.까지`;
+    },
+    /** 상세·시트의 긴 표시 */
+    dLabel: (days: number) =>
+      days < 0 ? `${-days}일 지남` : days === 0 ? '오늘까지 (D-day)' : `${days}일 남음 (D-${days})`,
+    /** 격자 카드의 짧은 뱃지 */
+    badge: (days: number) => (days < 0 ? '만료' : days === 0 ? 'D-day' : `D-${days}`),
+  },
+  /** 소비기한 알림 설정 (2026-09-08) */
+  reminders: {
+    title: '소비기한 알림',
+    master: '알림 받기',
+    masterHint: '소비기한이 다가오면 이 기기로 알려 드립니다.',
+    whenLabel: '언제 알릴까요',
+    before: (n: number) => `만료 ${n}일 전`,
+    hourHint: '알림은 그날 오전 9시에 옵니다. 앱을 열 때마다 가까운 알림부터 최대 60개를 걸어 둡니다.',
+    permissionWarnTitle: '알림 권한이 꺼져 있습니다',
+    permissionWarnBody: '권한을 허용하지 않으면 소비기한이 다가와도 알림이 오지 않습니다.',
+    permissionAsk: '알림 권한 허용하기',
+    openSettings: '기기 설정에서 켜기',
+    notifTitle: (name: string, days: number) => `${name} · D-${days}`,
+    notifBody: (date: string, path: string) => (path ? `${date}까지 · ${path}` : `${date}까지`),
+  },
   photo: {
     change: '사진 바꾸기',
     remove: '사진 제거',
@@ -524,6 +566,26 @@ export const KO = {
     // 되돌릴 수 없다는 사실을 분명히 적는다 — '정말요?' 만으로는 무게가 전달되지 않는다
     removeBody: '지운 사진은 되돌릴 수 없습니다. 다시 넣으려면 새로 찍거나 사진첩에서 골라야 합니다.',
     zoomHint: '두 손가락으로 확대 · 두 번 두드리면 원래대로',
+    /** 여러 장 (2026-09-08) */
+    add: '사진 추가',
+    addMore: '더 찍기',
+    /** 대표 사진 — 목록·검색·카드에 보이는 그 한 장 */
+    cover: '대표',
+    setCover: '대표로',
+    counter: (i: number, n: number) => `${i} / ${n}`,
+    /** 상세·등록에서 사진이 하나도 없을 때의 큰 자리 */
+    none: '사진이 없습니다',
+    limitTitle: '사진은 10장까지',
+    limitBody: (n: number) => `물건 하나에 사진은 ${n}장까지 넣을 수 있습니다.`,
+    uploading: '올리는 중',
+    failed: '실패',
+    retry: '다시 시도',
+    discard: '이 사진 취소',
+    /** 등록 화면 — 아직 저장 안 된 사진을 목록에서 빼기 */
+    dropShot: '빼기',
+    swipeHint: '옆으로 넘기면 다음 사진',
+    /** 카메라 오른쪽 위 — 여러 장 모드에서 지금까지 찍은 장수 */
+    shotCount: (n: number) => `${n}장`,
   },
 
   /** 첫 실행 안내 (2026-09-01) */

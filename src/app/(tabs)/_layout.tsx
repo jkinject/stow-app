@@ -4,6 +4,7 @@ import { Tabs } from 'expo-router';
 import { IconBoxes, IconCart, IconDots, IconSearch } from '@/components/Icon';
 import { useHousehold } from '@/features/household/context';
 import { useAuth } from '@/lib/auth';
+import { useExpiryReminderSync } from '@/features/item/reminders';
 import { useDrainStorageGc, useReportLocale, useTouchHousehold } from '@/features/storage/gc';
 import { useT } from '@/lib/i18n';
 import { useTheme, type } from '@/lib/theme';
@@ -35,6 +36,8 @@ export default function TabsLayout() {
    */
   useTouchHousehold(activeId);
   useDrainStorageGc(activeId);
+  // 소비기한 알림을 목록·설정에 맞춰 다시 건다 (2026-09-08)
+  useExpiryReminderSync(activeId);
   /**
    * ⚠ 이게 없으면 **외국인에게 한국어 메일이 나간다.** 삭제 예고 메일은 90일 넘게
    *   앱을 안 열었을 때 나가므로 그때는 기기 정보가 없다 — 미리 적어 둬야 한다.

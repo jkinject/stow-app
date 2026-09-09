@@ -18,6 +18,8 @@ export type ItemDetail = {
   unit: string | null;
   purchase_url: string | null;
   note: string | null;
+  /** 소비기한 YYYY-MM-DD (2026-09-08). null = 기한 없음 */
+  expires_on: string | null;
   photo_path: string | null;
   thumb_path: string | null;
   created_at: string;
@@ -29,7 +31,38 @@ export type ItemDetail = {
   /** 분류. 카테고리를 지우면 DB 가 여기를 null 로 만든다 (ON DELETE SET NULL) */
   /** ⚠ 색·아이콘도 함께 읽는다 — 고르기 시트가 카테고리 관리 화면과 같은 타일을 그린다 */
   category: { id: string; name: string | null; color: string | null; icon: string | null } | null;
+  /**
+   * 사진들 — 대표(첫 장)부터 순서대로 (2026-09-08 여러 장).
+   * ⚠ `photo_path` / `thumb_path` 는 이 배열의 첫 장을 서버가 복사한 것이다. 화면은
+   *   이 배열을 보고, 목록·카드는 그 두 컬럼을 본다.
+   */
+  photos: ItemPhoto[];
 };
+
+export type ItemPhoto = {
+  id: string;
+  photo_path: string;
+  thumb_path: string;
+  sort_order: number;
+  created_at: string;
+};
+
+/**
+ * 서버 트리거(t61)와 **같은 정렬**. 다르면 목록의 대표 사진과 상세의 첫 장이 어긋난다.
+ * PostgREST 의 임베드 정렬은 한 키만 안정적으로 주기 어려워 클라이언트에서 한 번 더 정렬한다.
+ */
+export function sortPhotos(photos: ItemPhoto[]): ItemPhoto[] {
+  return [...photos].sort(
+    (a, b) =>
+      a.sort_order - b.sort_order ||
+      a.created_at.localeCompare(b.created_at) ||
+      a.id.localeCompare(b.id),
+  );
+}
+
+function withSortedPhotos(row: ItemDetail): ItemDetail {
+  return { ...row, photos: sortPhotos(row.photos ?? []) };
+}
 
 export const itemKeys = {
   detail: (id: string) => ['item', id] as const,
@@ -52,13 +85,13 @@ export function useItem(itemId: string | null) {
         // ⚠ 한 줄 리터럴이어야 한다. 문자열을 이어붙이면 PostgREST 타입 추론이 깨져
         //   data 가 GenericStringError 가 된다.
         .select(
-          'id, household_id, location_id, container_id, name, category_id, quantity, threshold, unit, purchase_url, note, photo_path, thumb_path, created_at, updated_at, updater:profiles!items_updated_by_fkey(display_name), container:containers!items_container_id_fkey(name), category:categories!items_category_id_fkey(id, name, color, icon)',
+          'id, household_id, location_id, container_id, name, category_id, quantity, threshold, unit, purchase_url, note, expires_on, photo_path, thumb_path, created_at, updated_at, updater:profiles!items_updated_by_fkey(display_name), container:containers!items_container_id_fkey(name), category:categories!items_category_id_fkey(id, name, color, icon), photos:item_photos(id, photo_path, thumb_path, sort_order, created_at)',
         )
         .eq('id', itemId!)
         .is('deleted_at', null)
         .maybeSingle();
       if (error) throw error;
-      return (data as ItemDetail | null) ?? null;
+      return data ? withSortedPhotos(data as ItemDetail) : null;
     },
   });
 }
@@ -86,6 +119,33 @@ export function useItemPhotoUrl(photoPath: string | null | undefined) {
   });
 }
 
+/**
+ * 상세 화면의 큰 사진 **여러 장** — 한 번에 서명한다 (2026-09-08).
+ *
+ * 낱장 훅(`useItemPhotoUrl`)을 장수만큼 부르면 왕복이 장수만큼 난다. 경로 목록을
+ * 키로 잡아 한 번에 받고, 경로 → source 맵으로 돌려준다. 캐시 키 규칙은 낱장과 같다.
+ *
+ * ⚠ 키에 `'item-photo'` 접두를 그대로 둔다 — 사진이 바뀔 때 무효화하는 곳들이 그
+ *   접두로 비운다. 다른 키를 쓰면 바뀐 사진이 옛 URL 로 남는다.
+ */
+export function useItemPhotoUrls(paths: string[]) {
+  const key = paths.join('|');
+  return useQuery({
+    queryKey: ['item-photo', 'batch', key],
+    enabled: paths.length > 0,
+    staleTime: 50 * 60_000,
+    queryFn: async (): Promise<Record<string, ImageSource>> => {
+      const { data, error } = await supabase.storage.from('item-photos').createSignedUrls(paths, 3600);
+      if (error) throw error;
+      const out: Record<string, ImageSource> = {};
+      for (const row of data ?? []) {
+        if (row.signedUrl && row.path) out[row.path] = { uri: row.signedUrl, cacheKey: row.path };
+      }
+      return out;
+    },
+  });
+}
+
 export type ItemPatch = {
   name?: string;
   category_id?: string | null;
@@ -94,6 +154,7 @@ export type ItemPatch = {
   unit?: string | null;
   purchase_url?: string | null;
   note?: string | null;
+  expires_on?: string | null;
 };
 
 /**
@@ -138,7 +199,7 @@ export function useUpdateItem(itemId: string) {
         // ⚠ 한 줄 리터럴이어야 한다. 문자열을 이어붙이면 PostgREST 타입 추론이 깨져
         //   data 가 GenericStringError 가 된다.
         .select(
-          'id, household_id, location_id, container_id, name, category_id, quantity, threshold, unit, purchase_url, note, photo_path, thumb_path, created_at, updated_at, updater:profiles!items_updated_by_fkey(display_name), container:containers!items_container_id_fkey(name), category:categories!items_category_id_fkey(id, name, color, icon)',
+          'id, household_id, location_id, container_id, name, category_id, quantity, threshold, unit, purchase_url, note, expires_on, photo_path, thumb_path, created_at, updated_at, updater:profiles!items_updated_by_fkey(display_name), container:containers!items_container_id_fkey(name), category:categories!items_category_id_fkey(id, name, color, icon), photos:item_photos(id, photo_path, thumb_path, sort_order, created_at)',
         )
         .single();
       if (error) throw error;
@@ -153,7 +214,7 @@ export function useUpdateItem(itemId: string) {
        *
        *   mutationFn 은 observer 와 무관하게 끝까지 실행되므로 여기 두면 반드시 돈다.
        */
-      const item = data as ItemDetail;
+      const item = withSortedPhotos(data as ItemDetail);
       /**
        * ⚠ 갱신된 행을 **캐시에 직접 써 넣는다.** invalidate 만으로는 부족하다 —
        *   그건 "낡았다" 고 표시할 뿐이고, 화면이 닫힌 뒤에는 다시 읽어 오지도 않는다

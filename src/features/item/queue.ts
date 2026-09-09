@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 
 import { recordServerLatency } from './metrics';
 import { type PreparedPhoto } from './photo';
-import { attachPhotoLater } from './photoQueue';
+import { attachPhotosLater } from './photoQueue';
 
 /**
  * 등록 큐 — 계획 §2.4 의 긴장(P1 등록 마찰 최소화 ↔ P4 서버가 진실의 원천) 해소.
@@ -60,7 +60,8 @@ export type PendingState = 'saving' | 'done' | 'row_failed';
 
 export type Pending = {
   draft: DraftItem;
-  photo: PreparedPhoto | null;
+  /** 등록 때 찍은 사진들. 순서 = 화면에 보이는 순서, 첫 장이 대표다 (2026-09-08 여러 장) */
+  photos: PreparedPhoto[];
   state: PendingState;
   error?: string;
   attempts: number;
@@ -151,7 +152,7 @@ export function useRegisterQueue(onSynced?: () => void) {
   const processOne = useCallback(
     async (
       draft: DraftItem,
-      photo: PreparedPhoto | null,
+      photos: PreparedPhoto[],
       skipInsert = false,
       onRowSaved?: () => void,
     ) => {
@@ -174,9 +175,9 @@ export function useRegisterQueue(onSynced?: () => void) {
        *   다만 **디스크에 적히는 것까지는** 기다린다. 여기서 넘어가는 순간 이 화면은
        *   사라지므로, 적기 전에 넘기면 사진을 잃을 자리가 다시 생긴다.
        */
-      if (photo) {
+      if (photos.length > 0) {
         try {
-          await attachPhotoLater(draft.household_id, draft.id, photo);
+          await attachPhotosLater(draft.household_id, draft.id, photos);
         } catch {
           /* 맡기는 것 자체가 실패해도 물건은 이미 저장됐다 — 등록을 막지 않는다 */
         }
@@ -191,12 +192,12 @@ export function useRegisterQueue(onSynced?: () => void) {
   );
 
   const enqueue = useCallback(
-    (draft: DraftItem, photo: PreparedPhoto | null) => {
-      const entry: Pending = { draft, photo, state: 'saving', attempts: 0 };
+    (draft: DraftItem, photos: PreparedPhoto[]) => {
+      const entry: Pending = { draft, photos, state: 'saving', attempts: 0 };
       itemsRef.current.set(draft.id, entry);
       setPending((prev) => [entry, ...prev]);
       // 서버 응답을 기다리지 않는다 (P1). 실패는 목록의 배지로 알린다.
-      void processOne(draft, photo).catch(() => {});
+      void processOne(draft, photos).catch(() => {});
     },
     [processOne],
   );
@@ -209,12 +210,12 @@ export function useRegisterQueue(onSynced?: () => void) {
    * 기다려도 체감이 없다. 반대로 안 기다리면 상세가 빈 화면을 띄운다.
    */
   const enqueueAndWaitForRow = useCallback(
-    (draft: DraftItem, photo: PreparedPhoto | null): Promise<void> => {
-      const entry: Pending = { draft, photo, state: 'saving', attempts: 0 };
+    (draft: DraftItem, photos: PreparedPhoto[]): Promise<void> => {
+      const entry: Pending = { draft, photos, state: 'saving', attempts: 0 };
       itemsRef.current.set(draft.id, entry);
       setPending((prev) => [entry, ...prev]);
       return new Promise<void>((resolve, reject) => {
-        processOne(draft, photo, false, resolve).catch(reject);
+        processOne(draft, photos, false, resolve).catch(reject);
       });
     },
     [processOne],
@@ -225,7 +226,7 @@ export function useRegisterQueue(onSynced?: () => void) {
       const entry = itemsRef.current.get(id);
       if (!entry) return;
       patch(id, { state: 'saving', error: undefined, attempts: entry.attempts + 1 });
-      void processOne(entry.draft, entry.photo).catch(() => {});
+      void processOne(entry.draft, entry.photos).catch(() => {});
     },
     [patch, processOne],
   );

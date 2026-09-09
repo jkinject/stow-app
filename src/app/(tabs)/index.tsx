@@ -106,14 +106,22 @@ export default function FindTab() {
    * ⚠ 고른 값을 저장하지 않는다. 앱을 다시 켜면 랜덤으로 돌아온다 — 위 이유가
    *   기본값의 근거이고, "방금 넣은 것 찾기" 는 그 순간에만 필요한 일이다.
    */
-  const [sort, setSort] = useState<'shuffle' | 'recent'>('shuffle');
+  /** 소비기한 순(2026-09-08): 기한 있는 것부터 가까운 순, 기한 없는 것은 뒤에 등록순 */
+  const [sort, setSort] = useState<'shuffle' | 'recent' | 'expiry'>('shuffle');
 
   const ordered = useMemo(
     () =>
       sort === 'recent'
         ? // ⚠ ISO 8601 문자열이라 사전순 비교가 곧 시간순이다 (Date 로 바꿀 이유가 없다)
           indexed.slice().sort((a, b) => b.created_at.localeCompare(a.created_at))
-        : shuffle(indexed, seed),
+        : sort === 'expiry'
+          ? indexed.slice().sort((a, b) => {
+              if (a.expires_on && b.expires_on) return a.expires_on.localeCompare(b.expires_on);
+              if (a.expires_on) return -1;
+              if (b.expires_on) return 1;
+              return b.created_at.localeCompare(a.created_at);
+            })
+          : shuffle(indexed, seed),
     [indexed, seed, sort],
   );
   const scoped = useMemo(
@@ -218,7 +226,7 @@ export default function FindTab() {
     setLimit(PAGE);
   }, []);
   const onToggleSort = useCallback(() => {
-    setSort((v) => (v === 'shuffle' ? 'recent' : 'shuffle'));
+    setSort((v) => (v === 'shuffle' ? 'recent' : v === 'recent' ? 'expiry' : 'shuffle'));
     setLimit(PAGE); // 순서가 통째로 바뀌므로 처음부터 다시 본다
   }, []);
   const onPlace = useCallback((id: string | null) => {
@@ -252,6 +260,7 @@ export default function FindTab() {
         quantity={item.quantity}
         width={cardW}
         thumb={thumbs.get(item.thumb_path)}
+        expiresOn={item.expires_on}
         onPress={() => router.push(`/item/${item.id}`)}
       />
     ),
@@ -408,7 +417,7 @@ export default function FindTab() {
                 >
                   <IconSort size={13} color={c.textMuted} />
                   <Text style={[st.sortText, { color: c.textMuted }]}>
-                    {sort === 'recent' ? t.find.sortRecent : t.find.sortShuffle}
+                    {sort === 'recent' ? t.find.sortRecent : sort === 'expiry' ? t.find.sortExpiry : t.find.sortShuffle}
                   </Text>
                 </Pressable>
               </View>

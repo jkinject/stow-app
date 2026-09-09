@@ -86,6 +86,14 @@ export const IconTrash = (p: P) => (
  *   있다)과 "탈퇴하기"(되돌릴 수 없다)가 함께 있어서, 같은 그림이면 훑어볼 때
  *   두 줄이 같은 무게로 읽힌다. 사람에 ✕ 를 그려 성격을 다르게 만든다.
  */
+/** 알림 — 종 */
+export const IconBell = (p: P) => (
+  <S {...p}>
+    <Path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16z" />
+    <Path d="M10 20a2 2 0 0 0 4 0" />
+  </S>
+);
+
 export const IconInfo = (p: P) => (
   <S {...p}>
     <Circle cx="12" cy="12" r="9" />

@@ -119,47 +119,37 @@ async function uploadOne(path: string, uri: string) {
 }
 
 /**
- * 썸네일을 **먼저** 올린다.
- * 목록에 빨리 뜨고, 원본 업로드가 실패해도 목록은 정상 동작한다.
- */
-export async function uploadPhoto(
-  householdId: string,
-  itemId: string,
-  photo: PreparedPhoto,
-): Promise<{ thumbPath: string; photoPath: string }> {
-  const uuid = itemId; // 물건당 사진 1장이므로 itemId 를 파일명으로 재사용
-  const thumbPath = photoPaths.thumb(householdId, itemId, uuid);
-  const photoPath = photoPaths.full(householdId, itemId, uuid);
-
-  await uploadOne(thumbPath, photo.thumbUri);
-  await uploadOne(photoPath, photo.fullUri);
-
-  return { thumbPath, photoPath };
-}
-
-/**
- * 이미 있는 행(물건·박스)에 사진을 붙이거나 교체한다.
+ * 썸네일과 원본 두 장을 올린다. **썸네일을 먼저** — 목록에 빨리 뜨고, 원본 업로드가
+ * 실패해도 목록은 정상 동작한다.
  *
- * ⚠ `uploadPhoto` 와 달리 **버전 uuid 로 새 경로를 만든다.**
- *   교체할 때 같은 경로에 upsert 하면 서명 URL 의 경로가 그대로라
- *   expo-image 의 디스크 캐시가 **옛 사진을 계속 보여준다.** 파일은 바뀌었는데
- *   화면은 안 바뀌므로 "업로드가 실패했나" 로 보인다.
- *   경로가 달라지면 URL 도 달라져서 이 문제가 원천적으로 생기지 않는다.
+ * `fileId` 는 **사진마다 새 uuid** 다.
+ *   · 물건 사진(item_photos)은 행 id 를 그대로 쓴다 — 파일과 행이 같은 이름이라
+ *     "파일은 올라갔는데 행이 없다" 를 같은 id 로 다시 넣어 고칠 수 있다.
+ *   · 박스 사진은 교체할 때마다 새 uuid 를 만든다. 같은 경로에 upsert 하면 서명 URL 의
+ *     경로가 그대로라 expo-image 의 디스크 캐시가 **옛 사진을 계속 보여준다.** 파일은
+ *     바뀌었는데 화면은 안 바뀌므로 "업로드가 실패했나" 로 보인다.
+ *
+ * ⚠ 예전에는 물건당 한 장이라 `itemId` 를 파일명으로 재사용하는 `uploadPhoto` 가 따로
+ *   있었다(2026-09-08 사진 여러 장으로 바뀌며 걷어냈다). 파일명이 물건 id 면 둘째 장을
+ *   올릴 자리가 없다.
  *
  * 대가는 옛 파일이 남는 것이라, 부르는 쪽에서 행을 갱신한 뒤 `deletePhotoObjects` 로 지운다.
  */
 export async function uploadEntityPhoto(
   householdId: string,
   ownerId: string,
-  version: string,
+  fileId: string,
   photo: PreparedPhoto,
 ): Promise<{ thumbPath: string; photoPath: string }> {
-  const thumbPath = photoPaths.thumb(householdId, ownerId, version);
-  const photoPath = photoPaths.full(householdId, ownerId, version);
+  const thumbPath = photoPaths.thumb(householdId, ownerId, fileId);
+  const photoPath = photoPaths.full(householdId, ownerId, fileId);
   await uploadOne(thumbPath, photo.thumbUri);
   await uploadOne(photoPath, photo.fullUri);
   return { thumbPath, photoPath };
 }
+
+/** 물건 하나에 넣을 수 있는 사진 수. DB 의 t60 트리거와 **같은 값**이어야 한다 */
+export const MAX_ITEM_PHOTOS = 10;
 
 /**
  * 더 이상 참조되지 않는 사진 객체를 지운다.

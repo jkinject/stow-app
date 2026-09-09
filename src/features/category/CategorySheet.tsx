@@ -109,7 +109,12 @@ export function CategorySheet({
       maxHeightRatio="90%"
     >
       <View style={st.sheetBody}>
-            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={st.body}>
+            {/* ⚠ style 의 flexShrink 가 핵심이다 — 없으면 아이콘 94개만큼 늘어나 저장 버튼을 밀어낸다 */}
+            <ScrollView
+              style={st.scroll}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={st.body}
+            >
               {/* 미리보기 — 목록에서 보게 될 모습 그대로 */}
               <View style={st.preview}>
                 <View style={[st.tile, { backgroundColor: color }]}>
@@ -234,8 +239,13 @@ const ICON_COLS = 8;
 
 const st = StyleSheet.create({
   flex: { flex: 1 },
-  /** 시트 안쪽 — 목록이 길어도 저장 버튼이 바닥에 붙어 있게 */
-  sheetBody: { flexShrink: 1 },
+  /**
+   * 시트 안쪽 — 목록이 길어도 저장 버튼이 바닥에 붙어 있게.
+   * ⚠ 이 flexShrink 는 **ScrollView 에도** 있어야 한다(아래 `scroll`). 바깥만 줄어들고
+   *   안쪽이 내용 높이를 고집하면 결국 버튼이 밀려난다 — 실제로 그랬다(2026-09-08).
+   */
+  sheetBody: { flexShrink: 1, minHeight: 0 },
+  scroll: { flexShrink: 1 },
   body: { paddingHorizontal: space.xl, paddingBottom: space.lg, gap: space.xl },
 
   preview: { flexDirection: 'row', alignItems: 'center', gap: space.lg },

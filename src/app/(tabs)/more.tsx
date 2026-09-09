@@ -8,6 +8,7 @@ import { Alert, StyleSheet, Text, View } from 'react-native';
 
 import { ChoiceSheet } from '@/components/ChoiceSheet';
 import {
+  IconBell,
   IconGlobe,
   IconMoon,
   IconPrinter,
@@ -192,6 +193,12 @@ export default function MoreTab() {
             label={t.more.theme}
             value={themeLabel}
             onPress={() => setPicker('theme')}
+          />
+          {/* 소비기한 알림 — 기기별 설정이라 표시 설정과 같은 묶음에 둔다 (2026-09-08) */}
+          <SettingsRow
+            icon={(color) => <IconBell color={color} />}
+            label={t.more.expiryReminders}
+            onPress={() => router.push('/expiry-reminders')}
           />
         </SettingsGroup>
 

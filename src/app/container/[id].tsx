@@ -247,7 +247,9 @@ export default function ContainerDetail() {
         {/* 크게 보기 — 물건 상세와 **같은 컴포넌트**를 쓴다 */}
         <PhotoViewer
           visible={viewer}
-          source={boxPhoto.data}
+          sources={boxPhoto.data ? [boxPhoto.data] : []}
+          index={0}
+          onIndexChange={() => {}}
           onClose={() => setViewer(false)}
           onChange={() => {
             setViewer(false);

@@ -64,7 +64,8 @@
       "expo-sharing",
       "./plugins/withKoreanAppName",
       "./plugins/withReleaseSigning",
-      "expo-localization"
+      "expo-localization",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,
