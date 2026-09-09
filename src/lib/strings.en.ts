@@ -494,9 +494,7 @@ export const EN: Dict = {
     discard: 'Discard this photo',
     dropShot: 'Remove',
     swipeHint: 'Swipe for the next photo',
-    reorder: 'Reorder',
-    moveLeft: 'Earlier',
-    moveRight: 'Later',
+    dragHint: 'Long-press and drag to reorder · first is the cover',
     shotCount: (n: number) => `${n} photo${n === 1 ? '' : 's'}`,
   },
 

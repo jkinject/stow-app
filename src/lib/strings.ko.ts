@@ -585,9 +585,7 @@ export const KO = {
     dropShot: '빼기',
     swipeHint: '옆으로 넘기면 다음 사진',
     /** 순서 바꾸기 (2026-09-09) */
-    reorder: '순서 바꾸기',
-    moveLeft: '앞으로',
-    moveRight: '뒤로',
+    dragHint: '길게 눌러 끌면 순서가 바뀝니다 · 첫 장이 대표',
     /** 카메라 오른쪽 위 — 여러 장 모드에서 지금까지 찍은 장수 */
     shotCount: (n: number) => `${n}장`,
   },

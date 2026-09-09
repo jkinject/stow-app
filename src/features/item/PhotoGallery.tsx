@@ -1,18 +1,19 @@
 import { Image, type ImageSource } from 'expo-image';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  type GestureResponderEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
 
-import { IconChevron, IconImage, IconPlus, IconX } from '@/components/Icon';
-import { TextButton } from '@/components/ui';
+import { IconImage, IconPlus, IconX } from '@/components/Icon';
 import { useT } from '@/lib/i18n';
 import { overlay, radius, space, type, useTheme } from '@/lib/theme';
 
@@ -37,6 +38,18 @@ import { IMAGE_CACHE_POLICY } from './thumbs';
  *
  * ⚠ 아직 올라가지 않은 사진(큐)도 **같은 줄에 그린다.** 따로 빼면 "사진이 사라졌다" 가
  *   되돌아온다 — 큐를 만든 이유가 그것이다. 올리는 중/실패 표시는 그 장 위에 얹는다.
+ *
+ * ══ 순서 바꾸기 — 썸네일을 **길게 눌러 끈다** (2026-09-09 사용자 요청) ══════════
+ * 처음엔 "순서 바꾸기 → 앞으로/뒤로" 버튼이었는데 끌어서 옮기는 쪽을 원했다.
+ * ⚠ 드래그 정렬 라이브러리를 쓰지 않는다. 그쪽은 react-native-gesture-handler 위에 서는데
+ *   이 앱엔 `GestureHandlerRootView` 가 없어 **조용히 동작하지 않는다**(PhotoViewer 주석).
+ *   RN 기본 터치(onTouchMove)로 직접 한다 — 뷰어의 핀치·넘기기와 같은 방식이다.
+ *   · 길게 누르면(250ms) 그 장이 들리고, 그 순간 줄의 스크롤을 끈다(손가락을 놓을 때까지)
+ *   · 손가락 x 로 "지금 어느 칸 위인가" 를 계산해 **그 자리로 미리 옮겨 그린다** —
+ *     나머지 장이 실시간으로 비켜난다. 들린 장은 그 칸에서 손가락만큼 더 밀려 따라온다.
+ *   · 놓으면 `onMoveSlide(from, to)` 한 번. 큰 사진도 그 장으로 넘어간다.
+ *   · 아직 올라가는 중인 장(status)은 끌 수 없고, 그 앞을 지나칠 수도 없다(서버에 없는
+ *     장의 순서는 정할 수 없다). 첫 칸으로 끌면 곧 대표 지정이다.
  */
 
 export type GallerySlide = {
@@ -72,12 +85,7 @@ export function PhotoGallery({
   onRetry?: (key: string) => void;
   /** 넘기면 큰 사진 구석에 "빼기" 가 뜬다 — 등록 화면(아직 저장 전)에서 쓴다 */
   onDropSlide?: (i: number) => void;
-  /**
-   * 순서 바꾸기 (2026-09-09). 넘기면 썸네일 줄 아래에 "순서 바꾸기" 가 생기고, 그 모드에서
-   * 고른 장을 앞으로·뒤로·대표로 옮긴다. 드래그가 아니다 — 이 앱엔 제스처 핸들러 루트가
-   * 없어 그쪽 제스처는 조용히 안 되고(PhotoViewer 주석), 카테고리 화면도 버튼으로 옮긴다.
-   * `to` 는 새 자리. 아직 올라가는 중인 장(status 있음)은 옮길 수 없다.
-   */
+  /** 넘기면 썸네일을 길게 눌러 끌어 옮길 수 있다. `to` 는 새 자리 (위 주석) */
   onMoveSlide?: (from: number, to: number) => void;
   /** 첫 장에 "대표" 표시를 할지. 한 장뿐이면 뜻이 없어 안 그린다 */
   showCover?: boolean;
@@ -85,9 +93,10 @@ export function PhotoGallery({
   const { c } = useTheme();
   const t = useT();
   const [width, setWidth] = useState(0);
-  const [reordering, setReordering] = useState(false);
   const pager = useRef<ScrollView>(null);
   const strip = useRef<ScrollView>(null);
+  /** 줄을 감싼 View — 화면 위치를 재는 데 쓴다 (ScrollView 는 measureInWindow 가 없다) */
+  const stripBox = useRef<View>(null);
   const count = slides.length;
   const cur = Math.min(index, Math.max(0, count - 1));
   const height = width > 0 ? width / PHOTO_ASPECT : 0;
@@ -96,7 +105,7 @@ export function PhotoGallery({
   useEffect(() => {
     if (width > 0) pager.current?.scrollTo({ x: cur * width, animated: true });
     // 썸네일 줄도 그 장이 보이게 — 줄 폭보다 장수가 많을 때만 뜻이 있지만 늘 해도 무해하다
-    strip.current?.scrollTo({ x: Math.max(0, cur * (THUMB_W + space.sm) - THUMB_W), animated: true });
+    strip.current?.scrollTo({ x: Math.max(0, cur * SLOT - THUMB_W), animated: true });
   }, [cur, width]);
 
   const onPageEnd = useCallback(
@@ -107,6 +116,67 @@ export function PhotoGallery({
     },
     [width, cur, count, onIndexChange],
   );
+
+  /* ── 끌어서 옮기기 ────────────────────────────────────────────── */
+  const movable = slides.filter((s) => !s.status).length; // 서버에 있는 장은 앞쪽에 모여 있다
+  const canDrag = !!onMoveSlide && movable >= 2;
+  /** 끄는 동안의 상태. `to` 가 바뀔 때만 다시 그린다 */
+  const [drag, setDrag] = useState<{ from: number; to: number } | null>(null);
+  const dragRef = useRef<{ from: number; to: number; stripX: number } | null>(null);
+  const scrollX = useRef(0);
+  /** 들린 장이 제 칸에서 손가락만큼 더 밀리는 양 — 리렌더 없이 움직인다 */
+  const lift = useMemo(() => new Animated.Value(0), []);
+
+  const startDrag = useCallback(
+    (i: number) => {
+      if (!canDrag || slides[i]?.status) return;
+      // 줄의 화면 x — 손가락 pageX 를 줄 내용 좌표로 바꾸는 데 쓴다
+      stripBox.current?.measureInWindow((x: number) => {
+        dragRef.current = { from: i, to: i, stripX: x };
+        lift.setValue(0);
+        setDrag({ from: i, to: i });
+        onIndexChange(i);
+      });
+    },
+    [canDrag, slides, lift, onIndexChange],
+  );
+
+  const onStripTouchMove = useCallback(
+    (e: GestureResponderEvent) => {
+      const d = dragRef.current;
+      if (!d) return;
+      const touch = e.nativeEvent.touches[0];
+      if (!touch) return;
+      const contentX = touch.pageX - d.stripX + scrollX.current;
+      const to = Math.max(0, Math.min(movable - 1, Math.floor(contentX / SLOT)));
+      if (to !== d.to) {
+        d.to = to;
+        setDrag({ from: d.from, to });
+      }
+      // 그 칸의 가운데에서 손가락까지 — 들린 장이 손가락을 따라오게
+      lift.setValue(contentX - (to * SLOT + THUMB_W / 2));
+    },
+    [movable, lift],
+  );
+
+  const endDrag = useCallback(() => {
+    const d = dragRef.current;
+    if (!d) return;
+    dragRef.current = null;
+    setDrag(null);
+    lift.setValue(0);
+    if (d.to !== d.from) onMoveSlide?.(d.from, d.to);
+    else onIndexChange(d.from);
+  }, [lift, onMoveSlide, onIndexChange]);
+
+  /** 끄는 동안 보이는 순서 — 들린 장을 `to` 자리에 미리 넣어 그린다 */
+  const shown = useMemo(() => {
+    const arr = slides.map((s, i) => ({ s, i }));
+    if (!drag) return arr;
+    const [moved] = arr.splice(drag.from, 1);
+    arr.splice(drag.to, 0, moved);
+    return arr;
+  }, [slides, drag]);
 
   if (count === 0) {
     return (
@@ -206,44 +276,76 @@ export function PhotoGallery({
         ) : null}
       </View>
 
+      {/*
+        ⚠ 끄는 동안 스크롤을 끈다. 켜 두면 손가락 움직임을 줄이 가져가 장이 안 따라온다.
+          길게 누르는 동안엔 손가락이 멈춰 있어 줄이 아직 스크롤을 잡지 않았고, 그 뒤엔 잡지 못한다.
+        ⚠ 터치 이벤트는 자식(썸네일)에서 올라온다 — 줄에 onTouchMove 를 달면 다 받는다.
+      */}
+      <View ref={stripBox} collapsable={false}>
       <ScrollView
         ref={strip}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={st.strip}
         keyboardShouldPersistTaps="handled"
+        scrollEnabled={!drag}
+        scrollEventThrottle={32}
+        onScroll={(e) => {
+          scrollX.current = e.nativeEvent.contentOffset.x;
+        }}
+        onTouchMove={onStripTouchMove}
+        onTouchEnd={endDrag}
+        onTouchCancel={endDrag}
       >
-        {slides.map((s, i) => (
-          <Pressable
-            key={s.key}
-            onPress={() => onIndexChange(i)}
-            accessibilityRole="button"
-            accessibilityLabel={t.photo.counter(i + 1, count)}
-            style={[
-              st.thumb,
-              { backgroundColor: c.sunk, borderColor: i === cur ? c.accent : 'transparent' },
-            ]}
-          >
-            {s.source ? (
-              <Image
-                source={s.source}
-                style={st.fill}
-                contentFit="cover"
-                cachePolicy={IMAGE_CACHE_POLICY}
-              />
-            ) : null}
-            {s.status === 'uploading' ? (
-              <View style={[st.fill, st.center, st.scrim]}>
-                <ActivityIndicator size="small" color={overlay.fg} />
-              </View>
-            ) : s.status === 'failed' ? (
-              <View style={[st.fill, st.center, st.scrim]}>
-                <IconX size={16} color={overlay.danger} />
-              </View>
-            ) : null}
-          </Pressable>
-        ))}
-        {canAdd && !reordering ? (
+        {shown.map(({ s, i }, slot) => {
+          const lifted = drag?.from === i;
+          return (
+            <Animated.View
+              key={s.key}
+              style={
+                lifted
+                  ? { transform: [{ translateX: lift }, { scale: 1.08 }], zIndex: 2, elevation: 4 }
+                  : undefined
+              }
+            >
+              <Pressable
+                onPress={() => onIndexChange(i)}
+                onLongPress={canDrag && !s.status ? () => startDrag(i) : undefined}
+                delayLongPress={250}
+                accessibilityRole="button"
+                accessibilityLabel={t.photo.counter(slot + 1, count)}
+                accessibilityHint={canDrag && !s.status ? t.photo.dragHint : undefined}
+                style={[
+                  st.thumb,
+                  {
+                    backgroundColor: c.sunk,
+                    borderColor: i === cur || lifted ? c.accent : 'transparent',
+                    opacity: lifted ? 0.92 : 1,
+                  },
+                ]}
+              >
+                {s.source ? (
+                  <Image
+                    source={s.source}
+                    style={st.fill}
+                    contentFit="cover"
+                    cachePolicy={IMAGE_CACHE_POLICY}
+                  />
+                ) : null}
+                {s.status === 'uploading' ? (
+                  <View style={[st.fill, st.center, st.scrim]}>
+                    <ActivityIndicator size="small" color={overlay.fg} />
+                  </View>
+                ) : s.status === 'failed' ? (
+                  <View style={[st.fill, st.center, st.scrim]}>
+                    <IconX size={16} color={overlay.danger} />
+                  </View>
+                ) : null}
+              </Pressable>
+            </Animated.View>
+          );
+        })}
+        {canAdd && !drag ? (
           <Pressable
             onPress={onAdd}
             accessibilityRole="button"
@@ -259,84 +361,18 @@ export function PhotoGallery({
           </Pressable>
         ) : null}
       </ScrollView>
-
-      {/* 순서 바꾸기 — 두 장 이상이고 옮길 수 있을 때만. 고른 장(파란 테두리)이 대상이다 */}
-      {onMoveSlide && slides.filter((s) => !s.status).length >= 2 ? (
-        <View style={st.reorderRow}>
-          {reordering ? (
-            <>
-              <ReorderButton
-                label={t.photo.moveLeft}
-                dir="left"
-                disabled={cur <= 0 || !!slides[cur]?.status}
-                onPress={() => onMoveSlide(cur, cur - 1)}
-              />
-              <ReorderButton
-                label={t.photo.moveRight}
-                dir="right"
-                disabled={cur >= movable(slides) - 1 || !!slides[cur]?.status}
-                onPress={() => onMoveSlide(cur, cur + 1)}
-              />
-              <TextButton
-                label={t.photo.setCover}
-                size="small"
-                onPress={() => onMoveSlide(cur, 0)}
-                disabled={cur === 0 || !!slides[cur]?.status}
-              />
-              <TextButton
-                label={t.common.done}
-                size="small"
-                onPress={() => setReordering(false)}
-                style={st.reorderDone}
-              />
-            </>
-          ) : (
-            <TextButton label={t.photo.reorder} size="small" tone="muted" onPress={() => setReordering(true)} />
-          )}
-        </View>
+      </View>
+      {canDrag ? (
+        <Text style={[st.dragHint, { color: c.textFaint }]}>{t.photo.dragHint}</Text>
       ) : null}
     </View>
   );
 }
 
-/** 옮길 수 있는 장 수 — 서버에 있는 장(앞쪽)만. 큐의 장은 뒤에 붙어 있다 */
-function movable(slides: GallerySlide[]) {
-  return slides.filter((s) => !s.status).length;
-}
-
-function ReorderButton({
-  label,
-  dir,
-  disabled,
-  onPress,
-}: {
-  label: string;
-  dir: 'left' | 'right';
-  disabled: boolean;
-  onPress: () => void;
-}) {
-  const { c } = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      hitSlop={8}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={({ pressed }) => [
-        st.arrowBtn,
-        { borderColor: c.borderStrong },
-        (pressed || disabled) && { opacity: 0.4 },
-      ]}
-    >
-      <IconChevron size={18} color={c.text} style={dir === 'left' ? st.flip : undefined} />
-      <Text style={[st.arrowText, { color: c.text }]}>{label}</Text>
-    </Pressable>
-  );
-}
-
 /** 썸네일 폭. 높이는 같은 3:4 */
 const THUMB_W = 48;
+/** 썸네일 한 칸의 간격 — 끌 때 "몇 번째 칸 위인가" 를 이걸로 나눈다. strip 의 gap 과 같아야 한다 */
+const SLOT = THUMB_W + space.sm;
 
 const st = StyleSheet.create({
   root: { gap: space.sm },
@@ -371,20 +407,8 @@ const st = StyleSheet.create({
     paddingHorizontal: space.md,
     paddingVertical: space.sm,
   },
+  /** ⚠ gap 은 SLOT 계산과 같아야 한다 (space.sm) */
   strip: { flexDirection: 'row', gap: space.sm },
-  reorderRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexWrap: 'wrap' },
-  reorderDone: { marginLeft: 'auto' },
-  arrowBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.xs,
-    borderWidth: 1,
-    borderRadius: radius.sm,
-    paddingHorizontal: space.md,
-    paddingVertical: space.sm,
-  },
-  arrowText: { fontSize: type.small, fontWeight: '600' },
-  flip: { transform: [{ rotate: '180deg' }] },
   thumb: {
     width: THUMB_W,
     height: THUMB_W / PHOTO_ASPECT,
@@ -393,6 +417,7 @@ const st = StyleSheet.create({
     overflow: 'hidden',
   },
   addTile: { borderStyle: 'dashed', borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  dragHint: { fontSize: type.tiny },
   empty: {
     height: 96,
     borderRadius: radius.md,
