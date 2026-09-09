@@ -70,6 +70,7 @@ export function PhotoGallery({
   onRetry,
   onDropSlide,
   onMoveSlide,
+  onDragStateChange,
   showCover = true,
 }: {
   slides: GallerySlide[];
@@ -87,6 +88,13 @@ export function PhotoGallery({
   onDropSlide?: (i: number) => void;
   /** 넘기면 썸네일을 길게 눌러 끌어 옮길 수 있다. `to` 는 새 자리 (위 주석) */
   onMoveSlide?: (from: number, to: number) => void;
+  /**
+   * 끌기가 시작·끝날 때. 부모는 이걸로 **바깥 세로 스크롤을 잠근다.**
+   * ⚠ 안 잠그면 손가락이 위아래로 조금만 움직여도 상세 화면의 ScrollView 가 터치를
+   *   가져가 끌기가 취소된다(사용자 보고 2026-09-09 — "위아래로 조금만 나가도 취소").
+   *   여기 안의 줄(가로 스크롤)은 스스로 잠그지만 바깥은 부모만 잠글 수 있다.
+   */
+  onDragStateChange?: (dragging: boolean) => void;
   /** 첫 장에 "대표" 표시를 할지. 한 장뿐이면 뜻이 없어 안 그린다 */
   showCover?: boolean;
 }) {
@@ -135,10 +143,11 @@ export function PhotoGallery({
         dragRef.current = { from: i, to: i, stripX: x };
         lift.setValue(0);
         setDrag({ from: i, to: i });
+        onDragStateChange?.(true);
         onIndexChange(i);
       });
     },
-    [canDrag, slides, lift, onIndexChange],
+    [canDrag, slides, lift, onIndexChange, onDragStateChange],
   );
 
   const onStripTouchMove = useCallback(
@@ -165,9 +174,10 @@ export function PhotoGallery({
     dragRef.current = null;
     setDrag(null);
     lift.setValue(0);
+    onDragStateChange?.(false);
     if (d.to !== d.from) onMoveSlide?.(d.from, d.to);
     else onIndexChange(d.from);
-  }, [lift, onMoveSlide, onIndexChange]);
+  }, [lift, onMoveSlide, onIndexChange, onDragStateChange]);
 
   /** 끄는 동안 보이는 순서 — 들린 장을 `to` 자리에 미리 넣어 그린다 */
   const shown = useMemo(() => {
@@ -376,12 +386,8 @@ export function PhotoGallery({
   );
 }
 
-/**
- * 썸네일 폭. 높이는 같은 3:4.
- * ⚠ 48 → 64 (2026-09-09). 48 은 손가락 하나 폭이라 길게 누르는 동안 벗어나기 쉬웠다 —
- *   끌기가 시작되기 전에 취소되어 "영역이 너무 작다" 는 보고가 왔다.
- */
-const THUMB_W = 64;
+/** 썸네일 폭. 높이는 같은 3:4. (64 로 키웠다가 되돌렸다 — 크기는 그대로 두라는 요청) */
+const THUMB_W = 48;
 /** 길게 누르기. 250 이면 그 사이 손가락이 움직여 스크롤로 새 버린다 */
 const LONG_PRESS_MS = 180;
 const RETENTION = { top: 60, bottom: 60, left: 60, right: 60 };

@@ -237,6 +237,7 @@ function FormStep({
    */
   const [pickerOpen, setPickerOpen] = useState(canPickDest && !dest);
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [draggingPhoto, setDraggingPhoto] = useState(false);
 
   async function onSave() {
     const n = name.trim();
@@ -325,6 +326,7 @@ function FormStep({
         style={st.fill}
         contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: space.xxl, gap: space.md }}
         keyboardShouldPersistTaps="handled"
+        scrollEnabled={!draggingPhoto}
       >
         {/*
           찍은 사진들 — 상세 화면과 **같은 갤러리**. 큰 사진 구석의 "빼기" 로 한 장을
@@ -345,6 +347,7 @@ function FormStep({
             setPhotoIndex(to);
             onMoveShot(from, to);
           }}
+          onDragStateChange={setDraggingPhoto}
         />
 
         {/* 어디에 둘지. `/add/new` 로 들어오면 여기서 정한다 */}

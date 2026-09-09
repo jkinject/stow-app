@@ -542,7 +542,8 @@ export const KO = {
     dLabel: (days: number) =>
       days < 0 ? `${-days}일 지남` : days === 0 ? '오늘까지 (D-day)' : `${days}일 남음 (D-${days})`,
     /** 격자 카드의 짧은 뱃지 */
-    badge: (days: number) => (days < 0 ? '만료' : days === 0 ? 'D-day' : `D-${days}`),
+    /** 만료도 "만료" 한 마디가 아니라 얼마나 지났는지 (사용자 요청 2026-09-09) */
+    badge: (days: number) => (days < 0 ? `${-days}일 지남` : days === 0 ? 'D-day' : `D-${days}`),
   },
   /** 소비기한 알림 설정 (2026-09-08) */
   reminders: {

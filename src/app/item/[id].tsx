@@ -105,6 +105,8 @@ export default function ItemDetailScreen() {
   /** 셔터를 누른 뒤 `preparePhoto` 가 도는 장수 — 그동안도 자리를 보여 준다 */
   const [preparing, setPreparing] = useState(0);
   const [photoIndex, setPhotoIndex] = useState(0);
+  /** 썸네일을 끄는 동안 — 화면 스크롤을 잠근다 (PhotoGallery.onDragStateChange 주석) */
+  const [draggingPhoto, setDraggingPhoto] = useState(false);
 
   const insets = useSafeAreaInsets();
 
@@ -314,6 +316,7 @@ export default function ItemDetailScreen() {
           style={st.flex}
           contentContainerStyle={st.body}
           keyboardShouldPersistTaps="handled"
+          scrollEnabled={!draggingPhoto}
         >
           {/*
             사진을 누르면 **크게 본다.** 전에는 곧장 카메라가 떠서, 자세히 보려던
@@ -332,6 +335,7 @@ export default function ItemDetailScreen() {
             canAdd={canAdd}
             onRetry={(key) => retryPendingPhoto(key)}
             onMoveSlide={onMovePhoto}
+            onDragStateChange={setDraggingPhoto}
           />
           {/* 실패한 채 남은 장은 포기할 길도 있어야 한다 — 없으면 "실패" 가 영원히 붙어 있다 */}
           {waiting.some((j) => j.state === 'failed') && (

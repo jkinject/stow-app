@@ -458,7 +458,7 @@ export const EN: Dict = {
         : days === 0
           ? 'Today (D-day)'
           : `${days} day${days === 1 ? '' : 's'} left (D-${days})`,
-    badge: (days: number) => (days < 0 ? 'Expired' : days === 0 ? 'D-day' : `D-${days}`),
+    badge: (days: number) => (days < 0 ? `${-days}d past` : days === 0 ? 'D-day' : `D-${days}`),
   },
   reminders: {
     title: 'Expiry reminders',
