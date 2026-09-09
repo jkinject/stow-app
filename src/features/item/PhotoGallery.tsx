@@ -311,7 +311,14 @@ export function PhotoGallery({
               <Pressable
                 onPress={() => onIndexChange(i)}
                 onLongPress={canDrag && !s.status ? () => startDrag(i) : undefined}
-                delayLongPress={250}
+                delayLongPress={LONG_PRESS_MS}
+                /**
+                 * ⚠ 손가락이 조금 벗어나도 누름을 유지한다 (사용자 보고 2026-09-09: "끌다가
+                 *   취소된다"). 기본값(20)이면 길게 누르는 0.2초 사이에 살짝만 움직여도 취소되어
+                 *   드래그가 시작조차 안 된다. 썸네일이 작으니 더 넉넉히 준다.
+                 */
+                pressRetentionOffset={RETENTION}
+                hitSlop={{ top: 8, bottom: 8 }}
                 accessibilityRole="button"
                 accessibilityLabel={t.photo.counter(slot + 1, count)}
                 accessibilityHint={canDrag && !s.status ? t.photo.dragHint : undefined}
@@ -369,8 +376,15 @@ export function PhotoGallery({
   );
 }
 
-/** 썸네일 폭. 높이는 같은 3:4 */
-const THUMB_W = 48;
+/**
+ * 썸네일 폭. 높이는 같은 3:4.
+ * ⚠ 48 → 64 (2026-09-09). 48 은 손가락 하나 폭이라 길게 누르는 동안 벗어나기 쉬웠다 —
+ *   끌기가 시작되기 전에 취소되어 "영역이 너무 작다" 는 보고가 왔다.
+ */
+const THUMB_W = 64;
+/** 길게 누르기. 250 이면 그 사이 손가락이 움직여 스크롤로 새 버린다 */
+const LONG_PRESS_MS = 180;
+const RETENTION = { top: 60, bottom: 60, left: 60, right: 60 };
 /** 썸네일 한 칸의 간격 — 끌 때 "몇 번째 칸 위인가" 를 이걸로 나눈다. strip 의 gap 과 같아야 한다 */
 const SLOT = THUMB_W + space.sm;
 
