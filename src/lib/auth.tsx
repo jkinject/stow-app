@@ -10,22 +10,26 @@ import { supabase } from './supabase';
 WebBrowser.maybeCompleteAuthSession();
 
 /**
- * 인증 방식 (계획 §4.10)
+ * 인증 방식
  *  - Google Sign-In : 주력 경로
- *  - 이메일 매직링크 : 폴백 및 로컬 테스트용 (네이티브 설정이 필요 없다)
+ *  - 이메일 + 비밀번호 : 가입(메일 인증)과 로그인. 심사자처럼 외부 서비스에 못 들어가는
+ *    사람도 쓸 수 있는 유일한 길이다.
+ *
+ * ⚠ 매직링크(비밀번호 없이 메일 링크)는 **지웠다** (2026-09-09 사용자 결정). 길이 셋이면
+ *   로그인 화면이 복잡해지고, 링크는 요청한 기기에서만 통해(PKCE) "다른 기기에서 열었더니
+ *   안 된다" 는 문의가 생긴다. `signInWithOtp` 를 다시 부르는 코드를 넣지 말 것 — 메일
+ *   템플릿(magic_link)도 같이 지웠다.
  *
  * ⚠ Sign in with Apple 은 사용자 결정으로 연기됐다 (2026-08-28).
  *   Apple 심사 가이드라인 4.8 은 소셜 로그인을 쓰는 앱에 "이메일을 비공개로
- *   유지할 수 있는 동등한 대안"을 요구하는데, 매직링크는 링크를 보내야 하므로
- *   그 조건을 채우지 못한다. 따라서 **이 상태로는 iOS 스토어 제출이 반려된다.**
- *   개발·Android 배포에는 지장이 없다. M9 에서 반드시 추가할 것 (R24).
+ *   유지할 수 있는 동등한 대안"을 요구한다. 이메일+비밀번호 가입이 있으니 해석에 따라
+ *   통할 수도 있지만 확인된 바 없다 — iOS 제출 전에 확인할 것 (R24).
  */
 
 type AuthState = {
   session: Session | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
-  sendMagicLink: (email: string) => Promise<void>;
   /** 이메일 + 비밀번호 로그인 */
   signInWithPassword: (email: string, password: string) => Promise<void>;
   /**
@@ -148,14 +152,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         await createSessionFromUrl(result.url);
-      },
-
-      async sendMagicLink(email: string) {
-        const { error } = await supabase.auth.signInWithOtp({
-          email: email.trim(),
-          options: { emailRedirectTo: redirectTo },
-        });
-        if (error) throw error;
       },
 
       async signInWithPassword(email: string, password: string) {

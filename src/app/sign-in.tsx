@@ -36,6 +36,9 @@ import { useTheme, type, radius, space, tracking, leading } from '@/lib/theme';
  *
  *   그대로 따랐다. 그림은 상단에서 화면 폭을 다 쓰고 그라데이션으로 사라진다.
  *
+ * ⚠ 길은 둘뿐이다: 구글, 이메일+비밀번호(가입/로그인). "메일 링크로 받기" 는 지웠다
+ *   (2026-09-09) — lib/auth.tsx 머리말 참고. 여기에 세 번째 길을 다시 두지 말 것.
+ *
  * ⚠ 그라데이션은 `react-native-svg` 로 그린다. `expo-linear-gradient` 를 넣으면
  *   네이티브 의존성이 하나 더 늘어나는데, svg 는 이미 쓰고 있다(아이콘·QR).
  */
@@ -58,7 +61,7 @@ const HERO_SCREEN_INPUT = 0.34;
 const FADE_PART = 0.62;
 
 export default function SignIn() {
-  const { signInWithGoogle, sendMagicLink, signInWithPassword, signUpWithPassword } = useAuth();
+  const { signInWithGoogle, signInWithPassword, signUpWithPassword } = useAuth();
   const { c, isDark } = useTheme();
   const t = useT();
   const insets = useSafeAreaInsets();
@@ -66,9 +69,9 @@ export default function SignIn() {
 
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
-  const [busy, setBusy] = useState<'google' | 'magic' | 'pw' | null>(null);
-  /** 매직링크를 보냈거나 가입 인증 메일을 보낸 상태 */
-  const [sent, setSent] = useState<null | 'magic' | 'confirm'>(null);
+  const [busy, setBusy] = useState<'google' | 'pw' | null>(null);
+  /** 가입 인증 메일을 보낸 상태 — "메일함을 확인하세요" 를 보여 준다 */
+  const [confirmSent, setConfirmSent] = useState(false);
   /** 레퍼런스처럼 입력칸은 처음에 숨긴다 — 한 번 더 눌러야 나온다 */
   const [emailMode, setEmailMode] = useState(false);
   /**
@@ -104,7 +107,7 @@ export default function SignIn() {
     try {
       if (mode === 'signup') {
         const needsConfirm = await signUpWithPassword(email, pw);
-        if (needsConfirm) setSent('confirm');
+        if (needsConfirm) setConfirmSent(true);
       } else {
         await signInWithPassword(email, pw);
       }
@@ -113,22 +116,6 @@ export default function SignIn() {
         mode === 'signup' ? t.auth.signUpFailed : t.auth.signInFailed,
         authMessage(e instanceof Error ? e.message : t.common.tryAgain, t),
       );
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function onMagic() {
-    if (!email.includes('@')) {
-      Alert.alert(t.auth.emailInvalid, t.auth.emailInvalidBody);
-      return;
-    }
-    setBusy('magic');
-    try {
-      await sendMagicLink(email);
-      setSent('magic');
-    } catch (e) {
-      Alert.alert(t.auth.sendFailed, e instanceof Error ? e.message : t.common.tryAgain);
     } finally {
       setBusy(null);
     }
@@ -182,19 +169,15 @@ export default function SignIn() {
             <Text style={[s.sub, { color: c.textMuted }]}>{t.auth.tagline}</Text>
           </View>
 
-          {sent ? (
+          {confirmSent ? (
             <View style={[s.sentBox, { backgroundColor: c.card }]}>
-              <Text style={[s.sentTitle, { color: c.text }]}>
-                {sent === 'confirm' ? t.auth.confirmTitle : t.auth.sentTitle}
-              </Text>
-              <Text style={[s.sentBody, { color: c.textMuted }]}>
-                {sent === 'confirm' ? t.auth.confirmBody(email) : t.auth.sentBody(email)}
-              </Text>
+              <Text style={[s.sentTitle, { color: c.text }]}>{t.auth.confirmTitle}</Text>
+              <Text style={[s.sentBody, { color: c.textMuted }]}>{t.auth.confirmBody(email)}</Text>
               <TextButton
                 label={t.auth.resend}
                 size="small"
                 onPress={() => {
-                  setSent(null);
+                  setConfirmSent(false);
                   setEmailMode(true);
                 }}
                 style={s.link}
@@ -253,17 +236,6 @@ export default function SignIn() {
                 onPress={() => setMode(mode === 'signup' ? 'signin' : 'signup')}
                 style={s.textBtn}
               />
-
-              {/* 비밀번호를 잊었거나 만들기 싫은 사람을 위한 길. 가입 화면에서는 숨긴다 */}
-              {mode === 'signin' && (
-                <TextButton
-                  label={busy === 'magic' ? t.common.loading : t.auth.orMagic}
-                  tone="muted"
-                  onPress={onMagic}
-                  disabled={busy !== null}
-                  style={s.textBtn}
-                />
-              )}
 
               <TextButton
                 label={t.common.back}

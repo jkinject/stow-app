@@ -604,3 +604,17 @@ dev 빌드에서 화면이 죽기 때문**이었다. 지금은 릴리스 APK 를
   접은 version 문자열로 의존성 삼는다(공간 수가 바뀌면 스프레드 의존성은 길이가 달라진다).
 - 가구 id 없는 AsyncStorage 키 중 category-tip-hidden(일회성 팁)·mission-hidden(자정 리셋)·expiry-reminders(사용자 단위 의도)는 그대로.
 - 후속: 공간이 많아지면 touch_households(uuid[]) 배치 RPC. 공간별 알림 끄기는 요청이 오면.
+
+## 2026-09-09 — 매직링크(비밀번호 없이 메일 링크) 로그인 제거
+- 사용자 결정: 길은 둘뿐 — 구글, 이메일+비밀번호(가입/로그인). 셋이면 로그인 화면이 복잡하고, PKCE 링크는
+  요청한 기기에서만 통해 "다른 기기에서 열었더니 안 된다" 문의가 생긴다.
+- 지운 것: lib/auth.tsx `sendMagicLink`(signInWithOtp), sign-in.tsx 의 `onMagic`·'magic' busy·'magic' sent 상태와
+  "비밀번호 없이 메일 링크로 받기" 버튼, 문자열 magicLink/orMagic/sentTitle/sentBody/sendFailed(ko·en),
+  supabase/templates/magic_link.html 과 config.toml 의 magic_link 템플릿(로컬·운영 remotes 둘 다).
+- 남긴 것: auth-callback.tsx 와 `createSessionFromUrl`/`redirectTo` — 가입 인증 메일 링크와 구글 콜백이 같은 길을 탄다.
+  `resend`("다른 주소로 다시 보내기") 는 가입 인증 안내 카드가 쓴다. linkFailed 문구는 가입 링크 실패용으로 유지.
+- ⚠ 운영 Supabase 대시보드의 Magic Link 이메일 템플릿은 그대로 남아 있지만 앱이 부르지 않으면 나갈 일이 없다.
+  서버 쪽에서 OTP 를 완전히 막는 스위치는 없다(Email provider 를 끄면 비밀번호 로그인도 같이 죽는다).
+- 시뮬레이터 확인: 로그인 화면 이메일 모드에 로그인·가입하기·뒤로만 남고, tester 계정 비밀번호 로그인 정상.
+- 덤: 시뮬레이터 하드웨어 키보드가 한국어 우선이라 HID 타이핑이 자모로 들어간다 → 이메일은 pbcopy + 길게 눌러 Paste.
+  (`defaults write .GlobalPreferences AppleKeyboards` 는 재부팅 없이는 안 먹는다.)

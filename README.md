@@ -23,7 +23,7 @@
 - **앱** — Expo SDK 57 / React Native 0.86 / expo-router / TypeScript (strict)
 - **서버** — Supabase (Postgres + Auth + Storage), RLS 로 가구 단위 격리
 - **상태** — TanStack Query
-- **인증** — Google OAuth · 이메일 매직링크, 둘 다 **PKCE**
+- **인증** — Google OAuth(**PKCE**) · 이메일 + 비밀번호(가입은 메일 인증)
 
 ## 시작하기
 
@@ -34,7 +34,7 @@ cp .env.example .env.local  # supabase status 의 값으로 채운다
 npm start
 ```
 
-로컬 메일(매직링크)은 Mailpit <http://127.0.0.1:54324> 에서 봅니다.
+로컬 메일(가입 인증)은 Mailpit <http://127.0.0.1:54324> 에서 봅니다.
 
 ### 자주 쓰는 명령
 
