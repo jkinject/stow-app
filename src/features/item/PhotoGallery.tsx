@@ -11,7 +11,8 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 
-import { IconImage, IconPlus, IconX } from '@/components/Icon';
+import { IconChevron, IconImage, IconPlus, IconX } from '@/components/Icon';
+import { TextButton } from '@/components/ui';
 import { useT } from '@/lib/i18n';
 import { overlay, radius, space, type, useTheme } from '@/lib/theme';
 
@@ -55,6 +56,7 @@ export function PhotoGallery({
   canAdd = true,
   onRetry,
   onDropSlide,
+  onMoveSlide,
   showCover = true,
 }: {
   slides: GallerySlide[];
@@ -70,12 +72,20 @@ export function PhotoGallery({
   onRetry?: (key: string) => void;
   /** 넘기면 큰 사진 구석에 "빼기" 가 뜬다 — 등록 화면(아직 저장 전)에서 쓴다 */
   onDropSlide?: (i: number) => void;
+  /**
+   * 순서 바꾸기 (2026-09-09). 넘기면 썸네일 줄 아래에 "순서 바꾸기" 가 생기고, 그 모드에서
+   * 고른 장을 앞으로·뒤로·대표로 옮긴다. 드래그가 아니다 — 이 앱엔 제스처 핸들러 루트가
+   * 없어 그쪽 제스처는 조용히 안 되고(PhotoViewer 주석), 카테고리 화면도 버튼으로 옮긴다.
+   * `to` 는 새 자리. 아직 올라가는 중인 장(status 있음)은 옮길 수 없다.
+   */
+  onMoveSlide?: (from: number, to: number) => void;
   /** 첫 장에 "대표" 표시를 할지. 한 장뿐이면 뜻이 없어 안 그린다 */
   showCover?: boolean;
 }) {
   const { c } = useTheme();
   const t = useT();
   const [width, setWidth] = useState(0);
+  const [reordering, setReordering] = useState(false);
   const pager = useRef<ScrollView>(null);
   const strip = useRef<ScrollView>(null);
   const count = slides.length;
@@ -233,7 +243,7 @@ export function PhotoGallery({
             ) : null}
           </Pressable>
         ))}
-        {canAdd ? (
+        {canAdd && !reordering ? (
           <Pressable
             onPress={onAdd}
             accessibilityRole="button"
@@ -249,7 +259,79 @@ export function PhotoGallery({
           </Pressable>
         ) : null}
       </ScrollView>
+
+      {/* 순서 바꾸기 — 두 장 이상이고 옮길 수 있을 때만. 고른 장(파란 테두리)이 대상이다 */}
+      {onMoveSlide && slides.filter((s) => !s.status).length >= 2 ? (
+        <View style={st.reorderRow}>
+          {reordering ? (
+            <>
+              <ReorderButton
+                label={t.photo.moveLeft}
+                dir="left"
+                disabled={cur <= 0 || !!slides[cur]?.status}
+                onPress={() => onMoveSlide(cur, cur - 1)}
+              />
+              <ReorderButton
+                label={t.photo.moveRight}
+                dir="right"
+                disabled={cur >= movable(slides) - 1 || !!slides[cur]?.status}
+                onPress={() => onMoveSlide(cur, cur + 1)}
+              />
+              <TextButton
+                label={t.photo.setCover}
+                size="small"
+                onPress={() => onMoveSlide(cur, 0)}
+                disabled={cur === 0 || !!slides[cur]?.status}
+              />
+              <TextButton
+                label={t.common.done}
+                size="small"
+                onPress={() => setReordering(false)}
+                style={st.reorderDone}
+              />
+            </>
+          ) : (
+            <TextButton label={t.photo.reorder} size="small" tone="muted" onPress={() => setReordering(true)} />
+          )}
+        </View>
+      ) : null}
     </View>
+  );
+}
+
+/** 옮길 수 있는 장 수 — 서버에 있는 장(앞쪽)만. 큐의 장은 뒤에 붙어 있다 */
+function movable(slides: GallerySlide[]) {
+  return slides.filter((s) => !s.status).length;
+}
+
+function ReorderButton({
+  label,
+  dir,
+  disabled,
+  onPress,
+}: {
+  label: string;
+  dir: 'left' | 'right';
+  disabled: boolean;
+  onPress: () => void;
+}) {
+  const { c } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [
+        st.arrowBtn,
+        { borderColor: c.borderStrong },
+        (pressed || disabled) && { opacity: 0.4 },
+      ]}
+    >
+      <IconChevron size={18} color={c.text} style={dir === 'left' ? st.flip : undefined} />
+      <Text style={[st.arrowText, { color: c.text }]}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -290,6 +372,19 @@ const st = StyleSheet.create({
     paddingVertical: space.sm,
   },
   strip: { flexDirection: 'row', gap: space.sm },
+  reorderRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexWrap: 'wrap' },
+  reorderDone: { marginLeft: 'auto' },
+  arrowBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+  },
+  arrowText: { fontSize: type.small, fontWeight: '600' },
+  flip: { transform: [{ rotate: '180deg' }] },
   thumb: {
     width: THUMB_W,
     height: THUMB_W / PHOTO_ASPECT,

@@ -983,6 +983,10 @@ export type Database = {
       mark_dormant_households: { Args: never; Returns: number }
       mark_household_warned: { Args: { p_ids: string[] }; Returns: number }
       purge_expired_soft_deletes: { Args: never; Returns: undefined }
+      reorder_item_photos: {
+        Args: { p_item_id: string; p_photo_ids: string[] }
+        Returns: undefined
+      }
       report_orphan_photos: { Args: { p_paths: string[] }; Returns: number }
       resolve_shopping_item: {
         Args: { p_id: string; p_new_quantity: number }

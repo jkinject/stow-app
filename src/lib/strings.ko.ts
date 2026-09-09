@@ -584,6 +584,10 @@ export const KO = {
     /** 등록 화면 — 아직 저장 안 된 사진을 목록에서 빼기 */
     dropShot: '빼기',
     swipeHint: '옆으로 넘기면 다음 사진',
+    /** 순서 바꾸기 (2026-09-09) */
+    reorder: '순서 바꾸기',
+    moveLeft: '앞으로',
+    moveRight: '뒤로',
     /** 카메라 오른쪽 위 — 여러 장 모드에서 지금까지 찍은 장수 */
     shotCount: (n: number) => `${n}장`,
   },

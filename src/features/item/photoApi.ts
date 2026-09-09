@@ -3,6 +3,8 @@ import * as Crypto from 'expo-crypto';
 
 import { supabase } from '@/lib/supabase';
 
+import { itemKeys, type ItemDetail } from './api';
+
 import { deletePhotoObjects, uploadEntityPhoto, type PreparedPhoto } from './photo';
 import { attachPhotosLater } from './photoQueue';
 
@@ -141,6 +143,44 @@ export function useRemoveItemPhoto(itemId: string) {
       // 행이 사라진 뒤에 파일을 치운다 — 반대면 실패 시 깨진 칸이 남는다
       await deletePhotoObjects([photo.photo_path, photo.thumb_path]);
     },
+    onSuccess: () => invalidatePhotoViews(qc, 'items', itemId),
+  });
+}
+
+/**
+ * 순서 바꾸기·대표 지정 (2026-09-09 사용자 요청) — 새 순서의 사진 id 를 **전부** 보낸다.
+ *
+ * 서버 RPC 가 한 트랜잭션에 0부터 다시 적는다(카테고리처럼 행마다 보내면 중간에 끊겼을 때
+ * 반쯤 적힌다). 첫 장이 대표이고 items 의 복사본은 t61 이 맞춘다.
+ *
+ * ⚠ **낙관적으로** 먼저 그린다. "앞으로" 를 누를 때마다 왕복을 기다리면 연타가 안 된다.
+ *   실패하면 상세를 다시 읽어 서버 순서로 돌아간다.
+ */
+export function useReorderItemPhotos(itemId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (idsInOrder: string[]) => {
+      const { error } = await supabase.rpc('reorder_item_photos', {
+        p_item_id: itemId,
+        p_photo_ids: idsInOrder,
+      });
+      if (error) throw error;
+    },
+    onMutate: async (idsInOrder) => {
+      await qc.cancelQueries({ queryKey: itemKeys.detail(itemId) });
+      qc.setQueryData<ItemDetail | null>(itemKeys.detail(itemId), (prev) => {
+        if (!prev) return prev;
+        const byId = new Map(prev.photos.map((p) => [p.id, p]));
+        const photos = idsInOrder
+          .map((id, i) => {
+            const p = byId.get(id);
+            return p ? { ...p, sort_order: i } : null;
+          })
+          .filter((p): p is NonNullable<typeof p> => !!p);
+        return { ...prev, photos };
+      });
+    },
+    onError: () => void qc.invalidateQueries({ queryKey: itemKeys.detail(itemId) }),
     onSuccess: () => invalidatePhotoViews(qc, 'items', itemId),
   });
 }

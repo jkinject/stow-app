@@ -159,6 +159,14 @@ export default function AddItem() {
       queue={queue}
       onAddMore={() => setStep(1)}
       onDropShot={(i) => setShots((prev) => prev.filter((_, j) => j !== i))}
+      onMoveShot={(from, to) =>
+        setShots((prev) => {
+          const next = prev.slice();
+          const [moved] = next.splice(from, 1);
+          next.splice(to, 0, moved);
+          return next;
+        })
+      }
       onPickDest={setPicked}
       onDone={(id) => {
         /**
@@ -195,6 +203,7 @@ function FormStep({
   queue,
   onAddMore,
   onDropShot,
+  onMoveShot,
   onPickDest,
   onDone,
   onClose,
@@ -208,6 +217,7 @@ function FormStep({
   queue: ReturnType<typeof useRegisterQueue>;
   onAddMore: () => void;
   onDropShot: (i: number) => void;
+  onMoveShot: (from: number, to: number) => void;
   onPickDest: (d: AddContext) => void;
   onDone: (itemId: string, name: string) => void;
   onClose: () => void;
@@ -330,6 +340,10 @@ function FormStep({
           onDropSlide={(i) => {
             setPhotoIndex((cur) => Math.max(0, Math.min(cur, shots.length - 2)));
             onDropShot(i);
+          }}
+          onMoveSlide={(from, to) => {
+            setPhotoIndex(to);
+            onMoveShot(from, to);
           }}
         />
 

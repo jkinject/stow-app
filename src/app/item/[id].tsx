@@ -41,7 +41,7 @@ import { PhotoGallery, type GallerySlide } from '@/features/item/PhotoGallery';
 import { ExpirySheet } from '@/features/item/ExpirySheet';
 import { daysUntil, expiryTone } from '@/features/item/expiry';
 import { nudgeReminderPermission } from '@/features/item/reminders';
-import { useAddItemPhotos, useRemoveItemPhoto, useSetItemCover } from '@/features/item/photoApi';
+import { useAddItemPhotos, useRemoveItemPhoto, useReorderItemPhotos, useSetItemCover } from '@/features/item/photoApi';
 import { IMAGE_CACHE_POLICY, useThumbUrls } from '@/features/item/thumbs';
 import {
   dropPendingPhoto,
@@ -93,6 +93,7 @@ export default function ItemDetailScreen() {
   const addPhotos = useAddItemPhotos(itemId, activeId);
   const removeItemPhoto = useRemoveItemPhoto(itemId);
   const setCover = useSetItemCover(itemId);
+  const reorder = useReorderItemPhotos(itemId);
   /**
    * 등록할 때 찍은 사진이 아직 안 올라갔는가 (2026-09-06).
    *
@@ -213,6 +214,19 @@ export default function ItemDetailScreen() {
     }
   }
 
+  /** 순서 편집 — `to` 자리로 옮긴 새 순서를 통째로 보낸다 (0 이면 곧 대표 지정) */
+  function onMovePhoto(from: number, to: number) {
+    if (from === to || !photos[from] || to < 0 || to >= photos.length) return;
+    const ids = photos.map((p) => p.id);
+    const [moved] = ids.splice(from, 1);
+    ids.splice(to, 0, moved);
+    setPhotoIndex(to);
+    reorder.mutate(ids, {
+      onError: (e) =>
+        Alert.alert(t.item.savedFailed, e instanceof Error ? e.message : t.common.tryAgain),
+    });
+  }
+
   async function onSetCover(p: ItemPhoto) {
     try {
       const minOrder = Math.min(...photos.map((x) => x.sort_order));
@@ -317,6 +331,7 @@ export default function ItemDetailScreen() {
             onAdd={openCamera}
             canAdd={canAdd}
             onRetry={(key) => retryPendingPhoto(key)}
+            onMoveSlide={onMovePhoto}
           />
           {/* 실패한 채 남은 장은 포기할 길도 있어야 한다 — 없으면 "실패" 가 영원히 붙어 있다 */}
           {waiting.some((j) => j.state === 'failed') && (
