@@ -1,17 +1,17 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { IconBoxes } from '@/components/Icon';
 import { ThumbRow } from '@/components/ThumbRow';
-import { Empty, Loading, Screen, SectionLabel, TextButton } from '@/components/ui';
+import { Empty, Loading, Screen, TextButton } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { SpaceChip } from '@/features/household/SpaceSheet';
 import { useLocations } from '@/features/storage/api';
 import { useCoverStacks } from '@/features/storage/covers';
 import { LocationSheet } from '@/features/storage/LocationSheet';
 import { useT } from '@/lib/i18n';
-import { useTheme, space } from '@/lib/theme';
+import { useTheme, type, space, leading } from '@/lib/theme';
 
 /**
  * 보관 장소 — 정리 작업용 탭.
@@ -24,7 +24,8 @@ export default function PlacesTab() {
   const { c } = useTheme();
   const t = useT();
   const router = useRouter();
-  const { activeId } = useHousehold();
+  const { activeId, households, active } = useHousehold();
+  const multiple = households.length > 1 && !!active;
 
   const locations = useLocations(activeId);
 
@@ -51,20 +52,31 @@ export default function PlacesTab() {
 
   const list = locations.data ?? [];
 
+  /**
+   * 제목 줄 = "공간 │ 보관 장소 · N개" + 오른쪽 "+ 장소" (2026-09-10, Codex 시안 2 를 사용자가 선택).
+   * ⚠ 앱 이름("어디뒀지") 제목은 뺐다 — 이 탭에서 하는 일이 없었다. 공간이 하나면 접두와 구분선이
+   *   빠져 "보관 장소 · N개   + 장소" 만 남는다. 찾기 탭 검색창 접두와 같은 글자·꺾쇠를 쓴다.
+   */
+  const titleNode = (
+    <View style={st.titleRow}>
+      {multiple && (
+        <>
+          <SpaceChip variant="header" />
+          <View style={[st.divider, { backgroundColor: c.border }]} />
+        </>
+      )}
+      <Text style={[st.title, { color: c.text }]} numberOfLines={1}>
+        {t.places.section(list.length)}
+      </Text>
+    </View>
+  );
+
   return (
-    <Screen title={t.places.title}>
+    <Screen
+      titleNode={titleNode}
+      action={<TextButton label={t.places.addLocation} onPress={() => setAdding(true)} size="small" />}
+    >
       <View style={st.body}>
-        {/* 공간이 둘 이상이면 어느 공간인지 보여 주고, 누르면 바꾼다 — 전환 UI 는 SpaceSheet 한 벌 (2026-09-09) */}
-        <SpaceChip />
-
-        <SectionLabel
-          action={
-            <TextButton label={t.places.addLocation} onPress={() => setAdding(true)} size="small" />
-          }
-        >
-          {t.places.section(list.length)}
-        </SectionLabel>
-
         {locations.isLoading ? (
           <Loading />
         ) : list.length === 0 ? (
@@ -99,5 +111,8 @@ export default function PlacesTab() {
 
 const st = StyleSheet.create({
   body: { paddingHorizontal: space.xl, gap: space.md },
+  titleRow: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 44 },
+  divider: { width: 1, alignSelf: 'stretch', marginVertical: space.sm },
+  title: { flexShrink: 0, fontSize: type.small, lineHeight: leading.small, fontWeight: '700' },
   list: { gap: space.sm },
 });

@@ -75,8 +75,24 @@ export function SpaceSheet({ onClose }: { onClose: () => void }) {
  * 공간이 하나뿐이면 아무것도 그리지 않는다 — 바꿀 것이 없는데 칩이 있으면 소음이다.
  * (그때의 "추가" 입구는 더보기 프로필 카드가 맡는다.)
  */
-export function SpaceChip() {
+/**
+ * 헤더에 두는 작은 공간 표시 — 활성 공간 이름 + 꺾쇠. 누르면 위 시트가 열린다.
+ * 공간이 하나뿐이면 아무것도 그리지 않는다 — 바꿀 것이 없는데 표시가 있으면 소음이다.
+ * (그때의 "추가" 입구는 더보기 프로필 카드가 맡는다.)
+ *
+ * 모양은 둘뿐이다 (2026-09-10, Codex 시안 중 사용자 선택):
+ *   · `prefix` — 찾기 탭 검색창 **안쪽 왼쪽**에 접두로 들어간다("Kim Family ˅ │ 물건 이름…").
+ *                안쪽 여백을 스스로 가진다.
+ *   · `header` — 보관 장소 탭 제목 줄의 왼쪽("Kim Family ˅ │ 보관 장소 · 4개"). 여백은 바깥 줄이 준다.
+ *   글자(type.small·700, textMuted)와 꺾쇠(14)는 같다 — 두 탭이 같은 말로 읽혀야 한다.
+ *   ⚠ 전에는 검색창 위에 따로 뜬 알약 칩이었다. 층이 하나 늘고 검색창·필터와 결이 안 맞아
+ *     "구리다" 는 평을 들었다. 독립 칩으로 되돌리지 말 것.
+ */
+export type SpaceChipVariant = 'prefix' | 'header';
+
+export function SpaceChip({ variant }: { variant: SpaceChipVariant }) {
   const { c } = useTheme();
+  const t = useT();
   const { households, active } = useHousehold();
   const [open, setOpen] = useState(false);
   if (households.length < 2 || !active) return null;
@@ -85,13 +101,14 @@ export function SpaceChip() {
       <Pressable
         onPress={() => setOpen(true)}
         accessibilityRole="button"
+        accessibilityLabel={`${active.name}, ${t.space.switch}`}
         style={({ pressed }) => [
           st.chip,
-          { borderColor: c.border, backgroundColor: c.card },
+          variant === 'prefix' && st.prefixPad,
           pressed && { opacity: 0.7 },
         ]}
       >
-        <Text style={[st.chipText, { color: c.text }]} numberOfLines={1}>
+        <Text style={[st.chipText, { color: c.textMuted }]} numberOfLines={1}>
           {active.name}
         </Text>
         <IconChevron color={c.textFaint} size={14} style={st.chevron} />
@@ -111,17 +128,8 @@ const st = StyleSheet.create({
     marginRight: space.md,
   },
   tileText: { fontSize: type.label, fontWeight: '700' },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: space.xs,
-    borderWidth: 1,
-    borderRadius: radius.full,
-    paddingLeft: space.md,
-    paddingRight: space.sm,
-    paddingVertical: space.xs,
-  },
-  chipText: { fontSize: type.label, fontWeight: '600', maxWidth: 160 },
+  chip: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: space.xs, flexShrink: 1, maxWidth: 132 },
+  prefixPad: { paddingLeft: space.md, paddingRight: space.sm },
+  chipText: { fontSize: type.small, fontWeight: '700', flexShrink: 1 },
   chevron: { transform: [{ rotate: '90deg' }] },
 });

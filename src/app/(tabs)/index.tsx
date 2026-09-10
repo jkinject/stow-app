@@ -281,23 +281,37 @@ export default function FindTab() {
   return (
     <View style={[st.root, { backgroundColor: c.bg, paddingTop: insets.top }]}>
       {/* 공간이 둘 이상일 때만 — 지금 어느 공간을 찾고 있는지 (2026-09-09) */}
-      {households.length > 1 && (
-        <View style={st.spaceRow}>
-          <SpaceChip />
-        </View>
-      )}
       {/* 검색창과 스캔은 항상 맨 위에 고정된다 — 이 화면의 두 시작점이다 */}
       <View style={st.head}>
-        <Field
-          value={q}
-          onChangeText={onQuery}
-          placeholder={t.find.searchPlaceholder}
-          autoCorrect={false}
-          returnKeyType="search"
-          clearable
-          wrapStyle={st.flex}
-          style={st.input}
-        />
+        {/* 공간이 둘 이상이면 검색창 **안쪽 왼쪽**에 활성 공간을 접두로 — "이 공간에서 검색" 으로 읽힌다.
+            따로 띄우면 층이 하나 늘어 결이 깨진다 (2026-09-10, SpaceSheet.tsx 주석 참고) */}
+        {households.length > 1 ? (
+          <View style={[st.searchBox, { borderColor: c.border, backgroundColor: c.card }]}>
+            <SpaceChip variant="prefix" />
+            <View style={[st.searchDivider, { backgroundColor: c.border }]} />
+            <Field
+              value={q}
+              onChangeText={onQuery}
+              placeholder={t.find.searchPlaceholder}
+              autoCorrect={false}
+              returnKeyType="search"
+              clearable
+              wrapStyle={st.flex}
+              style={[st.input, st.searchInput]}
+            />
+          </View>
+        ) : (
+          <Field
+            value={q}
+            onChangeText={onQuery}
+            placeholder={t.find.searchPlaceholder}
+            autoCorrect={false}
+            returnKeyType="search"
+            clearable
+            wrapStyle={st.flex}
+            style={st.input}
+          />
+        )}
         <Pressable
           onPress={() => router.push('/scan')}
           style={({ pressed }) => [
@@ -511,8 +525,13 @@ const st = StyleSheet.create({
    *   전에는 필터가 있을 때만 4(space.xs)였는데, 필터 아래(16)와 짝이 안 맞아
    *   위아래가 어긋나 보였다(2026-09-02 사용자 지적, 실측 4dp vs 16dp).
    */
-  /** 칩이 없으면(공간 하나) 높이 0 — 여백을 남기지 않는다 */
-  spaceRow: { paddingHorizontal: PADDING, paddingTop: space.sm },
+  /**
+   * 검색창을 감싸는 상자 — 공간 접두와 입력칸이 **한 상자**로 보이게 테두리를 여기로 올린다.
+   * 안쪽 Field 는 테두리·모서리를 0 으로 (searchInput). 공간이 하나면 상자 없이 Field 그대로다.
+   */
+  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: radius.sm, overflow: 'hidden' },
+  searchDivider: { width: 1, alignSelf: 'stretch', marginVertical: space.sm },
+  searchInput: { borderWidth: 0, borderRadius: 0 },
   head: {
     flexDirection: 'row',
     gap: space.sm,
