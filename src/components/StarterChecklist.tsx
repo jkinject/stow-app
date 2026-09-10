@@ -193,7 +193,7 @@ function Step({
 
 const st = StyleSheet.create({
   card: {
-    marginHorizontal: space.xl,
+    // 좌우 여백은 담는 쪽(찾기 탭 목록)이 준다 — 미션 카드와 같은 선에 서야 한다
     borderRadius: radius.md,
     paddingHorizontal: space.lg,
     paddingTop: space.lg,

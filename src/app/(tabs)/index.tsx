@@ -578,7 +578,12 @@ const st = StyleSheet.create({
     borderWidth: 1,
   },
   bannerText: { fontSize: type.small },
-  starterWrap: { paddingBottom: space.lg, marginHorizontal: -PADDING },
+  /**
+   * ⚠ 좌우 여백은 목록(contentContainerStyle 의 PADDING)이 준다 — 여기서 음수 마진으로
+   *   상쇄하고 카드가 각자 여백을 갖게 두면 안 된다. 전에 그렇게 했더니 체크리스트는
+   *   제 여백(20)이 있어 맞았고 **미션 카드는 화면 끝까지 늘어났다**(실기기 2026-09-11).
+   */
+  starterWrap: { paddingBottom: space.lg },
   more: { fontSize: type.caption, textAlign: 'center', paddingVertical: space.lg },
   /**
    * ⚠ 아래 여백은 **스크롤과 무관해야** 한다 — 위 contentContainerStyle 주석 참고.
