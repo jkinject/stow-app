@@ -1,8 +1,8 @@
 import * as WebBrowser from 'expo-web-browser';
 import { useMemo } from 'react';
-import { FlatList, Pressable, StyleSheet, Text } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Screen } from '@/components/ui';
+import { Screen, SectionLabel } from '@/components/ui';
 import { useT } from '@/lib/i18n';
 import LICENSES from '@/lib/licenses.json';
 import { radius, space, type, useTheme, leading } from '@/lib/theme';
@@ -53,9 +53,11 @@ export default function LicensesScreen() {
         }
         renderItem={({ item }) =>
           item.kind === 'header' ? (
-            <Text style={[st.group, { color: c.textFaint }]}>
-              {item.license} · {item.count}
-            </Text>
+            <View style={st.group}>
+              <SectionLabel>
+                {item.license} · {item.count}
+              </SectionLabel>
+            </View>
           ) : (
             <Pressable
               disabled={!item.url}
@@ -81,7 +83,7 @@ export default function LicensesScreen() {
 const st = StyleSheet.create({
   list: { paddingHorizontal: space.xl, paddingBottom: space.giant, gap: space.sm },
   intro: { fontSize: type.small, lineHeight: leading.small, paddingBottom: space.md },
-  group: { fontSize: type.small, fontWeight: '700', paddingTop: space.lg, paddingBottom: space.xs },
+  group: { paddingTop: space.sm, paddingBottom: space.xs },
   row: { borderRadius: radius.sm, paddingHorizontal: space.md, paddingVertical: space.md, gap: space.xs },
   pressed: { opacity: 0.6 },
   name: { fontSize: type.label, fontWeight: '600' },

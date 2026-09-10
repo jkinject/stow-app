@@ -4,7 +4,7 @@ import { AppState, Linking, StyleSheet, Text, View } from 'react-native';
 
 import { IconBell } from '@/components/Icon';
 import { SettingsGroup, SettingsSwitchRow } from '@/components/SettingsList';
-import { Button, Screen } from '@/components/ui';
+import { Button, Screen, SectionLabel } from '@/components/ui';
 import { REMINDER_DAYS } from '@/features/item/expiry';
 import {
   getReminderPermission,
@@ -92,7 +92,7 @@ export default function ExpiryRemindersScreen() {
           />
         </SettingsGroup>
 
-        <Text style={[st.section, { color: c.textFaint }]}>{t.reminders.whenLabel}</Text>
+        <SectionLabel>{t.reminders.whenLabel}</SectionLabel>
         <SettingsGroup>
           {REMINDER_DAYS.map((n, i) => (
             <SettingsSwitchRow
@@ -114,7 +114,6 @@ export default function ExpiryRemindersScreen() {
 
 const st = StyleSheet.create({
   body: { paddingHorizontal: space.xl, paddingBottom: space.giant, gap: space.md },
-  section: { fontSize: type.tiny, fontWeight: '700', marginTop: space.sm, marginLeft: space.xs },
   hint: { fontSize: type.small, lineHeight: leading.body, marginHorizontal: space.xs },
   /* 경고 배너 — 테두리·제목이 danger 색. 바탕은 sunk 라 카드보다 한 단 가라앉아 구분된다 */
   warn: { borderWidth: 1, borderRadius: radius.md, padding: space.lg, gap: space.md },

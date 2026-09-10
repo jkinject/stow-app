@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Keyboard, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ModalHeader } from '@/components/Sheet';
-import { Button, Field, TextButton } from '@/components/ui';
+import { Button, Chip, Field, TextButton } from '@/components/ui';
 import { confirmDestructive } from '@/lib/confirm';
 import { useT } from '@/lib/i18n';
-import { radius, type, useTheme, space } from '@/lib/theme';
+import { type, useTheme, space } from '@/lib/theme';
 
 import { useCreateLocation, useLocations } from './api';
 
@@ -257,25 +257,9 @@ export function LocationSheet({
             <View style={st.block}>
               <Text style={[st.label, { color: c.textFaint }]}>{t.locSheet.suggestHint}</Text>
               <View style={st.chips}>
-                {chips.map((sug) => {
-                  const on = pickedSet.has(sug);
-                  return (
-                    <Pressable
-                      key={sug}
-                      onPress={() => toggle(sug)}
-                      disabled={saving}
-                      style={({ pressed }) => [
-                        st.chip,
-                        { borderColor: c.borderStrong, backgroundColor: c.card },
-                        /* ⚠ 폭에 영향을 주는 것(글자·borderWidth·padding)은 건드리지 않는다 */
-                        on && { borderColor: c.accent, backgroundColor: c.accent },
-                        pressed && { opacity: 0.6 },
-                      ]}
-                    >
-                      <Text style={[st.chipText, { color: on ? c.onAccent : c.text }]}>{sug}</Text>
-                    </Pressable>
-                  );
-                })}
+                {chips.map((sug) => (
+                  <Chip key={sug} label={sug} on={pickedSet.has(sug)} onPress={() => toggle(sug)} disabled={saving} />
+                ))}
               </View>
             </View>
           )}
@@ -321,18 +305,7 @@ export function LocationSheet({
               </Text>
               <View style={st.chips}>
                 {customPicked.map((n) => (
-                  <Pressable
-                    key={n}
-                    onPress={() => toggle(n)}
-                    disabled={saving}
-                    style={({ pressed }) => [
-                      st.chip,
-                      { borderColor: c.accent, backgroundColor: c.accent },
-                      pressed && { opacity: 0.6 },
-                    ]}
-                  >
-                    <Text style={[st.chipText, { color: c.onAccent }]}>{n}</Text>
-                  </Pressable>
+                  <Chip key={n} label={n} on onPress={() => toggle(n)} disabled={saving} />
                 ))}
               </View>
             </View>
@@ -358,13 +331,6 @@ const st = StyleSheet.create({
   /** 이미 있는 이름을 적었을 때 입력칸 아래에 붙는 지적 */
   dupe: { fontSize: type.caption },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  chip: {
-    borderWidth: 1,
-    borderRadius: radius.full,
-    paddingHorizontal: space.lg,
-    paddingVertical: space.md,
-  },
-  chipText: { fontSize: type.body, fontWeight: '600' },
   manual: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start' },
   addBtn: { width: 84 },
 });

@@ -4,9 +4,9 @@ import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ChoiceSheet } from '@/components/ChoiceSheet';
 import { IconChevron } from '@/components/Icon';
 import { BottomSheet } from '@/components/Sheet';
-import { Button, Field, TextButton } from '@/components/ui';
+import { Button, Chip, Field, FieldLabel, TextButton } from '@/components/ui';
 import { useT } from '@/lib/i18n';
-import { radius, space, tracking, type, useTheme } from '@/lib/theme';
+import { radius, space, type, useTheme } from '@/lib/theme';
 
 import { buildYmd, daysUntil, expiryTone, shiftYmd, todayYmd, type ExpiryTone } from './expiry';
 
@@ -88,29 +88,14 @@ export function ExpirySheet({
   return (
     <BottomSheet title={t.expiry.title} onClose={onClose} dismissOnBackdrop={false} keyboard>
       <View style={st.body}>
-        <Text style={[st.label, { color: c.textFaint }]}>{t.expiry.quickHint}</Text>
+        <FieldLabel>{t.expiry.quickHint}</FieldLabel>
         <View style={st.chips}>
-          {quick.map((q) => {
-            const on = ymd === q.ymd;
-            return (
-              <Pressable
-                key={q.label}
-                onPress={() => apply(q.ymd)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: on }}
-                style={({ pressed }) => [
-                  st.chip,
-                  { borderColor: on ? c.accent : c.border, backgroundColor: on ? c.accent : c.card },
-                  pressed && { opacity: 0.7 },
-                ]}
-              >
-                <Text style={[st.chipText, { color: on ? c.onAccent : c.text }]}>{q.label}</Text>
-              </Pressable>
-            );
-          })}
+          {quick.map((q) => (
+            <Chip key={q.label} label={q.label} on={ymd === q.ymd} onPress={() => apply(q.ymd)} />
+          ))}
         </View>
 
-        <Text style={[st.label, { color: c.textFaint }]}>{t.expiry.manualHint}</Text>
+        <FieldLabel>{t.expiry.manualHint}</FieldLabel>
         <View style={st.row}>
           <SelectBox
             value={`${y}${t.expiry.year}`}
@@ -225,15 +210,7 @@ function SelectBox({
 
 const st = StyleSheet.create({
   body: { paddingHorizontal: space.xl, paddingBottom: space.lg, gap: space.md },
-  label: { fontSize: type.tiny, fontWeight: '700', letterSpacing: tracking.wide },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  chip: {
-    borderWidth: 1,
-    borderRadius: radius.full,
-    paddingHorizontal: space.lg,
-    paddingVertical: space.sm,
-  },
-  chipText: { fontSize: type.label, fontWeight: '600' },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   year: { flex: 1.5 },
   small: { flex: 1.1 },

@@ -6,7 +6,7 @@ import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { IconGear, IconPlus, IconX } from '@/components/Icon';
 import { SettingsCard } from '@/components/SettingsCard';
-import { Button, Empty, IconButton, Loading, Screen, SectionLabel } from '@/components/ui';
+import { Button, Empty, FieldLabel, IconButton, Loading, Screen, SectionLabel } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { useEnsureActive } from '@/features/household/useEnsureActive';
 import { useAudit } from '@/features/history/api';
@@ -209,7 +209,7 @@ export default function ContainerDetail() {
               손이 미끄러진다. 지금 있는 장소를 함께 적어 어디에서 떠나는지 밝힌다.
             */}
             <View style={st.settingsMove}>
-              <Text style={[st.fieldLabel, { color: c.textFaint }]}>{t.container.place}</Text>
+              <FieldLabel>{t.container.place}</FieldLabel>
               <Text style={[st.settingsHere, { color: c.text }]} numberOfLines={1}>
                 {location?.name ?? t.common.notFound}
               </Text>
@@ -352,5 +352,4 @@ const st = StyleSheet.create({
   cardTitle: { flex: 1, fontSize: type.h2, fontWeight: '700', letterSpacing: tracking.tight, lineHeight: leading.h2 },
   settingsMove: { marginTop: space.lg, gap: space.sm },
   settingsHere: { fontSize: type.body, fontWeight: '600' },
-  fieldLabel: { fontSize: type.tiny, fontWeight: '600', letterSpacing: tracking.wide },
 });

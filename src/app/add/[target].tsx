@@ -15,7 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { KeyboardSpacer } from '@/components/KeyboardSpacer';
-import { Button, Field, TextButton } from '@/components/ui';
+import { Button, Field, FieldLabel, TextButton } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { CameraCapture } from '@/features/item/CameraCapture';
 import { MovePicker, type MoveTarget } from '@/features/item/MovePicker';
@@ -25,7 +25,7 @@ import { PhotoGallery } from '@/features/item/PhotoGallery';
 import { QUEUE_LIMIT, useRegisterQueue, type DraftItem } from '@/features/item/queue';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, space, tracking } from '@/lib/theme';
+import { useTheme, type, radius, space } from '@/lib/theme';
 
 /**
  * 물건 등록 — **2단계** (2026-08-30 사용자 요청).
@@ -356,7 +356,7 @@ function FormStep({
           style={[st.destRow, { borderColor: dest ? c.border : c.danger, backgroundColor: c.card }]}
         >
           <View style={st.destMain}>
-            <Text style={[st.destLabel, { color: c.textFaint }]}>{t.addFlow.whereTitle}</Text>
+            <FieldLabel>{t.addFlow.whereTitle}</FieldLabel>
             <Text style={[st.destValue, { color: dest ? c.text : c.textMuted }]} numberOfLines={1}>
               {dest ? pathOf(dest, t) : t.addFlow.whereNotSet}
             </Text>
@@ -473,7 +473,6 @@ const st = StyleSheet.create({
     gap: space.md,
   },
   destMain: { flex: 1, gap: space.xs },
-  destLabel: { fontSize: type.tiny, fontWeight: '600', letterSpacing: tracking.wide },
   destValue: { fontSize: type.body, fontWeight: '600' },
   destPick: { fontSize: type.small, fontWeight: '700' },
   nameField: { fontSize: type.subtitle },

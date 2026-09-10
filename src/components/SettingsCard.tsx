@@ -1,9 +1,9 @@
 import { type ReactNode, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Button, Field } from '@/components/ui';
+import { Button, Field, FieldLabel } from '@/components/ui';
 import { useT } from '@/lib/i18n';
-import { radius, space, tracking, type, useTheme } from '@/lib/theme';
+import { radius, space, type, useTheme } from '@/lib/theme';
 
 /**
  * ⚙ 를 눌러 펼치는 **설정 카드** — 이름 고치기 + 지우기.
@@ -46,7 +46,7 @@ export function SettingsCard({
 
   return (
     <View style={[st.card, { backgroundColor: c.card }]}>
-      <Text style={[st.label, { color: c.textFaint }]}>{label}</Text>
+      <FieldLabel>{label}</FieldLabel>
       <Field value={name} onChangeText={setName} placeholder={placeholder} />
       {!nameOk && <Text style={[st.err, { color: c.danger }]}>{t.item.nameRequired}</Text>}
 
@@ -75,7 +75,6 @@ export function SettingsCard({
 
 const st = StyleSheet.create({
   card: { borderRadius: radius.md, padding: space.lg, gap: space.sm },
-  label: { fontSize: type.tiny, fontWeight: '600', letterSpacing: tracking.wide },
   err: { fontSize: type.caption },
   danger: { marginTop: space.lg },
 });

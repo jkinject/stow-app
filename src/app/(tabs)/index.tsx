@@ -16,7 +16,7 @@ import { IconQr, IconSort } from '@/components/Icon';
 import { DailyMission } from '@/components/DailyMission';
 import { StarterChecklist } from '@/components/StarterChecklist';
 import { useCategoryList } from '@/features/category/api';
-import { Empty, Field, Loading } from '@/components/ui';
+import { Chip, Empty, Field, Loading } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { SpaceChip } from '@/features/household/SpaceSheet';
 import { useTodayMission } from '@/features/mission/api';
@@ -340,23 +340,9 @@ export default function FindTab() {
           style={st.filterScroll}
         >
           {[{ id: null as string | null, name: t.find.allPlaces }, ...(locations.data ?? [])].map(
-            (l) => {
-              const on = place === l.id;
-              return (
-                <Pressable
-                  key={l.id ?? 'all'}
-                  onPress={() => onPlace(l.id)}
-                  style={[
-                    st.filterChip,
-                    { borderColor: on ? c.accent : c.border, backgroundColor: on ? c.accent : c.card },
-                  ]}
-                >
-                  <Text style={[st.filterText, { color: on ? c.onAccent : c.textMuted }]}>
-                    {l.name}
-                  </Text>
-                </Pressable>
-              );
-            },
+            (l) => (
+              <Chip key={l.id ?? 'all'} label={l.name} on={place === l.id} onPress={() => onPlace(l.id)} />
+            ),
           )}
         </ScrollView>
       )}
@@ -600,6 +586,4 @@ const st = StyleSheet.create({
    */
   filterScroll: { flexGrow: 0, flexShrink: 0, marginBottom: GUTTER },
   filterRow: { paddingHorizontal: PADDING, gap: space.sm, alignItems: 'center' },
-  filterChip: { borderWidth: 1, borderRadius: radius.full, paddingHorizontal: space.lg, paddingVertical: space.sm },
-  filterText: { fontSize: type.small, fontWeight: '600' },
 });

@@ -4,7 +4,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ChoiceSheet, type Choice } from '@/components/ChoiceSheet';
 import { IconDots, IconUsers } from '@/components/Icon';
-import { Button, Field, IconButton, Loading, Screen, SectionLabel } from '@/components/ui';
+import { Button, Field, FieldLabel, IconButton, Loading, Screen, SectionLabel } from '@/components/ui';
 import {
   useInvite,
   useLeaveHousehold,
@@ -190,7 +190,7 @@ function HouseCard({
 
   return (
     <View style={[st.house, { backgroundColor: c.card }]}>
-      <Text style={[st.label, { color: c.textFaint }]}>{t.family.houseName}</Text>
+      <FieldLabel>{t.family.houseName}</FieldLabel>
       {canRename ? (
         <Field
           value={draft}
@@ -463,7 +463,6 @@ const st = StyleSheet.create({
   house: { borderRadius: radius.md, padding: space.lg, gap: space.sm },
   houseName: { fontSize: type.title, fontWeight: '700' },
   houseMeta: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  label: { fontSize: type.tiny, fontWeight: '700', letterSpacing: tracking.wide, textTransform: 'uppercase' },
 
   member: {
     flexDirection: 'row',

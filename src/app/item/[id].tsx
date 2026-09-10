@@ -21,7 +21,7 @@ import { safeIcon, type IconName } from '@/features/category/icons';
 import { KeyboardSpacer } from '@/components/KeyboardSpacer';
 import { BottomSheet, SheetOption } from '@/components/Sheet';
 import { useToast } from '@/components/Toast';
-import { Button, Field, Loading, Screen, TextButton, titleText } from '@/components/ui';
+import { Button, Field, FieldLabel, Loading, Screen, TextButton, titleText } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { useEnsureActive } from '@/features/household/useEnsureActive';
 import { useCategoryList } from '@/features/category/api';
@@ -368,29 +368,22 @@ export default function ItemDetailScreen() {
               }
               hitSlop={8}
             >
-              <Text style={[st.pathHint, { color: c.textFaint }]}>{t.item.location}</Text>
+              <FieldLabel style={st.pathHint}>{t.item.location}</FieldLabel>
               <Text style={[st.path, { color: c.text }]} numberOfLines={2}>
                 {path}
               </Text>
             </Pressable>
-            <Pressable
+            <Button
+              size="small"
+              variant="secondary"
+              label={move.isPending ? t.item.moving : t.item.move}
               onPress={() => setMoving(true)}
-              hitSlop={8}
-              style={({ pressed }) => [
-                st.moveBtn,
-                { borderColor: c.borderStrong },
-                pressed && { opacity: 0.6 },
-              ]}
-            >
-              <Text style={[st.moveText, { color: c.text }]}>
-                {move.isPending ? t.item.moving : t.item.move}
-              </Text>
-            </Pressable>
+            />
           </View>
 
           {/* 수량 — 가장 자주 바뀌는 값 */}
           <View style={[st.qtyBox, { backgroundColor: c.card }]}>
-            <Text style={[st.fieldLabel, { color: c.textFaint }]}>{t.item.quantity}</Text>
+            <FieldLabel>{t.item.quantity}</FieldLabel>
             <View style={st.qtyRow}>
               <Stepper kind="minus" onPress={() => onAdjust(-1)} disabled={row.quantity <= 0} />
               <Text style={[st.qtyValue, { color: row.quantity === 0 ? c.danger : c.text }]}>
@@ -829,7 +822,7 @@ function AutoField({
   return (
     <View style={st.field}>
       <View style={st.fieldHead}>
-        <Text style={[st.fieldLabel, { color: c.textFaint }]}>{label}</Text>
+        <FieldLabel>{label}</FieldLabel>
         {a.state === 'saved' && <Text style={[st.savedTag, { color: c.ok }]}>{t.item.saved}</Text>}
         {trailing}
       </View>
@@ -881,7 +874,7 @@ function CategoryPicker({
 
   return (
     <View style={st.field}>
-      <Text style={[st.fieldLabel, { color: c.textFaint }]}>{t.item.category}</Text>
+      <FieldLabel>{t.item.category}</FieldLabel>
       <View style={st.selectRow}>
         <Pressable
           onPress={() => setOpen(true)}
@@ -973,7 +966,7 @@ function ExpiryRow({ value, onPress }: { value: string | null; onPress: () => vo
     tone === null ? c.textFaint : tone === 'far' ? c.text : tone === 'soon' ? c.accentText : c.danger;
   return (
     <View style={st.field}>
-      <Text style={[st.fieldLabel, { color: c.textFaint }]}>{t.expiry.title}</Text>
+      <FieldLabel>{t.expiry.title}</FieldLabel>
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
@@ -1046,10 +1039,8 @@ const st = StyleSheet.create({
   /** 실패한 채 남은 장의 "이 사진 취소" 들 — 갤러리 바로 아래 한 줄 */
   failedRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: -space.sm },
   pathRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
-  pathHint: { fontSize: type.tiny, fontWeight: '600', letterSpacing: tracking.wide, marginBottom: space.xs },
+  pathHint: { marginBottom: space.xs },
   path: { fontSize: type.title, fontWeight: '700', letterSpacing: tracking.tight, lineHeight: leading.title },
-  moveBtn: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: space.lg, paddingVertical: space.sm },
-  moveText: { fontSize: type.small, fontWeight: '600' },
   qtyBox: { borderRadius: radius.md, padding: space.lg, gap: space.md },
   qtyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   qtyValue: { fontSize: type.display, fontWeight: '700', fontVariant: ['tabular-nums'] },
@@ -1065,7 +1056,6 @@ const st = StyleSheet.create({
   /* ⚠ 기호를 상자 가운데 앉히는 값이다 — 읽는 행간이 아니므로 `leading` 을 쓰지 않는다 */
   field: { gap: space.xs },
   fieldHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  fieldLabel: { fontSize: type.tiny, fontWeight: '600', letterSpacing: tracking.wide },
   savedTag: { fontSize: type.tiny, fontWeight: '700' },
   /** ⚠ 글자 크기·굵기는 TextButton 이 정한다 — 여기서는 자리만 민다 */
   openLink: { marginLeft: 'auto' },

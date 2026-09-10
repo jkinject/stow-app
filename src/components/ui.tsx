@@ -121,39 +121,104 @@ export function Screen({
   );
 }
 
+/**
+ * 버튼. 색은 셋(primary · secondary · danger), 크기는 둘이다.
+ *
+ * ⚠ `small` 은 **줄 안에 딸려 붙는 버튼**이다 (2026-09-11 디자인 시스템 점검).
+ *   물건 상세의 "이동", 살 것의 "사러 가기", 카테고리 관리의 "+ 추가" 가 각자
+ *   Pressable 로 같은 모양(테두리 1 · 8/16 여백 · 13·600)을 세 벌 그리고 있었다.
+ *   테두리 색까지 서로 달랐다(accent · borderStrong). 한 벌로 모은다 — 폭은 글자만큼이다.
+ */
 export function Button({
   label,
   onPress,
   variant = 'primary',
+  size = 'body',
   busy = false,
   disabled = false,
+  style,
 }: {
   label: string;
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'danger';
+  size?: 'body' | 'small';
   busy?: boolean;
   disabled?: boolean;
+  /** 자리 잡기(정렬·여백)만 준다 */
+  style?: StyleProp<ViewStyle>;
 }) {
   const { c } = useTheme();
   const bg = variant === 'primary' ? c.accent : 'transparent';
   const border = variant === 'primary' ? c.accent : variant === 'danger' ? c.danger : c.borderStrong;
   const fg = variant === 'primary' ? c.onAccent : variant === 'danger' ? c.danger : c.text;
+  const small = size === 'small';
 
   return (
     <Pressable
       onPress={onPress}
       disabled={busy || disabled}
+      hitSlop={small ? 8 : undefined}
       style={({ pressed }) => [
-        s.btn,
+        small ? s.btnSmall : s.btn,
         { backgroundColor: bg, borderColor: border },
+        style,
         (pressed || disabled) && { opacity: 0.6 },
       ]}
     >
       {busy ? (
-        <ActivityIndicator color={fg} />
+        <ActivityIndicator color={fg} size={small ? 'small' : undefined} />
       ) : (
-        <Text style={[s.btnText, { color: fg }]}>{label}</Text>
+        <Text style={[small ? s.btnSmallText : s.btnText, { color: fg }]}>{label}</Text>
       )}
+    </Pressable>
+  );
+}
+
+/**
+ * 입력칸·값 위에 붙는 작은 라벨 ("수량" · "위치" · "박스 이름" · "어디에 둘까요?").
+ *
+ * ⚠ 점검에서 **일곱 벌**이 나왔다 (2026-09-11). 물건 상세 · 박스 상세 · 등록 · 설정 카드 ·
+ *   가족 · 소비기한 시트가 각자 `fieldLabel`/`destLabel`/`label` 을 그렸고, 굵기(600·700)와
+ *   대문자 변환 유무가 갈려 있었다. 같은 자리의 다른 값은 의도가 아니라 소음이다.
+ *   tiny · 600 · 자간 wide · textFaint 한 벌.
+ */
+export function FieldLabel({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
+  const { c } = useTheme();
+  return <Text style={[s.fieldLabel, { color: c.textFaint }, style]}>{children}</Text>;
+}
+
+/**
+ * 알약 칩 — 고르는 것(장소 필터 · 소비기한 빠른 선택 · 장소 이름 제안).
+ *
+ * ⚠ 찾기 탭 · 소비기한 시트 · 장소 시트가 각자 그리고 있었다 (2026-09-11). 글자 크기가
+ *   14·15 로, 여백이 8·12 로, 안 고른 글자색이 text·textMuted 로 갈렸다. 한 벌로 모은다:
+ *   radius.full · 8/16 · label·600 · 고르면 accent 채움.
+ */
+export function Chip({
+  label,
+  on = false,
+  onPress,
+  disabled = false,
+}: {
+  label: string;
+  on?: boolean;
+  onPress: () => void;
+  disabled?: boolean;
+}) {
+  const { c } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityState={{ selected: on }}
+      style={({ pressed }) => [
+        s.chip,
+        { borderColor: on ? c.accent : c.border, backgroundColor: on ? c.accent : c.card },
+        pressed && { opacity: 0.7 },
+      ]}
+    >
+      <Text style={[s.chipText, { color: on ? c.onAccent : c.textMuted }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -413,6 +478,19 @@ const s = StyleSheet.create({
   h1sub: { fontSize: type.small },
   btn: { borderWidth: 1, paddingVertical: space.lg, borderRadius: radius.sm, alignItems: 'center' },
   btnText: { fontSize: type.bodyStrong, fontWeight: '600' },
+  btnSmall: {
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.sm,
+    alignSelf: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnSmallText: { fontSize: type.small, fontWeight: '600' },
+  fieldLabel: { fontSize: type.tiny, fontWeight: '600', letterSpacing: tracking.wide },
+  chip: { borderWidth: 1, borderRadius: radius.full, paddingHorizontal: space.lg, paddingVertical: space.sm },
+  chipText: { fontSize: type.label, fontWeight: '600' },
   textBtnBody: { fontSize: type.body, fontWeight: '600' },
   /** 작은 글씨는 굵어야 같은 무게로 읽힌다 */
   textBtnSmall: { fontSize: type.small, fontWeight: '700' },

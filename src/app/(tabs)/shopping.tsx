@@ -1,14 +1,14 @@
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, StyleSheet, Text, View } from 'react-native';
 
 import { ThumbRow } from '@/components/ThumbRow';
-import { Empty, Loading, Screen, SectionLabel } from '@/components/ui';
+import { Button, Empty, Loading, Screen, SectionLabel } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { useThumbUrls } from '@/features/item/thumbs';
 import { useShoppingList } from '@/features/shopping/api';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, space, leading } from '@/lib/theme';
+import { useTheme, type, space, leading } from '@/lib/theme';
 
 /**
  * 살 것 (AC16 · AC18).
@@ -111,16 +111,7 @@ function ShoppingCard({
       <View style={st.actions}>
         {/* AC18 — 구매 링크는 외부 브라우저로 연다 */}
         {it.purchase_url ? (
-          <Pressable
-            onPress={() => onLink(it.purchase_url!)}
-            style={({ pressed }) => [
-              st.actionBtn,
-              { borderColor: c.accent },
-              pressed && { opacity: 0.6 },
-            ]}
-          >
-            <Text style={[st.actionText, { color: c.accentText }]}>{t.shopping.buy}</Text>
-          </Pressable>
+          <Button size="small" variant="secondary" label={t.shopping.buy} onPress={() => onLink(it.purchase_url!)} />
         ) : (
           <Text style={[st.noLink, { color: c.textFaint }]}>
             {t.shopping.noLink}
@@ -135,8 +126,6 @@ const st = StyleSheet.create({
   body: { paddingHorizontal: space.xl, gap: space.md },
   card: { gap: space.sm },
   actions: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingLeft: space.max },
-  actionBtn: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: space.lg, paddingVertical: space.sm },
-  actionText: { fontSize: type.small, fontWeight: '600' },
   noLink: { fontSize: type.tiny, flex: 1, lineHeight: leading.tiny },
   zero: { fontSize: type.small, fontWeight: '700' },
   footNote: { fontSize: type.caption, textAlign: 'center', paddingTop: space.xl, lineHeight: leading.caption },

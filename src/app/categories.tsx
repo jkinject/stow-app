@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Empty, Field, Loading, Screen } from '@/components/ui';
+import { Button, Empty, Field, Loading, Screen } from '@/components/ui';
 import {
   isDuplicateName,
   useCategoryList,
@@ -177,17 +177,7 @@ export default function CategoriesScreen() {
       title={t.category.manage}
       subtitle={t.category.manageHint}
       action={
-        <Pressable
-          onPress={() => setSheet({ open: true, edit: null })}
-          style={({ pressed }) => [
-            st.addBtn,
-            { backgroundColor: c.accent },
-            pressed && { opacity: 0.8 },
-          ]}
-        >
-          <MaterialCommunityIcons name="plus" size={16} color={c.onAccent} />
-          <Text style={[st.addText, { color: c.onAccent }]}>{t.category.add}</Text>
-        </Pressable>
+        <Button size="small" label={`+ ${t.category.add}`} onPress={() => setSheet({ open: true, edit: null })} />
       }
     >
       <View style={st.body}>
@@ -384,15 +374,6 @@ const st = StyleSheet.create({
   flex: { flex: 1 },
   body: { paddingHorizontal: space.xl, gap: space.md },
 
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.xs,
-    borderRadius: radius.sm,
-    paddingHorizontal: space.md,
-    paddingVertical: space.sm,
-  },
-  addText: { fontSize: type.caption, fontWeight: '800' },
 
   meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   metaText: { fontSize: type.caption },
