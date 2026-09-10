@@ -2,7 +2,7 @@
   "expo": {
     "name": "Stow",
     "slug": "stow",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "stow",
@@ -21,9 +21,9 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "net.jangstar.stow",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
-        "CAMERA",
+        "android.permission.CAMERA",
         "android.permission.CAMERA"
       ],
       "allowBackup": false,
@@ -75,7 +75,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "73c0cb5d-ab95-4bc8-85b5-fbcf7dc9f16c"
+        "projectId": "ab3e4a13-9fff-470c-bdbb-0f940bfaba22"
       }
     },
     "owner": "jkinject",
@@ -83,10 +83,10 @@
       "policy": "fingerprint"
     },
     "updates": {
-      "url": "https://u.expo.dev/73c0cb5d-ab95-4bc8-85b5-fbcf7dc9f16c",
       "requestHeaders": {
         "expo-channel-name": "production"
-      }
+      },
+      "url": "https://u.expo.dev/ab3e4a13-9fff-470c-bdbb-0f940bfaba22"
     }
   }
 }

@@ -648,3 +648,14 @@ dev 빌드에서 화면이 죽기 때문**이었다. 지금은 릴리스 APK 를
   갖고 있었다. 여백이 없는 DailyMission 은 그대로 화면 폭을 다 썼다. 시뮬레이터 확인은 늘 체크리스트가 떠 있어 미션이 안 보였다.
 - 고침: 상쇄 마진과 체크리스트의 자체 여백을 지우고, 둘 다 목록(contentContainerStyle 의 PADDING)이 주는 여백을 쓴다.
   카드가 각자 여백을 갖게 두면 다음 카드에서 또 어긋난다.
+
+## 2026-09-11 — EAS 프로젝트를 stow 로 새로 만들고 1.1.1 로 올린다
+- OTA(`eas update`)가 "Slug for project identified by projectId (home-store) does not match slug (stow)" 로 막혔다.
+  `eas init` 때 만들어진 서버 프로젝트 slug 가 home-store 였고 app.json 은 stow. 8/31 OTA 3건은 그때 CLI 가 검사를 안 했다.
+  expo.dev 에는 slug 를 바꾸는 UI 가 없다(표시 이름만). 사용자 결정: home-store 는 쓰지 않고 stow 로 통일.
+- slug 를 home-store 로 맞추는 쪽은 안 된다 — fingerprint 정책이라 slug 가 지문에 들어간다(stow 3dbc4f… / home-store 521449…).
+  1.1.0 APK 에 박힌 지문이 3dbc4f… 라 어느 쪽이든 1.1.0 은 새 OTA 를 못 받는다. 그래서 프로젝트를 새로 만들고 네이티브를 다시 낸다.
+- `eas project:init --account jkinject` → @jkinject/stow (ab3e4a13-9fff-470c-bdbb-0f940bfaba22). updates.url 도 새 ID 로.
+  ⚠ `--force` 는 프로젝트를 새로 만드는 게 아니라 **app.json 의 slug 를 기존 프로젝트에 맞춰 덮어쓴다**(home-store 로 바뀌었었다).
+    projectId 를 지우고 다시 init 해야 새로 만든다. 옛 프로젝트(home-store)는 지우지 않았다 — 심사 중 1.1.0 이 그 주소를 본다.
+- 1.1.1 (versionCode 3) — 심사 중인 1.1.0 을 이 빌드로 교체 제출. 앞으로 JS 변경은 `eas update --branch production` 으로.
