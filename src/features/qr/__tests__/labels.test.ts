@@ -90,7 +90,8 @@ describe('buildLabelSheetHtml', () => {
     const html = buildLabelSheetHtml(mk(1));
     expect(html).toContain('size: A4');
     expect(html).toContain(`width: ${SHEET.pageW}mm`);
-    expect(html).toContain(`height: ${SHEET.pageH}mm`);
+    // 높이는 용지보다 1mm 짧다 — 같으면 iOS 인쇄에서 마지막 행이 2쪽으로 넘친다 (labels.ts 참고)
+    expect(html).toContain(`height: ${SHEET.pageH - 1}mm`);
     expect(html).toContain(`padding: ${SHEET.margin}mm`);
   });
 

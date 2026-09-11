@@ -92,7 +92,10 @@ export function buildLabelSheetHtml(labels: LabelInput[]): string {
   * { box-sizing: border-box; }
   body { margin: 0; font-family: -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
   .page {
-    width: ${pageW}mm; height: ${pageH}mm;
+    /* ⚠ 높이를 용지(297mm)보다 1mm 짧게 둔다. 정확히 297mm 로 두면 iOS 의 WKWebView 인쇄
+       포맷터가 반올림 오차만큼 넘쳤다고 보고 마지막 행을 빈 2쪽으로 밀어낸다 — 용지 크기
+       (A4_PT)를 맞춘 뒤에도 그랬다(2026-09-12, 공유 PDF 로 확인). 줄어드는 1mm 는 아래 여백에서 나간다. */
+    width: ${pageW}mm; height: ${pageH - 1}mm; overflow: hidden;
     padding: ${margin}mm;
     display: grid;
     grid-template-columns: repeat(${cols}, ${cw}mm);

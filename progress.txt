@@ -710,3 +710,15 @@ dev 빌드에서 화면이 죽기 때문**이었다. 지금은 릴리스 APK 를
 - 서체: Inter + Instrument Serif(이탤릭 강조). 한국어는 한글 이탤릭이 가짜 기울임이라 Noto Serif KR 정체로 대비만 준다. 본문은 Pretendard(jsDelivr).
 - 카드 사진은 심사 계정 데모 사진(우리가 만든 것)을 Storage 에서 내려받아 docs/site/photo-*.jpg 로 둔다(1024px, ~100KB).
 - 스크롤 리빌은 IntersectionObserver 6줄. 외부 라이브러리 없음.
+
+## 2026-09-12 — PR #2·#3 검토 결과와 라벨 2쪽 문제의 진짜 원인
+- PR #3(초성 검색): 맞다. 65개 테스트 통과. 다만 "겨ㅇ"·"겨우"(타이핑 중간 상태)에서 결과가 잠깐 빈다 — 자모 단위 분해 매칭으로
+  올리면 과매칭 없이 이것도 잡힌다(후속 후보).
+- PR #2(라벨 인쇄): 취소 무시는 맞다(expo-modules-core 가 클래스명에서 ERR_PRINT_INCOMPLETE 를 만든다, 실기 확인).
+  **빈 2쪽 수정은 효과가 없었다** — printAsync 에 A4_PT 를 넘긴 뒤에도 미리보기가 2쪽. 공유 PDF 를 시뮬레이터 컨테이너
+  (Library/Caches/Print)에서 꺼내 보니 폭은 정확히 맞고 마지막 행만 2쪽으로 넘어갔다: `.page` 높이 297mm 가 용지와 같아
+  반올림 오차만큼 넘친 것. → 높이를 296mm + overflow hidden 으로. 검증: 같은 방법으로 PDF 1쪽·폭 정상.
+  ⚠ 가설 검증 기록: "iOS 는 CSS 1px = 1pt 라 mm 을 px 로 바꿔야 한다"는 틀렸다 — px 로 바꾸니 75% 크기로 줄어들었다.
+  mm 은 물리 길이로 정확히 찍힌다.
+- 검증 요령: `xcrun simctl get_app_container <udid> net.jangstar.stow data` → Library/Caches/Print/*.pdf 를 복사해
+  `/Type /Page` 개수와 sips PNG 변환으로 본다. Metro 가 죽어 있으면 fast refresh 가 안 돼 옛 코드를 검증하게 된다 — 먼저 확인.
