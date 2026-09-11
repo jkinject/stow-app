@@ -669,3 +669,29 @@ dev 빌드에서 화면이 죽기 때문**이었다. 지금은 릴리스 APK 를
   테스트 16개 통과). 원인은 `printAsync({ html })` 이 용지 크기를 안 받으면 **US Letter(612×792pt)** 로 렌더링하는 것 —
   A4 시트 높이 842pt 가 넘쳐 2페이지로 갈라졌다. 공유(PDF) 경로만 `A4_PT` 를 넘기고 있었다. → 인쇄 경로에도 `A4_PT` 를 넘긴다.
   (expo-print 의 PrintOptions.width/height 기본값이 Letter 인 것은 두 경로 공통.)
+## 2026-09-12 — 영어 스토어 스크린샷 5장 + SEO 랜딩 페이지 (커밋 6a2482a)
+- 포지셔닝: "정리 앱이 아니다, 집의 기억이다". 글로벌(en-US) 우선. docs/play-store-listing.md 맨 위에 적음.
+- 스크린샷: iOS 시뮬레이터 "Stow Shots"(iPhone 17, tester@gmail.com, 공간 Kim Family, 영어 UI)에서
+  검색 결과 → 물건 상세 → 박스 상세 → 장소 목록 → 가족 초대 순서로 찍고 scripts/gen-store-screenshots.py 로 캡션을 얹음.
+  원본 위 177px(상태 표시줄)·아래 102px(홈 인디케이터)은 잘라냄. 랜딩용은 540×960 으로 줄여 docs/site/01~05.png.
+- 캡션 3번을 "QR labels on every box" → "Scan the box, skip the digging"(박스 상세)로 바꿈. 앱 안에 QR 을 크게 보여주는
+  화면이 없고(라벨은 PDF 인쇄 전용) iOS 인쇄 미리보기는 시스템 UI 라 스토어용으로 부적합.
+- 배움: expo-dev-client 의 떠 있는 "Tools button" 이 앱의 오른쪽 위 버튼(장소 톱니 등) 탭을 가로챈다 → dev 메뉴에서 토글을
+  끄고 찍을 것(스위치는 탭이 안 먹고 스와이프로만 꺼짐). 시뮬레이터 패널의 text 액션에 "\n" 을 주면 Return 키가 눌려
+  onBlur/onSubmit 이 돈다.
+- 발견한 버그(별도 작업으로 넘김): 라벨 인쇄 대화상자를 취소하면 PrintIncompleteException 경고가 뜬다. 라벨 2장인데
+  미리보기가 2페이지(2쪽은 빈 페이지).
+- 테스터 계정 데이터 정리: 가구 이름 "tester@gmail.com" → "Kim Family", 장소 "lcadct" → "Kitchen",
+  물건 "hnfbux" → "Dish Soap"(수량 1), "tester@gmail.com" → "Coffee Filters"(수량 2). 모두 앱 UI 로 고침(프로덕션 DB 직접 UPDATE 는 막힘).
+
+## 2026-09-12 — 포지셔닝을 스토어 문구·랜딩에 반영, 한국어 세트, Search Console (커밋 7807689·f657ca5·bb4388c)
+- 스토어 설명(en-US·ko-KR 간단한/자세한 설명)을 "정리 앱이 아니다, 집의 기억이다" 로 시작하게 전부 교체하고 Aside 로 Play Console 에
+  붙여넣어 검토 제출. 구매 목록 문구는 실제 동작(수량 0 전이)에 맞춤. 기본 언어는 한국어 → 영어(미국).
+- 랜딩 페이지: Codex(`codex exec -s read-only`)에 디자인 시안을 HTML 한 파일로 받아 헤드리스 크롬으로 이미지화한 뒤 그대로 구현.
+  CSS 는 시안 것을 쓰고 자리표시자만 실제 캡처(캡션 없는 540×1049)로 바꿈. 한국어(docs/ko/)도 같은 시안.
+  ⚠ 헤드리스 크롬은 창 최소 너비(~500px)가 있어 390px 모바일 렌더가 잘려 보인다 — 실제 확인은 브라우저 패널 mobile 프리셋으로.
+- 한국어 스크린샷: seed-review-account-ko.py 로 "우리 집" 공간(한국어 이름, 사진은 Kim Family 것을 storage copy API 로 복사,
+  item_photos.id 는 클라이언트가 만들어 넣어야 함, shopping_list 직접 insert 는 RLS 가 막음). 시뮬레이터에 한국어 입력은
+  `xcrun simctl pbcopy`(LANG=en_US.UTF-8 필요) → 길게 누르기 → Paste. 새 공간은 앱을 다시 띄워야 목록에 뜬다.
+- Search Console: URL 접두어 속성 https://jkinject.github.io/stow-app/ 를 HTML 태그로 확인, sitemap.xml 제출, 색인 요청 (Aside, jkinject@gmail.com).
+- 발견한 버그(별도 작업으로 넘김): 한국어 검색이 온전한 음절 질의("겨울")에도 초성 매칭을 적용해 보드게임·감기약이 함께 나온다.
