@@ -218,7 +218,8 @@ python3 scripts/gen-store-graphic.py     <히어로원본.png>   # 1024×500 그
 python3 scripts/gen-store-screenshots.py <기기캡처_폴더>     # 1080×1920 스크린샷
 ```
 
-> 한국어 스크린샷 세트는 아직 없다. 한국어 데이터가 있는 공간에서 UI 를 한국어로 두고 같은 5장을 찍으면 된다.
+> 한국어 세트(`docs/store/screenshots/ko/`)는 같은 계정의 두 번째 공간 "우리 집"(`scripts/seed-review-account-ko.py`,
+> 사진은 Kim Family 것을 복사)에서 UI 를 한국어로 두고 같은 5장을 찍었다: `python3 scripts/gen-store-screenshots.py <폴더> ko`.
 
 ---
 

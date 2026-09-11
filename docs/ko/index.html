@@ -3,91 +3,401 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>어디뒀지 (Stow) – 집 안 물건 어디 뒀는지 찾아주는 앱</title>
-<meta name="description" content="그거 어디 뒀더라? 어디뒀지는 물건을 어느 방, 어느 박스에 넣었는지 기억해 줍니다. 사진 한 장 찍고 이름만 적으면 나중에 검색 한 번으로 찾습니다. 가족과 함께, 무료." />
+<title>어디뒀지 (Stow) – 그거 어디 뒀더라? 집 안 물건 찾기 앱</title>
+<meta name="description" content="어디뒀지는 정리 앱이 아닙니다. 집의 기억입니다. 넣을 때 사진 한 장, 찾을 때 이름 한 번 — 어느 방 어느 박스인지 바로 알려줍니다. 박스 QR 라벨, 가족 공유. Google Play 무료." />
 <meta name="google-site-verification" content="K4lu8mos72T_vt28bGPbaz6qlm2qfO47-Oh6_fT6Rf0" />
 <link rel="canonical" href="https://jkinject.github.io/stow-app/ko/" />
-<link rel="alternate" hreflang="ko" href="https://jkinject.github.io/stow-app/ko/" />
 <link rel="alternate" hreflang="en" href="https://jkinject.github.io/stow-app/" />
+<link rel="alternate" hreflang="ko" href="https://jkinject.github.io/stow-app/ko/" />
 <link rel="alternate" hreflang="x-default" href="https://jkinject.github.io/stow-app/" />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="어디뒀지 – 집 안 물건 찾기" />
-<meta property="og:description" content="사진 찍고 이름만 적으면, 어느 방 어느 박스에 뒀는지 검색 한 번으로. 박스 QR 라벨, 가족 공유." />
+<meta property="og:title" content="어디뒀지 – 그거 어디 뒀더라?" />
+<meta property="og:description" content="정리 앱이 아닙니다. 집의 기억입니다. 넣을 때 사진 한 장, 찾을 때 이름 한 번." />
 <meta property="og:url" content="https://jkinject.github.io/stow-app/ko/" />
 <meta property="og:image" content="https://jkinject.github.io/stow-app/store/feature-graphic-1024x500.png" />
+<meta name="twitter:card" content="summary_large_image" />
 <link rel="icon" href="../store/icon-512.png" />
-<link rel="stylesheet" href="../_shared.css" />
 <script type="application/ld+json">
-{ "@context": "https://schema.org", "@type": "SoftwareApplication", "name": "어디뒀지", "alternateName": "Stow", "operatingSystem": "Android", "applicationCategory": "LifestyleApplication",
-  "description": "물건을 어느 방, 어느 박스에 넣었는지 기억해 주는 앱. 사진 한 장, 이름 하나, 검색 한 번.", "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" },
-  "installUrl": "https://play.google.com/store/apps/details?id=net.jangstar.stow", "url": "https://jkinject.github.io/stow-app/ko/", "image": "https://jkinject.github.io/stow-app/store/icon-512.png", "inLanguage": "ko" }
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "어디뒀지",
+  "alternateName": "Stow",
+  "operatingSystem": "Android",
+  "applicationCategory": "LifestyleApplication",
+  "description": "어디뒀지는 정리 앱이 아니라 집의 기억입니다. 넣을 때 사진 한 장 찍어 두면 찾을 때 이름만으로 어느 방 어느 박스인지 알려줍니다. 박스 QR 라벨, 가족 공유.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" },
+  "installUrl": "https://play.google.com/store/apps/details?id=net.jangstar.stow",
+  "url": "https://jkinject.github.io/stow-app/ko/",
+  "image": "https://jkinject.github.io/stow-app/store/icon-512.png",
+  "inLanguage": ["ko", "en"]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type":"Question","name":"정말 무료인가요?","acceptedAnswer":{"@type":"Answer","text":"네. 광고도, 구독도, 분석 추적기도 없습니다. 사진과 목록은 같은 공간의 구성원에게만 보입니다."}},
+    {"@type":"Question","name":"집 안 물건을 전부 등록해야 하나요?","acceptedAnswer":{"@type":"Answer","text":"아니요. 실제로 자주 잃어버리는 것부터 시작하세요. 계절 옷, 케이블, 서류, 약. 넣을 때마다 하나씩 더하면 됩니다."}},
+    {"@type":"Question","name":"가족과 같이 쓸 수 있나요?","acceptedAnswer":{"@type":"Answer","text":"네. 초대 코드 하나면 가족이 같은 집에 들어옵니다. 누가 무엇을 옮겼는지 기록이 남습니다."}},
+    {"@type":"Question","name":"QR 라벨이 꼭 필요한가요?","acceptedAnswer":{"@type":"Answer","text":"아니요. 검색만으로도 충분합니다. 라벨은 선택입니다. A4 한 장에 21개를 인쇄해 박스에 붙이면, 스캔하는 순간 그 박스의 내용물이 열립니다."}}
+  ]
+}
 </script>
 <style>
-  .hero { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: center; }
-  .hero h1 { font-size: 36px; line-height: 1.25; margin: 0; }
-  .hero .lead { font-size: 17px; color: var(--muted); margin: 0; }
-  .cta { display: inline-flex; align-items: center; gap: 10px; background: var(--accent); color: #fff; text-decoration: none; padding: 14px 22px; border-radius: 999px; font-weight: 700; }
-  .sub { color: var(--faint); font-size: 14px; }
-  .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 20px 0; }
-  .shots img { width: 100%; border-radius: 12px; border: 1px solid var(--line); }
-  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-  .steps .box { margin: 0; } .steps b { display: block; color: var(--text); margin-bottom: 4px; }
-  details { border-bottom: 1px solid var(--line); padding: 10px 0; } summary { cursor: pointer; font-weight: 700; color: var(--text); } details p { margin: 8px 0 0; }
-  .lang { float: right; font-size: 14px; }
-  @media (min-width: 640px) { .hero { grid-template-columns: 1.2fr 1fr; } }
+:root {
+  --bg: #f4f5fa;
+  --ink: #0b0d14;
+  --muted: #6b7280;
+  --blue: #2b3fd6;
+  --border: #e5e7f0;
+  --cream: #fdf3dc;
+  --amber: #f0a020;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+button { font: inherit; }
+.wrap { width: min(1200px, calc(100% - 96px)); margin: auto; }
+nav { height: 104px; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-size: 29px; font-weight: 800; letter-spacing: -1.4px; }
+.brandmark { width: 36px; height: 36px; background: var(--blue); border-radius: 11px; position: relative; }
+.brandmark::before { content: ""; position: absolute; width: 18px; height: 15px; border: 2px solid white; border-radius: 4px; left: 9px; top: 12px; }
+.brandmark::after { content: ""; position: absolute; width: 10px; height: 2px; background: white; left: 13px; top: 9px; border-radius: 2px; }
+.nav-links { display: flex; align-items: center; gap: 30px; }
+.language { font-size: 13px; color: #515564; }
+.pill { display: inline-flex; align-items: center; justify-content: center; gap: 12px; background: var(--blue); color: white; border-radius: 99px; padding: 17px 25px; font-size: 14px; font-weight: 650; }
+.nav-cta { padding: 13px 21px; font-size: 12px; }
+.play-icon { width: 19px; height: 22px; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%); flex: 0 0 auto; }
+.hero { display: grid; grid-template-columns: 1.08fr 1fr; align-items: center; min-height: 752px; padding: 30px 0 72px; gap: 35px; }
+.eyebrow { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 750; letter-spacing: 1.7px; text-transform: uppercase; }
+.status-dot { width: 7px; height: 7px; background: var(--blue); border-radius: 50%; }
+h1 { font-size: 88px; line-height: 1.01; letter-spacing: -5.8px; font-weight: 800; margin: 27px 0 25px; }
+h1 span { color: var(--blue); }
+.hero-copy > p { max-width: 445px; font-size: 19px; line-height: 1.65; color: #626777; margin: 0 0 31px; letter-spacing: -.3px; }
+.hero-copy > p strong { color: var(--ink); font-weight: 550; }
+.hero-cta { font-size: 15px; padding: 19px 27px; box-shadow: 0 6px 15px #2b3fd619; }
+.trust { font-size: 11px; color: var(--muted); margin-top: 16px; padding-left: 9px; letter-spacing: .25px; }
+.trust span { padding: 0 8px; color: #a1a5b2; }
+.hero-art { height: 650px; position: relative; display: flex; justify-content: center; align-items: center; }
+.orbit { position: absolute; width: 516px; height: 516px; border-radius: 50%; background: #e8eafa; }
+.orbit::after { content: ""; position: absolute; inset: -22px; border: 1px solid #e4e6f1; border-radius: 50%; }
+.phone { position: relative; width: 280px; padding: 8px; background: #111420; border: 1px solid #454957; border-radius: 40px; box-shadow: 0 26px 45px #11183220, 0 5px 9px #11183217; flex: 0 0 auto; }
+.phone::before { content: ""; position: absolute; width: 4px; height: 48px; border-radius: 3px 0 0 3px; background: #222634; left: -4px; top: 108px; }
+.phone::after { content: ""; position: absolute; width: 66px; height: 5px; background: #ffffff55; bottom: 17px; left: calc(50% - 33px); border-radius: 9px; }
+.screen { aspect-ratio: 1206 / 2343; border-radius: 32px; overflow: hidden; background: linear-gradient(155deg, #1c223d 0%, #121729 60%, #0b0d14 100%); color: white; display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; padding: 0; }
+.camera { position: absolute; width: 9px; height: 9px; top: 15px; left: calc(50% - 4.5px); background: #080a11; border: 2px solid #282d40; border-radius: 50%; }
+.screen-label { font-size: 25px; line-height: 1.2; font-weight: 750; letter-spacing: -.85px; margin: 0; max-width: 225px; }
+.screen-rule { width: 26px; height: 3px; background: #7785ff; border-radius: 5px; margin: 19px 0 24px; }
+.placeholder { flex: 1; width: 100%; border: 1px dashed #ffffff26; border-radius: 18px; background: #ffffff03; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; }
+.placeholder-caption { font-size: 8px; text-transform: uppercase; letter-spacing: 1.7px; color: #8b92aa; margin-top: 21px; }
+.placeholder-detail { font-size: 12px; color: #b8bfd4; line-height: 1.7; margin-top: 18px; }
+.outline-icon { width: 38px; height: 33px; border: 1.5px solid #8791b1; border-radius: 7px; position: relative; }
+.outline-icon::before { content: ""; position: absolute; left: 10px; top: 8px; width: 14px; height: 2px; background: #8791b1; border-radius: 3px; }
+.hero-phone { width: 296px; transform: rotate(5deg); z-index: 1; }
+.hero-phone .screen { padding-top: 0; }
+.found-card { position: absolute; z-index: 2; left: -10px; bottom: 113px; width: 250px; padding: 17px 19px; background: #fff; border-radius: 18px; border: 1px solid var(--border); box-shadow: 0 14px 35px #1c223d12; transform: rotate(-4deg); }
+.found-top { display: flex; align-items: center; gap: 8px; font-size: 9px; font-weight: 750; color: var(--blue); text-transform: uppercase; letter-spacing: 1.4px; margin-bottom: 11px; }
+.check { width: 17px; height: 17px; border-radius: 50%; background: #edf0ff; display: grid; place-items: center; font-size: 11px; }
+.found-name { font-size: 16px; font-weight: 750; letter-spacing: -.4px; }
+.found-path { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.memory-note { position: absolute; right: -6px; top: 89px; z-index: 2; background: var(--cream); color: #785014; padding: 13px 18px; border-radius: 10px; transform: rotate(9deg); font-size: 12px; font-weight: 600; line-height: 1.5; box-shadow: 0 8px 20px #8b652510; }
+.manifesto { background: var(--cream); border: 1px solid #f0e5c9; border-radius: 24px; padding: 43px 48px; display: grid; grid-template-columns: 1fr 1.48fr; gap: 65px; position: relative; }
+.manifesto .eyebrow { color: #90621c; margin-bottom: 14px; }
+.manifesto h2 { font-size: 32px; line-height: 1.14; letter-spacing: -1.3px; margin: 0; }
+.manifesto p { font-size: 18px; line-height: 1.75; letter-spacing: -.3px; margin: 0; color: #6a604c; }
+.manifesto p strong { color: #332c20; font-weight: 650; }
+.section { padding-top: 104px; }
+.section-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 37px; }
+.kicker { font-size: 10px; letter-spacing: 1.9px; font-weight: 750; color: var(--blue); text-transform: uppercase; margin-bottom: 13px; }
+h2 { margin: 0; font-size: 43px; line-height: 1.13; letter-spacing: -1.9px; font-weight: 800; }
+.section-aside { font-size: 14px; color: var(--muted); margin: 0 0 4px; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.step { padding: 27px 28px 30px; background: #fff; border: 1px solid var(--border); border-radius: 20px; }
+.step-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 29px; }
+.step-icon { width: 44px; height: 44px; background: #eef0ff; color: var(--blue); border-radius: 13px; display: grid; place-items: center; }
+.step-number { font-size: 11px; color: #a0a5b6; font-weight: 650; }
+.camera-icon { width: 23px; height: 17px; border: 1.7px solid currentColor; border-radius: 4px; position: relative; }
+.camera-icon::before { content: ""; position: absolute; width: 7px; height: 7px; border: 1.5px solid currentColor; border-radius: 50%; top: 3px; left: 6px; }
+.camera-icon::after { content: ""; position: absolute; width: 9px; height: 4px; border: 1.5px solid currentColor; border-bottom: 0; top: -5px; left: 5px; border-radius: 3px 3px 0 0; }
+.search-icon { width: 17px; height: 17px; border: 1.8px solid currentColor; border-radius: 50%; position: relative; margin: -4px 0 0 -4px; }
+.search-icon::after { content: ""; position: absolute; width: 9px; height: 2px; background: currentColor; transform: rotate(45deg); right: -7px; bottom: -4px; border-radius: 2px; }
+.location-icon { width: 17px; height: 21px; border: 1.8px solid currentColor; border-radius: 12px 12px 12px 0; transform: rotate(-45deg); position: relative; margin-top: -4px; }
+.location-icon::after { content: ""; position: absolute; width: 5px; height: 5px; border: 1.5px solid currentColor; border-radius: 50%; left: 4px; top: 5px; }
+.step h3 { font-size: 19px; letter-spacing: -.55px; margin: 0 0 10px; }
+.step p { font-size: 13px; color: var(--muted); line-height: 1.6; margin: 0; }
+.features { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.feature { background: white; border: 1px solid var(--border); border-radius: 24px; overflow: hidden; }
+.feature-copy { padding: 32px 34px 26px; }
+.feature-index { font-size: 9px; font-weight: 750; letter-spacing: 1.6px; text-transform: uppercase; color: var(--blue); margin-bottom: 12px; }
+.feature h3 { font-size: 26px; font-weight: 750; letter-spacing: -1px; margin: 0 0 10px; }
+.feature p { font-size: 14px; color: var(--muted); line-height: 1.6; margin: 0; }
+.feature-stage { margin: 0 16px 16px; height: 466px; border-radius: 16px; background: #eef0f9; display: flex; align-items: flex-start; justify-content: center; padding-top: 27px; overflow: hidden; position: relative; }
+.feature-stage::before { content: ""; position: absolute; width: 365px; height: 365px; border: 1px solid #dde1f1; border-radius: 50%; top: 70px; }
+.feature-stage .phone { width: 246px; border-radius: 40px; }
+.feature-stage .screen { padding: 0; }
+.feature-stage .screen-label { font-size: 22px; }
+.feature-stage .placeholder-detail { font-size: 11px; }
+.feature:nth-child(2) .feature-stage { background: #f1efe9; }
+.feature:nth-child(2) .feature-stage::before { border-color: #e4dfd3; }
+.feature:nth-child(3) .feature-stage { background: #edf2ee; }
+.feature:nth-child(3) .feature-stage::before { border-color: #dce5dd; }
+.feature:nth-child(4) .feature-stage { background: #f1edf6; }
+.feature:nth-child(4) .feature-stage::before { border-color: #e3dced; }
+.extras { display: flex; align-items: center; justify-content: center; gap: 28px; padding: 28px 0 0; color: #737989; font-size: 12px; }
+.extras span { display: inline-flex; align-items: center; gap: 8px; }
+.mini-dot { width: 5px; height: 5px; background: #9da7de; border-radius: 50%; }
+.family { margin-top: 100px; background: var(--blue); border-radius: 28px; color: white; padding: 58px 55px; display: grid; grid-template-columns: 1.4fr 1fr; align-items: center; gap: 65px; overflow: hidden; position: relative; }
+.family .kicker { color: #c3caff; }
+.family h2 { font-size: 42px; letter-spacing: -1.8px; line-height: 1.12; }
+.family p { font-size: 14px; color: #d9deff; line-height: 1.7; max-width: 415px; margin: 21px 0 0; }
+.invite { background: white; border: 1px solid #ffffff55; border-radius: 20px; padding: 24px; color: var(--ink); box-shadow: 0 18px 35px #11207840; transform: rotate(3deg); }
+.invite-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.invite-title { font-size: 13px; font-weight: 750; }
+.avatars { display: flex; padding-left: 5px; }
+.avatar { width: 29px; height: 29px; border: 2px solid white; border-radius: 50%; background: #eee9db; margin-left: -6px; display: grid; place-items: center; font-size: 9px; font-weight: 750; color: #796646; }
+.avatar:nth-child(2) { background: #e7eafa; color: #5362a0; }
+.avatar:nth-child(3) { background: #e6efe8; color: #4f795b; }
+.code-label { color: var(--muted); font-size: 10px; }
+.code { margin-top: 9px; background: #f4f5fa; border: 1px dashed #d9dce8; border-radius: 12px; padding: 17px 10px; font-size: 29px; letter-spacing: 8px; text-align: center; font-weight: 750; color: var(--blue); }
+.invite-note { margin-top: 12px; font-size: 10px; color: var(--muted); text-align: center; }
+.faq { display: grid; grid-template-columns: .8fr 1.2fr; gap: 65px; padding: 100px 0 95px; }
+.faq h2 { font-size: 38px; }
+.faq-intro { font-size: 14px; color: var(--muted); line-height: 1.7; margin-top: 18px; }
+.faq-list { border-top: 1px solid #dfe2ed; }
+.faq-row { min-height: 77px; border-bottom: 1px solid #dfe2ed; display: flex; justify-content: space-between; align-items: center; gap: 20px; font-size: 15px; font-weight: 600; }
+.plus { width: 25px; height: 25px; border-radius: 50%; border: 1px solid #dfe2ed; position: relative; flex: 0 0 auto; }
+.plus::before, .plus::after { content: ""; position: absolute; width: 9px; height: 1px; background: #72798b; left: 7px; top: 11px; }
+.plus::after { transform: rotate(90deg); }
+footer { border-top: 1px solid var(--border); padding: 33px 0 38px; }
+.footer-top { display: flex; align-items: center; justify-content: space-between; }
+footer .brand { font-size: 24px; gap: 9px; }
+footer .brandmark { transform: scale(.83); transform-origin: left center; margin-right: -5px; }
+.footer-links { display: flex; align-items: center; gap: 27px; font-size: 12px; color: #5f6678; }
+.footer-play { font-weight: 650; color: var(--blue); }
+.footer-bottom { display: flex; justify-content: space-between; margin-top: 23px; font-size: 10px; color: #9399a7; }
+@media (max-width: 720px) {
+  .wrap { width: calc(100% - 40px); }
+  nav { height: 82px; }
+  .brand { font-size: 25px; }
+  .nav-links { gap: 14px; }
+  .language { font-size: 11px; }
+  .nav-cta { font-size: 10px; padding: 11px 13px; }
+  .hero { grid-template-columns: 1fr; padding: 37px 0 45px; gap: 25px; }
+  h1 { font-size: 64px; letter-spacing: -4px; margin-top: 23px; }
+  .hero-copy > p { font-size: 17px; max-width: 350px; }
+  .hero-art { height: 570px; }
+  .orbit { width: 310px; height: 310px; }
+  .hero-phone { width: 262px; }
+  .found-card { width: 221px; left: -3px; bottom: 45px; }
+  .memory-note { right: 0; top: 45px; font-size: 10px; padding: 10px 12px; }
+  .manifesto { grid-template-columns: 1fr; padding: 29px 25px; gap: 22px; }
+  .manifesto h2 { font-size: 29px; }
+  .manifesto p { font-size: 16px; }
+  .manifesto p br { display: none; }
+  .section { padding-top: 64px; }
+  h2 { font-size: 35px; letter-spacing: -1.5px; }
+  .section-head { display: block; margin-bottom: 25px; }
+  .section-aside { margin-top: 15px; font-size: 13px; }
+  .steps { grid-template-columns: 1fr; gap: 12px; }
+  .step { padding: 22px 25px; }
+  .step-top { margin-bottom: 17px; }
+  .features { grid-template-columns: 1fr; gap: 19px; }
+  .feature-copy { padding: 27px 25px 23px; }
+  .feature h3 { font-size: 24px; }
+  .feature-stage { height: 451px; margin: 0 12px 12px; }
+  .extras { flex-direction: column; gap: 13px; align-items: flex-start; padding-left: 10px; }
+  .family { margin-top: 61px; grid-template-columns: 1fr; padding: 34px 26px; gap: 32px; border-radius: 24px; }
+  .family h2 { font-size: 34px; }
+  .invite { transform: rotate(2deg); padding: 21px; }
+  .faq { grid-template-columns: 1fr; padding: 65px 0; gap: 25px; }
+  .faq h2 { font-size: 34px; }
+  .faq-row { font-size: 13px; min-height: 74px; }
+  .footer-top { align-items: flex-start; gap: 26px; flex-direction: column; }
+  .footer-links { flex-wrap: wrap; gap: 18px; font-size: 11px; }
+  .footer-bottom { flex-direction: column; gap: 9px; line-height: 1.5; }
+}
+.screen img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.faq-list details { border-top: 1px solid var(--border); }
+.faq-list details:last-child { border-bottom: 1px solid var(--border); }
+.faq-list summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 22px 0; font-weight: 600; font-size: 17px; }
+.faq-list summary::-webkit-details-marker { display: none; }
+.faq-list summary::after { content: "+"; color: var(--muted); font-size: 22px; font-weight: 300; }
+.faq-list details[open] summary::after { content: "–"; }
+.faq-list details p { margin: 0 0 22px; color: var(--muted); line-height: 1.6; max-width: 560px; }
+
+html[lang="ko"] h1 { letter-spacing: -3px; }
+html[lang="ko"] h2 { letter-spacing: -1.2px; }
+html[lang="ko"] .eyebrow, html[lang="ko"] .kicker, html[lang="ko"] .feature-index { letter-spacing: .6px; }
+
 </style>
 </head>
 <body>
 <div class="wrap">
-  <a class="lang" href="../" hreflang="en">English</a>
-  <section class="hero">
-    <div>
-      <p class="lead">어디뒀지 · Android</p>
-      <h1>그거 어디 뒀더라?</h1>
-      <p class="lead">어디뒀지는 물건을 어느 방, 어느 박스에 넣었는지 기억해 줍니다. 사진 한 장 찍고 이름만 적으면, 나중에 검색 한 번으로 찾습니다. 가족이 같은 집을 함께 씁니다.</p>
-      <p><a class="cta" href="https://play.google.com/store/apps/details?id=net.jangstar.stow">Google Play에서 받기</a></p>
-      <p class="sub">무료 · 광고 없음 · 분석 추적기 없음</p>
+  <nav aria-label="주 메뉴">
+    <a class="brand" href="./" aria-label="어디뒀지 홈"><span class="brandmark"></span>어디뒀지</a>
+    <div class="nav-links">
+      <a class="language" href="../" hreflang="en" lang="en">English</a>
+      <a class="pill nav-cta" href="https://play.google.com/store/apps/details?id=net.jangstar.stow">Google Play에서 받기</a>
     </div>
-    <img src="../site/01.png" alt="어디뒀지 앱: 물건을 검색해 어느 방 어느 박스에 있는지 보는 화면" width="540" height="960" style="width:100%;height:auto;border-radius:16px;" />
-  </section>
+  </nav>
 
-  <h2>정리 앱이 아닙니다</h2>
-  <p>겨울옷, 캠핑 장비, 아이가 크면서 안 쓰는 장난감, 여분 케이블. 둘 자리는 이미 잘 정했습니다. 문제는 여섯 달 뒤에 그 자리를 기억하는 일입니다. 어디뒀지는 집의 기억이지, 정리하라는 할 일 목록이 아닙니다.</p>
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="status-dot"></span>Android · 무료</div>
+        <h1>그거 어디<br>뒀<span>더라?</span></h1>
+        <p>어디뒀지는 정리 앱이 아닙니다.<br><strong>집의 기억입니다.</strong></p>
+        <a class="pill hero-cta" href="https://play.google.com/store/apps/details?id=net.jangstar.stow"><span class="play-icon"></span>Google Play에서 받기</a>
+        <div class="trust">무료<span>·</span>광고 없음<span>·</span>추적기 없음</div>
+      </div>
+      <div class="hero-art">
+        <div class="orbit"></div>
+        <div class="memory-note">머릿속에 넣어 둘<br>자리는 이미 없어요.</div>
+        <div class="phone hero-phone"><div class="screen"><img src="../site/ko/01.png" alt="어디뒀지 검색 결과: 겨울 이불 — 안방 › 옷장 위 칸" width="540" height="1049" /></div></div>
+        <div class="found-card">
+          <div class="found-top"><span class="check">✓</span>여기 있네</div>
+          <div class="found-name">겨울 이불</div>
+          <div class="found-path">안방 &nbsp;›&nbsp; 옷장 위 칸</div>
+        </div>
+      </div>
+    </section>
 
-  <h2>이렇게 씁니다</h2>
-  <div class="steps">
-    <div class="box"><b>1. 찍고 이름 적기</b>넣으면서 사진 한 장, 이름 하나. 10초.</div>
-    <div class="box"><b>2. 장소와 박스 고르기</b>장소(안방, 창고, 사무실) 안에 박스, 박스 안에 물건. 이게 전부입니다.</div>
-    <div class="box"><b>3. 나중에 검색</b>이름 일부만 쳐도, 초성만 쳐도 사진과 정확한 위치가 나옵니다.</div>
-    <div class="box"><b>4. 박스 스캔</b>QR 라벨을 A4 한 장에 21개씩 인쇄해 붙이면, 스캔 한 번에 내용물이 열립니다.</div>
-  </div>
+    <section class="manifesto" id="not-an-organizing-app">
+      <div>
+        <div class="eyebrow">덜 뒤지고, 더 살기</div>
+        <h2>사는 집이지,<br>유지해야 할 시스템이 아닙니다.</h2>
+      </div>
+      <p>
+        같은 모양 수납함도, 라벨기도 필요 없습니다.<br>
+        "정리 잘하는 사람"이 될 필요도 없습니다.<br>
+        <strong>지금 넣던 대로 넣으세요. 어디 뒀는지는 어디뒀지가 기억합니다.</strong><br>
+        잡동사니 서랍도 환영합니다.
+      </p>
+    </section>
 
-  <div class="shots">
-    <img src="../site/02.png" alt="물건 상세 — 사진, 위치 경로, 수량" loading="lazy" />
-    <img src="../site/03.png" alt="박스 상세 — 박스 안에 든 물건 목록" loading="lazy" />
-    <img src="../site/04.png" alt="보관 장소 목록 — 박스와 물건 개수" loading="lazy" />
-    <img src="../site/05.png" alt="가족 화면 — 초대 코드" loading="lazy" />
-  </div>
+    <section class="section" id="how-it-works">
+      <div class="section-head">
+        <div><div class="kicker">이렇게 씁니다</div><h2>넣어 두고, 다시 찾고.</h2></div>
+        <p class="section-aside">작은 습관 하나. "혹시 그거 본 사람?"은 훨씬 줄어듭니다.</p>
+      </div>
+      <div class="steps">
+        <article class="step">
+          <div class="step-top"><span class="step-icon"><span class="camera-icon"></span></span><span class="step-number">01</span></div>
+          <h3>넣으면서 사진 한 장.</h3>
+          <p>사진, 이름, 어디에 넣는지. 10초면 됩니다.</p>
+        </article>
+        <article class="step">
+          <div class="step-top"><span class="step-icon"><span class="search-icon"></span></span><span class="step-number">02</span></div>
+          <h3>필요할 때 이름만 검색.</h3>
+          <p>"겨울 이불" 이라고 치면 끝. 초성만 쳐도 찾아집니다.</p>
+        </article>
+        <article class="step">
+          <div class="step-top"><span class="step-icon"><span class="location-icon"></span></span><span class="step-number">03</span></div>
+          <h3>바로 그 박스로.</h3>
+          <p>어느 방, 어느 박스인지 알려줍니다.</p>
+        </article>
+      </div>
+    </section>
 
-  <h2>가족을 위해 만들었습니다</h2>
-  <p>초대 코드 하나로 가족이 같은 집에 들어옵니다. 같은 박스를 보고, 바뀐 기록이 남고, 사무실이나 본가는 따로 공간을 만들어 관리합니다. 소비기한을 넣어 두면 만료 전에 알려 주고, 지운 것은 30일 동안 휴지통에 남습니다.</p>
+    <section class="section" id="features">
+      <div class="section-head">
+        <div><div class="kicker">작은 기억, 집 안 어디에나</div><h2>언젠가는 꼭 필요한<br>그 물건들을 위해.</h2></div>
+        <p class="section-aside">여분 케이블부터 잘 드는 가위까지.</p>
+      </div>
+      <div class="features">
+        <article class="feature">
+          <div class="feature-copy">
+            <div class="feature-index">01 / 작은 것까지 기억</div>
+            <h3>넣을 때 사진 한 장</h3>
+            <p>사진, 위치, 수량. 나중의 내가 고마워합니다.</p>
+          </div>
+          <div class="feature-stage"><div class="phone"><div class="screen"><img src="../site/ko/02.png" alt="물건 상세: 사진, 위치 경로 안방 › 옷장 위 칸, 수량" width="540" height="1049" loading="lazy" /></div></div></div>
+        </article>
+        <article class="feature">
+          <div class="feature-copy">
+            <div class="feature-index">02 / 열지 않고 들여다보기</div>
+            <h3>박스는 열지 말고 스캔</h3>
+            <p>박스마다 QR 라벨이 붙습니다. 스캔하면 안에 든 것이 다 보입니다.</p>
+          </div>
+          <div class="feature-stage"><div class="phone"><div class="screen"><img src="../site/ko/03.png" alt="박스 상세: 박스 안에 든 물건 목록" width="540" height="1049" loading="lazy" /></div></div></div>
+        </article>
+        <article class="feature">
+          <div class="feature-copy">
+            <div class="feature-index">03 / 모든 장소에 자리를</div>
+            <h3>우리 집 구조 그대로</h3>
+            <p>장소 → 박스 → 물건. 실제 집이 그런 것처럼요.</p>
+          </div>
+          <div class="feature-stage"><div class="phone"><div class="screen"><img src="../site/ko/04.png" alt="보관 장소 목록: 박스 수와 물건 수" width="540" height="1049" loading="lazy" /></div></div></div>
+        </article>
+        <article class="feature">
+          <div class="feature-copy">
+            <div class="feature-index">04 / 모두가 같은 답을</div>
+            <h3>가족이 같은 집을 봅니다</h3>
+            <p>초대 코드를 알려 주세요. 각자 자기 물건을 찾습니다.</p>
+          </div>
+          <div class="feature-stage"><div class="phone"><div class="screen"><img src="../site/ko/05.png" alt="가족 화면: 구성원과 초대 코드" width="540" height="1049" loading="lazy" /></div></div></div>
+        </article>
+      </div>
+      <div class="extras">
+        <span><i class="mini-dot"></i>소비기한이 오기 전에 알림</span>
+        <span><i class="mini-dot"></i>다 떨어지면 살 것 목록으로</span>
+        <span><i class="mini-dot"></i>실수로 지웠다면 30일 안에 복구</span>
+      </div>
+    </section>
 
-  <h2>자주 묻는 질문</h2>
-  <details><summary>무료인가요?</summary><p>네. 광고도, 구독도, 분석 추적기도 없습니다. 사진은 가족 공간에서만 볼 수 있게 저장됩니다.</p></details>
-  <details><summary>인터넷 없이도 되나요?</summary><p>마지막 목록은 오프라인에서도 검색됩니다. 등록은 연결이 필요하고, 오프라인에서 찍은 사진은 나중에 자동으로 올라갑니다.</p></details>
-  <details><summary>창고·사무실에도 쓸 수 있나요?</summary><p>네. "공간"은 집·사무실·창고 무엇이든 됩니다. 공간마다 장소·박스·구성원이 따로입니다.</p></details>
-  <details><summary>아이폰 버전은요?</summary><p>아직 없습니다. 지금은 Android이고 iOS는 준비 중입니다.</p></details>
+    <section class="family" id="family">
+      <div>
+        <div class="kicker">함께 사는 집, 함께 쓰는 기억</div>
+        <h2>내가 집안의 검색 엔진일<br>필요는 없잖아요.</h2>
+        <p>초대 코드 하나면 모두가 같은 집에 들어옵니다.<br>사무실이나 창고는 별도 공간으로 나눌 수 있습니다.</p>
+      </div>
+      <div class="invite">
+        <div class="invite-header">
+          <span class="invite-title">우리 집</span>
+          <div class="avatars"><span class="avatar">김</span><span class="avatar">이</span><span class="avatar">박</span></div>
+        </div>
+        <div class="code-label">코드 하나로 모두 초대</div>
+        <div class="code">STOW24</div>
+        <div class="invite-note">초대 코드 예시 · 같은 집, 같은 답</div>
+      </div>
+    </section>
 
-  <h2>문서</h2>
-  <ul>
-    <li><a href="../privacy/">개인정보처리방침</a> · <a href="../privacy/en/">Privacy Policy (English)</a></li>
-    <li><a href="../delete-account/">계정 및 데이터 삭제</a> · <a href="../delete-account/en/">Delete your account (English)</a></li>
-  </ul>
+    <section class="faq" id="faq">
+      <div>
+        <div class="kicker">자주 묻는 질문</div>
+        <h2>알아 두면<br>좋은 것들.</h2>
+        <p class="faq-intro">이 탭을 어디 뒀는지 잊기 전에.</p>
+      </div>
+      <div class="faq-list">
+        <details><summary>정말 무료인가요?</summary><p>네. 광고도, 구독도, 분석 추적기도 없습니다. 사진과 목록은 같은 공간의 구성원에게만 보입니다.</p></details>
+        <details><summary>집 안 물건을 전부 등록해야 하나요?</summary><p>아니요. 실제로 자주 잃어버리는 것부터 시작하세요. 계절 옷, 케이블, 서류, 약. 넣을 때마다 하나씩 더하면 됩니다.</p></details>
+        <details><summary>가족과 같이 쓸 수 있나요?</summary><p>네. 초대 코드 하나면 가족이 같은 집에 들어옵니다. 누가 무엇을 옮겼는지 기록이 남습니다.</p></details>
+        <details><summary>QR 라벨이 꼭 필요한가요?</summary><p>아니요. 검색만으로도 충분합니다. 라벨은 선택입니다. A4 한 장에 21개를 인쇄해 박스에 붙이면, 스캔하는 순간 그 박스의 내용물이 열립니다.</p></details>
+        <details><summary>아이폰 버전은요?</summary><p>아직 없습니다. 지금은 Android 만 있고, iOS 는 준비 중입니다.</p></details>
+      </div>
+    </section>
+  </main>
 
-  <h2>문의</h2>
-  <p><a href="mailto:jkinject@gmail.com">jkinject@gmail.com</a></p>
-
-  <footer>어디뒀지 (Stow) — <a href="https://play.google.com/store/apps/details?id=net.jangstar.stow">Google Play</a></footer>
+  <footer>
+    <div class="footer-top">
+      <a class="brand" href="./"><span class="brandmark"></span>어디뒀지</a>
+      <div class="footer-links">
+        <a href="../privacy/">개인정보처리방침</a>
+        <a href="../delete-account/">계정 삭제</a>
+        <a href="mailto:jkinject@gmail.com">문의</a>
+        <a class="footer-play" href="https://play.google.com/store/apps/details?id=net.jangstar.stow">Google Play ↗</a>
+      </div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 어디뒀지 · Stow. 집의 기억.</span><span>"어디 있지?"는 줄이고, "찾았다!"는 늘리고.</span></div>
+  </footer>
 </div>
 </body>
 </html>
