@@ -63,15 +63,31 @@ export default function Labels() {
       );
   }
 
+  /**
+   * 사용자가 인쇄 대화상자를 닫은 것은 오류가 아니다.
+   * expo-print 는 iOS 에서 취소를 `PrintIncompleteException`("Printing did not complete",
+   * code ERR_PRINT_INCOMPLETE) 로 reject 한다 — 메시지에 cancel 이 없어서 문구만 보고
+   * 거르면 "라벨을 만들지 못했어요" 경고가 떠 사용자를 겁준다. code 를 먼저 보고,
+   * 공유 시트 닫기(cancel/dismiss) 문구도 같이 거른다.
+   */
+  function isPrintCancelled(e: unknown): boolean {
+    const code = (e as { code?: unknown } | null)?.code;
+    if (code === 'ERR_PRINT_INCOMPLETE') return true;
+    const msg = e instanceof Error ? e.message : String(e);
+    return /Printing did not complete|cancel|dismiss/i.test(msg);
+  }
+
   async function run(mode: 'print' | 'share') {
     if (busy || count === 0) return;
     setBusy(true);
     try {
       const html = buildLabelSheetHtml(buildLabels());
+      // 용지 크기를 명시하지 않으면 두 경로 모두 US Letter(792pt) 로 렌더링한다.
+      // A4 시트(842pt)가 한 장에 못 들어가 인쇄 미리보기에 빈 2페이지가 딸려 나오고,
+      // PDF 는 오른쪽 열·아래 행이 잘린다.
       if (mode === 'print') {
-        await Print.printAsync({ html });
+        await Print.printAsync({ html, ...A4_PT });
       } else {
-        // 용지 크기를 명시하지 않으면 US Letter 로 나와 A4 레이아웃이 잘린다
         const { uri } = await Print.printToFileAsync({ html, ...A4_PT });
         if (await Sharing.isAvailableAsync()) {
           await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' });
@@ -80,10 +96,8 @@ export default function Labels() {
         }
       }
     } catch (e) {
-      // 인쇄 대화상자를 사용자가 닫은 것도 여기로 온다 — 오류로 겁주지 않는다
-      const msg = e instanceof Error ? e.message : String(e);
-      if (!/cancel|dismiss/i.test(msg)) {
-        Alert.alert(t.labels.failed, msg);
+      if (!isPrintCancelled(e)) {
+        Alert.alert(t.labels.failed, e instanceof Error ? e.message : String(e));
       }
     } finally {
       setBusy(false);

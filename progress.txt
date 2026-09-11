@@ -659,3 +659,13 @@ dev 빌드에서 화면이 죽기 때문**이었다. 지금은 릴리스 APK 를
   ⚠ `--force` 는 프로젝트를 새로 만드는 게 아니라 **app.json 의 slug 를 기존 프로젝트에 맞춰 덮어쓴다**(home-store 로 바뀌었었다).
     projectId 를 지우고 다시 init 해야 새로 만든다. 옛 프로젝트(home-store)는 지우지 않았다 — 심사 중 1.1.0 이 그 주소를 본다.
 - 1.1.1 (versionCode 3) — 심사 중인 1.1.0 을 이 빌드로 교체 제출. 앞으로 JS 변경은 `eas update --branch production` 으로.
+
+## 2026-09-12 — 라벨 인쇄: 취소를 오류로 띄우던 것, 미리보기에 빈 2페이지가 딸리던 것
+- 취소: iOS 인쇄 대화상자를 닫으면 expo-print 가 `PrintIncompleteException`("Printing did not complete", code
+  ERR_PRINT_INCOMPLETE) 로 reject 한다. 기존 catch 는 문구에 cancel|dismiss 가 있을 때만 걸렀으므로 "라벨을 만들지
+  못했어요" 경고가 떴다. → `isPrintCancelled` 로 code 를 먼저 보고, 문구(Printing did not complete·cancel·dismiss)도 같이
+  거른다. 진짜 실패(렌더링 실패·프린터 오류)는 그대로 경고.
+- 빈 2페이지: `buildLabelSheetHtml` 의 페이지 나눔은 문제없었다(`.page:last-child { page-break-after: auto }` 이미 있음,
+  테스트 16개 통과). 원인은 `printAsync({ html })` 이 용지 크기를 안 받으면 **US Letter(612×792pt)** 로 렌더링하는 것 —
+  A4 시트 높이 842pt 가 넘쳐 2페이지로 갈라졌다. 공유(PDF) 경로만 `A4_PT` 를 넘기고 있었다. → 인쇄 경로에도 `A4_PT` 를 넘긴다.
+  (expo-print 의 PrintOptions.width/height 기본값이 Letter 인 것은 두 경로 공통.)
