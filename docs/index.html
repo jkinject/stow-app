@@ -1,31 +1,109 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>어디뒀지 (Stow)</title>
+<title>Stow – Find what you put away | Home item finder app for Android</title>
+<meta name="description" content="Where did I put that? Stow remembers which room and which box you put things in. Snap a photo, type a name, find it in one search. Free on Google Play." />
+<link rel="canonical" href="https://jkinject.github.io/stow-app/" />
+<link rel="alternate" hreflang="en" href="https://jkinject.github.io/stow-app/" />
+<link rel="alternate" hreflang="ko" href="https://jkinject.github.io/stow-app/ko/" />
+<link rel="alternate" hreflang="x-default" href="https://jkinject.github.io/stow-app/" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Stow – Find what you put away" />
+<meta property="og:description" content="Snap a photo when you stow it, then find it by name. Boxes, QR labels, and the whole family in one home." />
+<meta property="og:url" content="https://jkinject.github.io/stow-app/" />
+<meta property="og:image" content="https://jkinject.github.io/stow-app/store/feature-graphic-1024x500.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="./store/icon-512.png" />
 <link rel="stylesheet" href="./_shared.css" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Stow",
+  "alternateName": "어디뒀지",
+  "operatingSystem": "Android",
+  "applicationCategory": "LifestyleApplication",
+  "description": "Stow remembers which room and which box you put things in. Snap a photo, type a name, find it in one search. QR labels for boxes, shared with your family.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "installUrl": "https://play.google.com/store/apps/details?id=net.jangstar.stow",
+  "url": "https://jkinject.github.io/stow-app/",
+  "image": "https://jkinject.github.io/stow-app/store/icon-512.png",
+  "inLanguage": ["en", "ko", "ja", "de", "fr", "es"]
+}
+</script>
+<style>
+  .hero { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: center; }
+  .hero h1 { font-size: 38px; line-height: 1.2; margin: 0; }
+  .hero .lead { font-size: 18px; color: var(--muted); margin: 0; }
+  .cta { display: inline-flex; align-items: center; gap: 10px; background: var(--accent); color: #fff; text-decoration: none; padding: 14px 22px; border-radius: 999px; font-weight: 700; }
+  .cta:hover { opacity: .9; }
+  .sub { color: var(--faint); font-size: 14px; }
+  .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 20px 0; }
+  .shots img { width: 100%; border-radius: 12px; border: 1px solid var(--line); }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .steps .box { margin: 0; }
+  .steps b { display: block; color: var(--text); margin-bottom: 4px; }
+  details { border-bottom: 1px solid var(--line); padding: 10px 0; }
+  summary { cursor: pointer; font-weight: 700; color: var(--text); }
+  details p { margin: 8px 0 0; }
+  .lang { float: right; font-size: 14px; }
+  @media (min-width: 640px) { .hero { grid-template-columns: 1.2fr 1fr; } }
+</style>
 </head>
 <body>
 <div class="wrap">
-  <h1>어디뒀지 <span class="tag">Stow</span></h1>
-  <p class="lead">집 안 물건이 어디 있는지 찾아주는 앱</p>
+  <a class="lang" href="./ko/" hreflang="ko">한국어</a>
+  <section class="hero">
+    <div>
+      <p class="lead">Stow · Android</p>
+      <h1>Where did I put that?</h1>
+      <p class="lead">Stow remembers which room and which box you put things in. Snap a photo, type a name, and find it in one search — with your whole family.</p>
+      <p><a class="cta" href="https://play.google.com/store/apps/details?id=net.jangstar.stow">Get it on Google Play</a></p>
+      <p class="sub">Free · No ads · No analytics trackers</p>
+    </div>
+    <img src="./site/01.png" alt="Stow app: searching for an item and seeing which room and box it is in" width="540" height="960" style="width:100%;height:auto;border-radius:16px;" />
+  </section>
 
-  <div class="box">
-    <p>물건을 사진 찍어 어느 방, 어느 박스에 뒀는지 기록해 두면,
-       나중에 이름만으로 바로 찾을 수 있습니다. 가족이 같은 집을 함께 씁니다.</p>
+  <h2>Not an organizing app</h2>
+  <p>You already have a sensible place for the winter coats, the camping gear, the kids' old toys and the spare cables. The problem is remembering it six months later. Stow is a memory for your house, not a to-do list for tidying it.</p>
+
+  <h2>How it works</h2>
+  <div class="steps">
+    <div class="box"><b>1. Snap and name</b>Take a photo as you put something away and type its name. Ten seconds.</div>
+    <div class="box"><b>2. Pick the place and box</b>Places (bedroom, garage, storage unit) hold boxes. Boxes hold things. That's the whole model.</div>
+    <div class="box"><b>3. Search later</b>Type part of the name. Stow shows the photo and the exact place and box.</div>
+    <div class="box"><b>4. Scan the box</b>Print QR labels, 21 per A4 sheet. Scan one and its contents open instantly.</div>
   </div>
 
-  <h2>문서</h2>
+  <div class="shots">
+    <img src="./site/02.png" alt="Item detail showing the item's photo, location path and quantity" loading="lazy" />
+    <img src="./site/03.png" alt="Box detail listing everything inside the box" loading="lazy" />
+    <img src="./site/04.png" alt="Places list with boxes and item counts" loading="lazy" />
+    <img src="./site/05.png" alt="Family screen with a shared invite code" loading="lazy" />
+  </div>
+
+  <h2>Built for households</h2>
+  <p>One invite code brings your family into the same home. Everyone sees the same boxes, every change is logged, and you can keep an office or a second home as a separate space. Expiry dates remind you before food or medicine runs out. Deleted things stay in Trash for 30 days.</p>
+
+  <h2>FAQ</h2>
+  <details><summary>Is Stow free?</summary><p>Yes. No ads, no subscription, no analytics trackers. Your photos are stored privately for your household only.</p></details>
+  <details><summary>Does it work without internet?</summary><p>Your last list stays available offline for searching. Adding items needs a connection; photos taken offline upload later automatically.</p></details>
+  <details><summary>Can I use it for a storage unit, office or garage?</summary><p>Yes. A "space" can be anything: your home, an office, a storage unit. Each space has its own places, boxes and members.</p></details>
+  <details><summary>Is there an iPhone version?</summary><p>Not yet. Stow is on Android today; iOS is planned.</p></details>
+  <details><summary>How do the QR labels work?</summary><p>Every box gets a QR code. Print them from the app (21 per A4 sheet), cut, stick. Scanning with the phone camera opens that box's contents.</p></details>
+
+  <h2>Documents</h2>
   <ul>
-    <li><a href="./privacy/">개인정보처리방침</a> · <a href="./privacy/en/">Privacy Policy (English)</a></li>
-    <li><a href="./delete-account/">계정 및 데이터 삭제</a> · <a href="./delete-account/en/">Delete your account (English)</a></li>
+    <li><a href="./privacy/en/">Privacy Policy</a> · <a href="./privacy/">개인정보처리방침</a></li>
+    <li><a href="./delete-account/en/">Delete your account</a> · <a href="./delete-account/">계정 및 데이터 삭제</a></li>
   </ul>
 
-  <h2>문의</h2>
+  <h2>Contact</h2>
   <p><a href="mailto:jkinject@gmail.com">jkinject@gmail.com</a></p>
 
-  <footer>어디뒀지 (Stow)</footer>
+  <footer>Stow · 어디뒀지 — <a href="https://play.google.com/store/apps/details?id=net.jangstar.stow">Google Play</a></footer>
 </div>
 </body>
 </html>

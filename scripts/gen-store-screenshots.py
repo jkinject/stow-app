@@ -84,11 +84,11 @@ def center(d, text, y, f, fill):
 #   한 화면에 두 언어가 섞이면 스토어에서 무슨 앱인지 안 읽힌다.
 #   한국어 세트는 한국어 데이터가 있는 가구에서 따로 찍어야 한다.
 SHOTS = [
-    ('sh1.png', "Where did I put that?",   'Stop searching the whole house'),
-    ('sh2.png', 'Just type the name',      'Finds it as you type'),
-    ('sh5.png', 'Boxes inside places',     'Two levels is all you need'),
-    ('sh3.png', 'Every place at a glance', 'Photos of what is actually inside'),
-    ('sh4.png', 'Knows what ran out',      'Restock before you notice'),
+    ('sh1.png', 'Where did I put that?',     'One search. Room and box, instantly'),
+    ('sh2.png', 'Snap it, name it, done',    'Stow remembers where it went'),
+    ('sh3.png', 'Scan the box, skip the digging', 'Every box gets a QR label'),
+    ('sh4.png', 'Your home, mapped',         'Places hold boxes, boxes hold things'),
+    ('sh5.png', 'Whole family, one home',    'One invite code, everyone in sync'),
 ]
 
 TITLE = font(62, 12)   # Bold

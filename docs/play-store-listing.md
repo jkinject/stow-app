@@ -7,6 +7,23 @@ Play Console 이 묻는 **순서 그대로** 정리했습니다. 코드 블록�
 
 ---
 
+## 포지셔닝 (2026-09-12)
+
+**정리 앱이 아니다. 집의 기억이다.**
+
+- 사용자는 "정리하고 싶은" 사람이 아니라 **"그거 어디 뒀더라?" 를 반복하는** 사람이다.
+  정리 앱(라벨링·미니멀리즘)과 나란히 놓이면 진다 — 그 시장은 이미 포화이고 우리는 정리를 시키지 않는다.
+- 약속은 하나다: **넣을 때 사진 한 장, 찾을 때 이름 한 번.** 방과 박스까지 바로 알려준다.
+- 글로벌 우선. 한국 창고·수납 시장은 너무 작다. 기본 언어는 **en-US**, 한국어는 번역 중 하나다.
+  스토어 문구·스크린샷·랜딩 페이지(`docs/index.html`)는 영어가 원본이고 한국어(`docs/ko/`)가 번역이다.
+- 이 문장을 스토어 설명·랜딩 페이지·SNS 소개에 그대로 쓴다:
+  ```
+  Stow is not an organizing app. It's a memory for your house.
+  Snap a photo when you put something away. Search by name when you need it back.
+  ```
+
+---
+
 ## 0. 앱 만들기
 
 | 항목 | 값 |
@@ -92,9 +109,9 @@ Play Console 이 묻는 **순서 그대로** 정리했습니다. 코드 블록�
 
 ---
 
-## 2. 스토어 등록정보 (영어 — 선택)
+## 2. 스토어 등록정보 (영어 — **기본 언어**)
 
-언어를 추가할 때 씁니다. 한국만 출시한다면 건너뛰어도 됩니다.
+2026-09-12 부터 en-US 가 기본 언어다. 한국어(1번)는 번역 언어 중 하나로 남는다.
 
 ### 앱 이름
 ```
@@ -170,7 +187,7 @@ Privacy policy: https://jkinject.github.io/stow-app/privacy/en/
 |---|---|---|
 | 앱 아이콘 | `docs/store/icon-512.png` | 512×512 PNG ✅ |
 | 그래픽 이미지 | `docs/store/feature-graphic-1024x500.png` | 1024×500 PNG ✅ |
-| 휴대전화 스크린샷 | `docs/store/screenshots/01~05` | 1080×1920 PNG ✅ (2~8장) |
+| 휴대전화 스크린샷 (영어) | `docs/store/screenshots/en/01~05` | 1080×1920 PNG ✅ (2~8장) |
 
 > ⚠️ **기기 원본(1080×2520)을 그대로 올리면 거부됩니다.** Play 는 긴 변이 짧은 변의
 > **2배를 넘으면** 받지 않는데, 이 기기는 2.33배입니다. 그렇다고 잘라서 맞추면
@@ -180,13 +197,17 @@ Privacy policy: https://jkinject.github.io/stow-app/privacy/en/
 
 스크린샷 순서가 곧 스토어에 보이는 순서입니다. 첫 장이 가장 중요합니다.
 
-| # | 캡션 | 보여주는 것 |
+| # | 캡션 (en-US) | 보여주는 것 |
 |---|---|---|
-| 1 | 그거 어디 뒀더라? | 첫인상 — 앱이 무슨 앱인지 |
-| 2 | 이름만 검색하면 끝 | 찾기 격자 |
-| 3 | 수량까지 함께 기억 | 물건 상세 |
-| 4 | 가족이 함께 씁니다 | 초대 코드 |
-| 5 | 카테고리로 묶어서 | 카테고리 |
+| 1 | Where did I put that? — One search. Room and box, instantly | 찾기 탭, "Winter" 검색 결과에 `Bedroom › Top Shelf Bin` 경로 |
+| 2 | Snap it, name it, done — Stow remembers where it went | 물건 상세 (사진·위치 경로·수량) |
+| 3 | Scan the box, skip the digging — Every box gets a QR label | 박스 상세 (스캔하면 보이는 화면) |
+| 4 | Your home, mapped — Places hold boxes, boxes hold things | 보관 장소 목록 |
+| 5 | Whole family, one home — One invite code, everyone in sync | 구성원 + 초대 코드 |
+
+원본은 iOS 시뮬레이터 "Stow Shots"(iPhone 17, 심사 계정 tester@gmail.com, 공간 Kim Family, 영어 UI)에서
+`xcrun simctl io <udid> screenshot` 으로 찍고, 상태 표시줄(위 177px)·홈 인디케이터(아래 102px)를 잘라낸 뒤 스크립트에 넣었다.
+같은 파일을 540×960 으로 줄인 것이 랜딩 페이지용 `docs/site/01~05.png` 다.
 
 다시 만들려면 (모두 원본 경로를 인자로 받습니다):
 ```bash
@@ -195,9 +216,7 @@ python3 scripts/gen-store-graphic.py     <히어로원본.png>   # 1024×500 그
 python3 scripts/gen-store-screenshots.py <기기캡처_폴더>     # 1080×1920 스크린샷
 ```
 
-> 물건이 많이 들어간 상태로 다시 찍으면 훨씬 좋아집니다. 지금은 물건이 1개뿐이라
-> 2번(찾기 격자)이 비어 보입니다. 집을 정리하며 20~30개쯤 넣은 뒤
-> 그 화면만 다시 찍는 것을 권합니다.
+> 한국어 스크린샷 세트는 아직 없다. 한국어 데이터가 있는 공간에서 UI 를 한국어로 두고 같은 5장을 찍으면 된다.
 
 ---
 
