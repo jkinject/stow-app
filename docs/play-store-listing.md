@@ -46,35 +46,38 @@ Play Console 이 묻는 **순서 그대로** 정리했습니다. 코드 블록�
 
 ### 간단한 설명 (80자 이내)
 ```
-그거 어디 뒀더라? 사진 찍어 두면 이름만으로 바로 찾습니다. 가족이 함께 쓰는 우리 집 물건 지도.
+정리 앱이 아닙니다. 집의 기억입니다. 넣을 때 사진 한 장, 찾을 때 이름 한 번 — 방과 박스까지 바로.
 ```
 
 ### 자세한 설명 (4000자 이내)
 ```
 "그거 어디 뒀더라?"
 
-계절 옷, 여행용 캐리어, 아이 장난감, 공구함, 약… 분명 어딘가에 잘 넣어뒀는데
-막상 필요할 때는 온 집을 뒤집니다. 어디뒀지는 그 시간을 없애 줍니다.
+어디뒀지는 정리 앱이 아닙니다. 집의 기억입니다.
+계절 옷, 캐리어, 공구, 아이 장난감, 상비약… 분명 어딘가에 잘 넣어뒀는데
+막상 필요할 때는 온 집을 뒤집니다. 정리를 더 하라는 앱은 많습니다.
+어디뒀지는 "어디 뒀는지" 를 대신 기억합니다.
 
 
-■ 넣을 때 10초, 찾을 때 1초
+■ 넣을 때 사진 한 장, 찾을 때 이름 한 번
 
-물건을 사진 찍고 이름만 넣으면 끝입니다. 어느 방, 어느 박스에 뒀는지가
-함께 기록됩니다. 나중에는 이름만 검색하면 바로 나옵니다.
+물건을 넣으면서 사진 찍고 이름만 적으면 끝입니다. 어느 방, 어느 박스에
+들어갔는지가 함께 남습니다. 나중에는 이름만 검색하면 방과 박스가 바로 나옵니다.
 
-• 초성으로도 찾아집니다 — "ㄱㅈㅈ" 만 쳐도 "건전지"가 나옵니다
-• 사진이 함께 보여서 목록만 훑어도 뭐가 어디 있는지 바로 읽힙니다
+• 초성으로도 찾아집니다 — "ㄱㅈㅈ" 만 쳐도 "건전지" 가 나옵니다
+• 사진이 함께 보여서 목록만 훑어도 뭐가 어디 있는지 읽힙니다
 
 
-■ 집 구조 그대로 정리
+■ 집 구조 그대로
 
 장소(안방·주방·창고) 안에 박스를 두고, 박스 안에 물건을 넣습니다.
-박스에 넣지 않고 장소에 그냥 두는 물건도 됩니다 — 신발장의 우산처럼요.
+박스 없이 장소에 그냥 두는 물건도 됩니다 — 신발장의 우산처럼요.
+사무실이나 세컨하우스는 별도 공간으로 나눠 관리할 수 있습니다.
 
 
 ■ 박스에 QR 라벨을 붙이세요
 
-박스를 만들면 QR 코드가 자동으로 만들어집니다. A4 한 장에 21개까지 인쇄해
+박스를 만들면 QR 코드가 자동으로 생깁니다. A4 한 장에 21개까지 인쇄해
 잘라 붙이면, 스캔하는 순간 그 박스에 뭐가 들었는지 열립니다.
 상자를 하나하나 열어 볼 필요가 없습니다.
 
@@ -82,14 +85,13 @@ Play Console 이 묻는 **순서 그대로** 정리했습니다. 코드 블록�
 ■ 가족이 함께 씁니다
 
 초대 코드 하나면 가족이 같은 집에 들어옵니다. 누가 무엇을 어디로 옮겼는지
-기록이 남아서, "내가 안 옮겼는데?" 로 끝나는 대화가 줄어듭니다.
+기록이 남아서 "내가 안 옮겼는데?" 로 끝나는 대화가 줄어듭니다.
 
 
-■ 다 떨어지기 전에 알려줍니다
+■ 다 떨어지면 알려줍니다
 
-물건마다 "이만큼 남으면 알려줘" 를 정해 두면, 그 아래로 내려갈 때
-살 것 목록에 자동으로 올라갑니다. 세제, 건전지, 아이 약처럼
-떨어지고 나서야 알아채는 것들에 좋습니다.
+수량이 0 이 되는 순간 살 것 목록에 자동으로 올라갑니다. 세제, 건전지, 아이 약처럼
+떨어지고 나서야 알아채는 것들에 좋습니다. 소비기한을 적어 두면 기한 전에 알려줍니다.
 
 
 ■ 실수해도 되돌릴 수 있습니다
@@ -101,8 +103,7 @@ Play Console 이 묻는 **순서 그대로** 정리했습니다. 코드 블록�
 
 광고를 넣지 않고, 분석 도구를 쓰지 않으며, 어떤 데이터도 팔지 않습니다.
 광고 식별자·위치정보·연락처를 수집하지 않습니다.
-사진과 물건 목록은 같은 집 구성원에게만 보이며, 모든 데이터는
-대한민국(AWS 서울)에 저장됩니다.
+사진과 물건 목록은 같은 집 구성원에게만 보입니다.
 
 개인정보처리방침: https://jkinject.github.io/stow-app/privacy/
 ```
@@ -120,34 +121,36 @@ Stow - Find What You Put Away
 
 ### 간단한 설명
 ```
-Where did I put that? Snap a photo when you stow it, then find it by name.
+Not an organizing app. A memory for your house: snap it, name it, find it later.
 ```
 
 ### 자세한 설명
 ```
 "Where did I put that?"
 
-Seasonal clothes, the suitcase, tools, the kids' toys, medicine — you put them
-somewhere sensible, and then you tear the house apart looking for them.
-Stow removes that.
+Stow is not an organizing app. It's a memory for your house.
+The winter coats, the suitcase, the tools, the kids' old toys, the medicine —
+you put them somewhere sensible, and six months later you tear the house apart.
+Plenty of apps tell you to tidy more. Stow just remembers where things went.
 
 
-■ Ten seconds to store, one second to find
+■ Snap it when you stow it, search it when you need it
 
-Snap a photo, type a name. Stow remembers which room and which box it went into.
-Later, just search the name.
+Take a photo as you put something away and type a name. Stow keeps the room
+and the box it went into. Later, search the name and both come straight back.
 
-• Photos in the list, so you recognise things at a glance
 • Partial names work — no need to remember exactly what you called it
+• Photos in every list, so you recognise things at a glance
 
 
-■ Mirrors how your home is actually organised
+■ Mirrors how your home is actually laid out
 
 Places (bedroom, kitchen, garage) hold boxes, and boxes hold items.
 Things can also sit loose in a place — like the umbrella by the front door.
+An office, a storage unit or a second home can be a separate space.
 
 
-■ Put QR labels on your boxes
+■ QR labels on your boxes
 
 Every box gets a QR code. Print up to 21 per A4 sheet, cut, stick.
 Scan one and its contents open instantly — no more opening every box.
@@ -159,10 +162,10 @@ One invite code brings your family into the same home. Every change is logged,
 so "I didn't move it" conversations get a lot shorter.
 
 
-■ Know before you run out
+■ Know when you run out
 
-Set a threshold per item. Drop below it and the item lands on your shopping list
-automatically — detergent, batteries, medicine.
+The moment an item hits zero it lands on your shopping list automatically —
+detergent, batteries, medicine. Add an expiry date and Stow reminds you before it passes.
 
 
 ■ Undo is always there
@@ -172,9 +175,8 @@ Deleted items stay in Trash for 30 days.
 
 ■ Privacy
 
-No ads, no analytics SDKs, and we never sell your data. We don't collect
-advertising IDs, location, or contacts. Your photos and lists are visible only
-to members of your household.
+No ads, no analytics trackers, nothing sold. No advertising ID, location or contacts.
+Photos and lists are visible only to the members of your home.
 
 Privacy policy: https://jkinject.github.io/stow-app/privacy/en/
 ```
