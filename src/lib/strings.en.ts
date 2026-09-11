@@ -407,8 +407,16 @@ export const EN: Dict = {
     leaveTitle: (house) => `Leave "${house}"?`,
     leaveBody: 'You will lose access to this space. You need a new invite code to come back.',
     leaveBlocked: 'The last owner cannot leave',
-    leaveBlockedHint: 'Make someone else an owner first.',
+    leaveBlockedHint: 'Make someone else an owner first, or delete the space.',
     leaveFailed: "Couldn't leave",
+    deleteSpace: 'Delete this space',
+    deleteSpaceTitle: (house) => `Delete "${house}"?`,
+    deleteSpaceBody: (items, members) =>
+      (members > 1 ? `All ${members} members lose this space. ` : '') +
+      `${items} item${items === 1 ? '' : 's'} and their photos are deleted for good. This cannot be undone.`,
+    deleteSpaceConfirm: 'Delete',
+    deleteSpaceFailed: "Couldn't delete the space",
+    deletedSpace: (house) => `Deleted "${house}"`,
   },
 
   deleteAccount: {

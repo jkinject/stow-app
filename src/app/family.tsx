@@ -3,10 +3,13 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ChoiceSheet, type Choice } from '@/components/ChoiceSheet';
+import { useToast } from '@/components/Toast';
 import { IconDots, IconUsers } from '@/components/Icon';
 import { Button, Field, FieldLabel, IconButton, Loading, Screen, SectionLabel } from '@/components/ui';
 import {
   useInvite,
+  useDeleteHousehold,
+  useHouseholdDeletionPreview,
   useLeaveHousehold,
   useMembers,
   useRemoveMember,
@@ -47,6 +50,9 @@ export default function FamilyScreen() {
   const members = useMembers(activeId);
   const invite = useInvite(activeId);
   const leave = useLeaveHousehold();
+  const preview = useHouseholdDeletionPreview();
+  const del = useDeleteHousehold();
+  const toast = useToast();
 
   const rows = members.data ?? [];
   const ownerCount = rows.filter((m) => m.role === 'owner').length;
@@ -69,6 +75,39 @@ export default function FamilyScreen() {
             // 보내고, 남은 가구가 있으면 컨텍스트가 첫 가구로 넘어간다.
           } catch (e) {
             Alert.alert(t.family.leaveFailed, msg(e, t.common.tryAgain));
+          }
+        },
+      },
+    ]);
+  }
+
+  /**
+   * 공간 삭제 — 관리자 전용. 마지막 관리자는 나갈 수 없으니(위) 만든 공간을 없애려면 이 길뿐이다.
+   * 미리보기로 물건·구성원 수를 받아 확인창에 적는다: "정말 삭제할까요?" 만으로는 다른 가족까지
+   * 이 공간을 잃는다는 걸 알 수 없다.
+   */
+  async function onDelete() {
+    if (!activeId || !active) return;
+    let p;
+    try {
+      p = await preview.mutateAsync(activeId);
+    } catch (e) {
+      Alert.alert(t.family.deleteSpaceFailed, msg(e, t.common.tryAgain));
+      return;
+    }
+    const name = active.name;
+    Alert.alert(t.family.deleteSpaceTitle(name), t.family.deleteSpaceBody(p.itemCount, p.memberCount), [
+      { text: t.common.cancel, style: 'cancel' },
+      {
+        text: t.family.deleteSpaceConfirm,
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await del.mutateAsync({ householdId: activeId, photoPaths: p.photoPaths });
+            toast(t.family.deletedSpace(name));
+            // 화면을 옮기지 않는다 — 나가기와 같이 컨텍스트/_layout 가드가 처리한다
+          } catch (e) {
+            Alert.alert(t.family.deleteSpaceFailed, msg(e, t.common.tryAgain));
           }
         },
       },
@@ -135,6 +174,16 @@ export default function FamilyScreen() {
             <Text style={[st.hint, { color: c.textFaint }]}>
               {t.family.leaveBlocked} — {t.family.leaveBlockedHint}
             </Text>
+          )}
+          {isOwner && (
+            <View style={st.deleteWrap}>
+              <Button
+                label={t.family.deleteSpace}
+                variant="danger"
+                onPress={() => void onDelete()}
+                busy={preview.isPending || del.isPending}
+              />
+            </View>
           )}
         </View>
       </View>
@@ -458,6 +507,8 @@ function formatDate(iso: string) {
 const st = StyleSheet.create({
   body: { paddingHorizontal: space.xl, gap: space.xxl, paddingTop: space.xs },
   section: { gap: space.sm },
+  // 나가기와 삭제 사이를 띄운다 — 붙어 있으면 둘 다 빨간 버튼이라 손이 미끄러진다
+  deleteWrap: { marginTop: space.lg },
   card: { borderRadius: radius.md, overflow: 'hidden' },
 
   house: { borderRadius: radius.md, padding: space.lg, gap: space.sm },

@@ -722,3 +722,17 @@ dev 빌드에서 화면이 죽기 때문**이었다. 지금은 릴리스 APK 를
   mm 은 물리 길이로 정확히 찍힌다.
 - 검증 요령: `xcrun simctl get_app_container <udid> net.jangstar.stow data` → Library/Caches/Print/*.pdf 를 복사해
   `/Type /Page` 개수와 sips PNG 변환으로 본다. Metro 가 죽어 있으면 fast refresh 가 안 돼 옛 코드를 검증하게 된다 — 먼저 확인.
+
+## 2026-09-12 — 공간 삭제 (관리자) — 만든 공간을 없앨 길이 없던 구멍
+- 증상: 마지막 관리자는 나갈 수 없게 막아 두어(t06) 실수로 만든 공간·필요 없어진 공간을 없앨 방법이 계정 탈퇴뿐이었다.
+- DB: 20260912000100_delete_household.sql — household_deletion_preview(p)(물건·구성원 수, 사진 경로: item_photos·containers·storage_gc 큐)
+  + delete_household(p). 둘 다 security definer, 관리자만(42501). storage_gc 는 명시적으로 지운다 — households FK 가
+  20260902000200 에서 떼어져 CASCADE 가 없다(테스트에서 행이 남아 발견). pgTAP 20개 통과, 전체 스위트 PASS.
+- 클라이언트: useHouseholdDeletionPreview / useDeleteHousehold (사진 먼저 → RPC, 탈퇴와 같은 순서). 가족 화면에 관리자 전용
+  "이 공간 삭제" 버튼 + 물건·구성원 수를 센 확인창. 마지막 관리자 힌트에 "또는 공간을 삭제하세요". 화면 이동은 하지 않는다 —
+  컨텍스트가 남은 첫 공간으로, 없으면 _layout 가드가 온보딩으로.
+- database.types.ts 는 `npx supabase gen types typescript --local` 로 다시 생성. 로컬에 마이그레이션을 먼저 올려야 한다
+  (`npx supabase migration up --local`; 이미 올라간 파일을 고쳤을 땐 docker exec supabase_db_home-store psql 로 재적용).
+- 프로덕션: `npx supabase db push --linked --include-all` 로 적용됨. 시뮬레이터에서 "Delete Test" 공간 만들고 삭제 → 목록에서 사라지고
+  Kim Family 로 넘어감 확인.
+- ⚠ 테스트 파일에서 배열 비교는 `order by p collate "C"` — 로케일 정렬이 `_` 와 `.` 순서를 바꾼다.

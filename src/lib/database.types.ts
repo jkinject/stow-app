@@ -958,6 +958,7 @@ export type Database = {
       }
       delete_account: { Args: never; Returns: Json }
       delete_dormant_households: { Args: { p_ids: string[] }; Returns: number }
+      delete_household: { Args: { p_household: string }; Returns: undefined }
       dormant_households_to_delete: {
         Args: never
         Returns: {
@@ -978,6 +979,10 @@ export type Database = {
         Returns: undefined
       }
       gen_invite_code: { Args: never; Returns: string }
+      household_deletion_preview: {
+        Args: { p_household: string }
+        Returns: Json
+      }
       is_household_member: { Args: { hid: string }; Returns: boolean }
       is_household_owner: { Args: { hid: string }; Returns: boolean }
       mark_dormant_households: { Args: never; Returns: number }

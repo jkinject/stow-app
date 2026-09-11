@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useAuth } from '@/lib/auth';
+import { deletePhotoObjects } from '@/features/item/photo';
 import { supabase } from '@/lib/supabase';
 
 
@@ -229,6 +230,57 @@ export function useLeaveHousehold() {
         .delete()
         .eq('household_id', householdId)
         .eq('user_id', uid);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries(),
+  });
+}
+
+/**
+ * 공간 삭제 미리보기 — 무엇이 사라지는지 세어 확인창에 보여 준다.
+ * 관리자만 부를 수 있다(서버가 판정, 42501).
+ */
+export type HouseholdDeletionPreview = {
+  itemCount: number;
+  memberCount: number;
+  /** 함께 지워야 할 사진 경로 (물건 원본·썸네일, 박스) */
+  photoPaths: string[];
+};
+
+export function useHouseholdDeletionPreview() {
+  return useMutation({
+    mutationFn: async (householdId: string): Promise<HouseholdDeletionPreview> => {
+      const { data, error } = await supabase.rpc('household_deletion_preview', { p_household: householdId });
+      if (error) throw error;
+      const d = data as { item_count: number; member_count: number; photo_paths: string[] };
+      return { itemCount: d.item_count ?? 0, memberCount: d.member_count ?? 0, photoPaths: d.photo_paths ?? [] };
+    },
+  });
+}
+
+/**
+ * 공간 삭제 (관리자). 마지막 관리자는 나갈 수 없으므로(t06) 만든 공간을 없애는 길은 이것뿐이다.
+ *
+ * ⚠ 순서가 계정 탈퇴(deleteAccount.ts)와 같다: **사진을 먼저** 지우고 RPC 를 부른다.
+ *   Storage 객체는 SQL 로 못 지우고, 가구 행이 사라진 뒤에는 Storage 정책(경로의 가구 id)에
+ *   걸려 아무도 못 지운다. 사진 삭제가 실패해도 계속한다 — 그 파일은 어차피 아무도 못 읽고,
+ *   삭제를 막는 것보다 낫다.
+ * ⚠ 성공하면 캐시를 통째로 비운다 — 그 공간의 물건·장소가 캐시에 남아 다음 화면에 비친다.
+ *   화면 이동은 하지 않는다: 남은 공간이 있으면 컨텍스트가 첫 공간으로, 없으면 _layout
+ *   가드가 온보딩으로 보낸다(나가기와 같다).
+ */
+export function useDeleteHousehold() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ householdId, photoPaths }: { householdId: string; photoPaths: string[] }) => {
+      if (photoPaths.length > 0) {
+        try {
+          await deletePhotoObjects(photoPaths);
+        } catch {
+          // 무시 — 위 주석
+        }
+      }
+      const { error } = await supabase.rpc('delete_household', { p_household: householdId });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries(),

@@ -495,8 +495,18 @@ export const KO = {
     leaveTitle: (house: string) => `"${house}" 에서 나갈까요?`,
     leaveBody: '이 공간의 물건을 더 이상 볼 수 없게 됩니다. 다시 들어오려면 초대 코드가 필요합니다.',
     leaveBlocked: '마지막 관리자는 나갈 수 없습니다',
-    leaveBlockedHint: '다른 구성원을 관리자로 지정한 뒤에 나갈 수 있습니다.',
+    leaveBlockedHint: '다른 구성원을 관리자로 지정한 뒤에 나가거나, 공간을 삭제하세요.',
     leaveFailed: '나가지 못했습니다',
+    // 공간 삭제 — 무엇이 사라지는지 **세어서** 보여준다 (탈퇴 확인창과 같은 이유)
+    deleteSpace: '이 공간 삭제',
+    deleteSpaceTitle: (house: string) => `"${house}" 을(를) 삭제할까요?`,
+    deleteSpaceBody: (items: number, members: number) =>
+      (members > 1
+        ? `구성원 ${members}명 모두 이 공간을 잃습니다. `
+        : '') + `물건 ${items}개와 사진이 완전히 사라집니다. 되돌릴 수 없습니다.`,
+    deleteSpaceConfirm: '삭제',
+    deleteSpaceFailed: '공간을 삭제하지 못했습니다',
+    deletedSpace: (house: string) => `"${house}" 을(를) 삭제했습니다`,
   },
 
   deleteAccount: {
