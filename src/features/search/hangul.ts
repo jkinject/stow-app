@@ -75,11 +75,16 @@ export function buildEntry(name: string, category?: string | null): SearchIndexE
  * 매칭 판정.
  * 질의가 초성만이면 초성 문자열에서, 아니면 정규화된 이름에서 부분일치를 본다.
  * "전지" → norm 매칭, "ㄱㅈㅈ" → cho 매칭. 둘 다 "건전지"를 찾는다.
+ *
+ * ⚠ 온전한 음절 질의에는 초성 대조를 **하지 않는다** (2026-09-12).
+ *   예전엔 "ㄱ전지" 같은 혼합 입력을 살리려고 질의를 초성으로 바꿔 한 번 더 봤는데,
+ *   그러면 "겨울"(ㄱㅇ)이 보드게임(ㅂㄷㄱㅇ)·감기약(ㄱㄱㅇ)에도 걸린다 — 음절 두 자를
+ *   초성 두 자로 뭉개면 거의 모든 물건이 매칭된다. 혼합 입력은 사용자가 타이핑 도중
+ *   잠깐 지나가는 상태라 결과가 비어도 다음 글자에서 바로 채워진다.
  */
 export function matches(entry: SearchIndexEntry, query: string): boolean {
   const q = normalize(query);
   if (!q) return true;
   if (isChoseongQuery(query)) return entry.cho.includes(q);
-  // 초성이 아니어도 초성 문자열을 함께 본다 — "ㄱ전지" 같은 혼합 입력을 놓치지 않는다
-  return entry.norm.includes(q) || entry.cho.includes(normalize(toChoseong(query)));
+  return entry.norm.includes(q);
 }

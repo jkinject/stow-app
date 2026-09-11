@@ -84,6 +84,25 @@ describe('matches — AC8', () => {
     expect(matches(umbrella, 'ㄱㅈㅈ')).toBe(false);
   });
 
+  it('온전한 음절 질의는 초성으로 뭉개지 않는다 — "겨울"이 보드게임·감기약에 걸리지 않는다', () => {
+    const winterBlanket = buildEntry('겨울 이불');
+    const winterBoots = buildEntry('아이 겨울 부츠');
+    const boardGame = buildEntry('보드게임'); // 초성 ㅂㄷㄱㅇ 에 "ㄱㅇ" 이 들어 있다
+    const coldMedicine = buildEntry('감기약'); // 초성 ㄱㄱㅇ 에 "ㄱㅇ" 이 들어 있다
+    expect(matches(winterBlanket, '겨울')).toBe(true);
+    expect(matches(winterBoots, '겨울')).toBe(true);
+    expect(matches(boardGame, '겨울')).toBe(false);
+    expect(matches(coldMedicine, '겨울')).toBe(false);
+    // 초성만 치면 여전히 초성으로 찾는다
+    expect(matches(boardGame, 'ㄱㅇ')).toBe(true);
+    expect(matches(coldMedicine, 'ㄱㅇ')).toBe(true);
+  });
+
+  it('음절 일부만 쳐도 부분일치로 찾는다', () => {
+    expect(matches(buildEntry('겨울 이불'), '이불')).toBe(true);
+    expect(matches(buildEntry('아이 겨울 부츠'), '부츠')).toBe(true);
+  });
+
   it('빈 질의는 전부 통과시킨다', () => {
     expect(matches(battery, '')).toBe(true);
   });
