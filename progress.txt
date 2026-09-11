@@ -695,3 +695,11 @@ dev 빌드에서 화면이 죽기 때문**이었다. 지금은 릴리스 APK 를
   `xcrun simctl pbcopy`(LANG=en_US.UTF-8 필요) → 길게 누르기 → Paste. 새 공간은 앱을 다시 띄워야 목록에 뜬다.
 - Search Console: URL 접두어 속성 https://jkinject.github.io/stow-app/ 를 HTML 태그로 확인, sitemap.xml 제출, 색인 요청 (Aside, jkinject@gmail.com).
 - 발견한 버그(별도 작업으로 넘김): 한국어 검색이 온전한 음절 질의("겨울")에도 초성 매칭을 적용해 보드게임·감기약이 함께 나온다.
+
+## 2026-09-12 — 찾기 탭: 온전한 음절 질의("겨울")에 초성 매칭이 끼어들던 것을 고친다
+- 원인: `matches()`(src/features/search/hangul.ts)가 초성이 아닌 질의에도 `toChoseong(query)` 를 `entry.cho` 에 대조하는
+  폴백을 갖고 있었다("ㄱ전지" 혼합 입력용). "겨울" → "ㄱㅇ" 이 보드게임(ㅂㄷㄱㅇ)·감기약(ㄱㄱㅇ)의 초성에 들어 있어 같이 나왔다.
+  서버(pg_trgm)는 관여 없음 — 검색은 전부 클라이언트 메모리.
+- 수정: 폴백 제거. 초성 대조는 `isChoseongQuery` 가 참일 때(ㄱ~ㅎ 만)만, 나머지는 `norm` 부분일치만. "ㄱㅈㅈ" → 건전지는 그대로.
+  혼합 입력("ㄱ전지")은 타이핑 도중 잠깐 지나가는 상태라 포기.
+- 테스트: hangul.test.ts 에 겨울/보드게임/감기약 회귀 케이스와 부분 단어("이불"·"부츠") 케이스 추가. jest 19개 통과, tsc·expo lint 깨끗.
