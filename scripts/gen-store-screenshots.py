@@ -21,8 +21,10 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SP = sys.argv[1] if len(sys.argv) > 1 else None
 if not SP or not os.path.isdir(SP):
-    raise SystemExit('캡처 폴더를 인자로 주세요: python3 scripts/gen-store-screenshots.py <폴더>')
-OUT = os.path.join(ROOT, 'docs/store/screenshots/en')
+    raise SystemExit('캡처 폴더를 인자로 주세요: python3 scripts/gen-store-screenshots.py <폴더> [en|ko]')
+# ⚠ 언어별로 캡션과 출력 폴더가 다르다. 기본은 en (스토어 기본 언어).
+LANG = sys.argv[2] if len(sys.argv) > 2 else 'en'
+OUT = os.path.join(ROOT, 'docs/store/screenshots', LANG)
 os.makedirs(OUT, exist_ok=True)
 
 W, H = 1080, 1920            # 9:16 — Play 권장 크기
@@ -83,13 +85,24 @@ def center(d, text, y, f, fill):
 # ⚠ 영어 세트다. 심사 계정(Kim Family)의 데이터가 영어라 UI 도 영어로 맞춰 찍었다 —
 #   한 화면에 두 언어가 섞이면 스토어에서 무슨 앱인지 안 읽힌다.
 #   한국어 세트는 한국어 데이터가 있는 가구에서 따로 찍어야 한다.
-SHOTS = [
-    ('sh1.png', 'Where did I put that?',     'One search. Room and box, instantly'),
-    ('sh2.png', 'Snap it, name it, done',    'Stow remembers where it went'),
-    ('sh3.png', 'Scan the box, skip the digging', 'Every box gets a QR label'),
-    ('sh4.png', 'Your home, mapped',         'Places hold boxes, boxes hold things'),
-    ('sh5.png', 'Whole family, one home',    'One invite code, everyone in sync'),
-]
+SHOTS_BY_LANG = {
+    'en': [
+        ('sh1.png', 'Where did I put that?',     'One search. Room and box, instantly'),
+        ('sh2.png', 'Snap it, name it, done',    'Stow remembers where it went'),
+        ('sh3.png', 'Scan the box, skip the digging', 'Every box gets a QR label'),
+        ('sh4.png', 'Your home, mapped',         'Places hold boxes, boxes hold things'),
+        ('sh5.png', 'Whole family, one home',    'One invite code, everyone in sync'),
+    ],
+    # 한국어 세트 — 심사 계정의 두 번째 공간 "우리 집"(seed-review-account-ko.py)에서 한국어 UI 로 찍는다.
+    'ko': [
+        ('sh1.png', '그거 어디 뒀더라?',          '이름만 치면 방과 박스가 바로'),
+        ('sh2.png', '넣을 때 사진 한 장',          '어디 뒀는지는 어디뒀지가 기억합니다'),
+        ('sh3.png', '박스는 열지 말고 스캔',        '박스마다 QR 라벨이 붙습니다'),
+        ('sh4.png', '우리 집 구조 그대로',          '장소 안에 박스, 박스 안에 물건'),
+        ('sh5.png', '가족이 같은 집을 봅니다',      '초대 코드 하나면 끝'),
+    ],
+}
+SHOTS = SHOTS_BY_LANG[LANG]
 
 TITLE = font(62, 12)   # Bold
 SUBF = font(34, 10)    # Regular

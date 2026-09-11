@@ -4,20 +4,19 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Stow – Find what you put away | Home item finder app for Android</title>
-<meta name="description" content="Where did I put that? Stow remembers which room and which box you put things in. Snap a photo, type a name, find it in one search. Free on Google Play." />
+<meta name="description" content="Where did I put that? Stow is not an organizing app — it's a memory for your house. Snap a photo when you stow it, search by name later, and Stow tells you the room and the box. Free on Google Play." />
 <meta name="google-site-verification" content="K4lu8mos72T_vt28bGPbaz6qlm2qfO47-Oh6_fT6Rf0" />
 <link rel="canonical" href="https://jkinject.github.io/stow-app/" />
 <link rel="alternate" hreflang="en" href="https://jkinject.github.io/stow-app/" />
 <link rel="alternate" hreflang="ko" href="https://jkinject.github.io/stow-app/ko/" />
 <link rel="alternate" hreflang="x-default" href="https://jkinject.github.io/stow-app/" />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="Stow – Find what you put away" />
-<meta property="og:description" content="Snap a photo when you stow it, then find it by name. Boxes, QR labels, and the whole family in one home." />
+<meta property="og:title" content="Stow – Where did I put that?" />
+<meta property="og:description" content="Not an organizing app. A memory for your house: snap it, name it, find it later." />
 <meta property="og:url" content="https://jkinject.github.io/stow-app/" />
 <meta property="og:image" content="https://jkinject.github.io/stow-app/store/feature-graphic-1024x500.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <link rel="icon" href="./store/icon-512.png" />
-<link rel="stylesheet" href="./_shared.css" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -26,85 +25,376 @@
   "alternateName": "어디뒀지",
   "operatingSystem": "Android",
   "applicationCategory": "LifestyleApplication",
-  "description": "Stow remembers which room and which box you put things in. Snap a photo, type a name, find it in one search. QR labels for boxes, shared with your family.",
+  "description": "Stow is not an organizing app. It's a memory for your house. Snap a photo when you put something away, search by name later, and Stow tells you the room and the box. QR labels for boxes, shared with your family.",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
   "installUrl": "https://play.google.com/store/apps/details?id=net.jangstar.stow",
   "url": "https://jkinject.github.io/stow-app/",
   "image": "https://jkinject.github.io/stow-app/store/icon-512.png",
+  "screenshot": ["https://jkinject.github.io/stow-app/site/01.png","https://jkinject.github.io/stow-app/site/02.png","https://jkinject.github.io/stow-app/site/03.png"],
   "inLanguage": ["en", "ko", "ja", "de", "fr", "es"]
 }
 </script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type":"Question","name":"Is Stow really free?","acceptedAnswer":{"@type":"Answer","text":"Yes. No ads, no subscription, no analytics trackers. Photos and lists are visible only to the members of your home."}},
+    {"@type":"Question","name":"Do I have to catalog my whole house?","acceptedAnswer":{"@type":"Answer","text":"No. Start with the things you actually lose: seasonal clothes, cables, documents, medicine. Add more whenever you put something away."}},
+    {"@type":"Question","name":"Can my family use the same home?","acceptedAnswer":{"@type":"Answer","text":"Yes. One invite code brings everyone into the same home. Every change is logged so you can see who moved what."}},
+    {"@type":"Question","name":"Do I need QR labels to use Stow?","acceptedAnswer":{"@type":"Answer","text":"No. Search works without them. Labels are optional: print 21 per A4 sheet, stick them on boxes, and scanning one opens that box's contents."}}
+  ]
+}
+</script>
 <style>
-  .hero { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: center; }
-  .hero h1 { font-size: 38px; line-height: 1.2; margin: 0; }
-  .hero .lead { font-size: 18px; color: var(--muted); margin: 0; }
-  .cta { display: inline-flex; align-items: center; gap: 10px; background: var(--accent); color: #fff; text-decoration: none; padding: 14px 22px; border-radius: 999px; font-weight: 700; }
-  .cta:hover { opacity: .9; }
-  .sub { color: var(--faint); font-size: 14px; }
-  .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 20px 0; }
-  .shots img { width: 100%; border-radius: 12px; border: 1px solid var(--line); }
-  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-  .steps .box { margin: 0; }
-  .steps b { display: block; color: var(--text); margin-bottom: 4px; }
-  details { border-bottom: 1px solid var(--line); padding: 10px 0; }
-  summary { cursor: pointer; font-weight: 700; color: var(--text); }
-  details p { margin: 8px 0 0; }
-  .lang { float: right; font-size: 14px; }
-  @media (min-width: 640px) { .hero { grid-template-columns: 1.2fr 1fr; } }
+:root {
+  --bg: #f4f5fa;
+  --ink: #0b0d14;
+  --muted: #6b7280;
+  --blue: #2b3fd6;
+  --border: #e5e7f0;
+  --cream: #fdf3dc;
+  --amber: #f0a020;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+button { font: inherit; }
+.wrap { width: min(1200px, calc(100% - 96px)); margin: auto; }
+nav { height: 104px; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-size: 29px; font-weight: 800; letter-spacing: -1.4px; }
+.brandmark { width: 36px; height: 36px; background: var(--blue); border-radius: 11px; position: relative; }
+.brandmark::before { content: ""; position: absolute; width: 18px; height: 15px; border: 2px solid white; border-radius: 4px; left: 9px; top: 12px; }
+.brandmark::after { content: ""; position: absolute; width: 10px; height: 2px; background: white; left: 13px; top: 9px; border-radius: 2px; }
+.nav-links { display: flex; align-items: center; gap: 30px; }
+.language { font-size: 13px; color: #515564; }
+.pill { display: inline-flex; align-items: center; justify-content: center; gap: 12px; background: var(--blue); color: white; border-radius: 99px; padding: 17px 25px; font-size: 14px; font-weight: 650; }
+.nav-cta { padding: 13px 21px; font-size: 12px; }
+.play-icon { width: 19px; height: 22px; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%); flex: 0 0 auto; }
+.hero { display: grid; grid-template-columns: 1.08fr 1fr; align-items: center; min-height: 752px; padding: 30px 0 72px; gap: 35px; }
+.eyebrow { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 750; letter-spacing: 1.7px; text-transform: uppercase; }
+.status-dot { width: 7px; height: 7px; background: var(--blue); border-radius: 50%; }
+h1 { font-size: 88px; line-height: 1.01; letter-spacing: -5.8px; font-weight: 800; margin: 27px 0 25px; }
+h1 span { color: var(--blue); }
+.hero-copy > p { max-width: 445px; font-size: 19px; line-height: 1.65; color: #626777; margin: 0 0 31px; letter-spacing: -.3px; }
+.hero-copy > p strong { color: var(--ink); font-weight: 550; }
+.hero-cta { font-size: 15px; padding: 19px 27px; box-shadow: 0 6px 15px #2b3fd619; }
+.trust { font-size: 11px; color: var(--muted); margin-top: 16px; padding-left: 9px; letter-spacing: .25px; }
+.trust span { padding: 0 8px; color: #a1a5b2; }
+.hero-art { height: 650px; position: relative; display: flex; justify-content: center; align-items: center; }
+.orbit { position: absolute; width: 516px; height: 516px; border-radius: 50%; background: #e8eafa; }
+.orbit::after { content: ""; position: absolute; inset: -22px; border: 1px solid #e4e6f1; border-radius: 50%; }
+.phone { position: relative; width: 280px; padding: 8px; background: #111420; border: 1px solid #454957; border-radius: 40px; box-shadow: 0 26px 45px #11183220, 0 5px 9px #11183217; flex: 0 0 auto; }
+.phone::before { content: ""; position: absolute; width: 4px; height: 48px; border-radius: 3px 0 0 3px; background: #222634; left: -4px; top: 108px; }
+.phone::after { content: ""; position: absolute; width: 66px; height: 5px; background: #ffffff55; bottom: 17px; left: calc(50% - 33px); border-radius: 9px; }
+.screen { aspect-ratio: 1206 / 2343; border-radius: 32px; overflow: hidden; background: linear-gradient(155deg, #1c223d 0%, #121729 60%, #0b0d14 100%); color: white; display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; padding: 0; }
+.camera { position: absolute; width: 9px; height: 9px; top: 15px; left: calc(50% - 4.5px); background: #080a11; border: 2px solid #282d40; border-radius: 50%; }
+.screen-label { font-size: 25px; line-height: 1.2; font-weight: 750; letter-spacing: -.85px; margin: 0; max-width: 225px; }
+.screen-rule { width: 26px; height: 3px; background: #7785ff; border-radius: 5px; margin: 19px 0 24px; }
+.placeholder { flex: 1; width: 100%; border: 1px dashed #ffffff26; border-radius: 18px; background: #ffffff03; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; }
+.placeholder-caption { font-size: 8px; text-transform: uppercase; letter-spacing: 1.7px; color: #8b92aa; margin-top: 21px; }
+.placeholder-detail { font-size: 12px; color: #b8bfd4; line-height: 1.7; margin-top: 18px; }
+.outline-icon { width: 38px; height: 33px; border: 1.5px solid #8791b1; border-radius: 7px; position: relative; }
+.outline-icon::before { content: ""; position: absolute; left: 10px; top: 8px; width: 14px; height: 2px; background: #8791b1; border-radius: 3px; }
+.hero-phone { width: 296px; transform: rotate(5deg); z-index: 1; }
+.hero-phone .screen { padding-top: 0; }
+.found-card { position: absolute; z-index: 2; left: -10px; bottom: 113px; width: 250px; padding: 17px 19px; background: #fff; border-radius: 18px; border: 1px solid var(--border); box-shadow: 0 14px 35px #1c223d12; transform: rotate(-4deg); }
+.found-top { display: flex; align-items: center; gap: 8px; font-size: 9px; font-weight: 750; color: var(--blue); text-transform: uppercase; letter-spacing: 1.4px; margin-bottom: 11px; }
+.check { width: 17px; height: 17px; border-radius: 50%; background: #edf0ff; display: grid; place-items: center; font-size: 11px; }
+.found-name { font-size: 16px; font-weight: 750; letter-spacing: -.4px; }
+.found-path { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.memory-note { position: absolute; right: -6px; top: 89px; z-index: 2; background: var(--cream); color: #785014; padding: 13px 18px; border-radius: 10px; transform: rotate(9deg); font-size: 12px; font-weight: 600; line-height: 1.5; box-shadow: 0 8px 20px #8b652510; }
+.manifesto { background: var(--cream); border: 1px solid #f0e5c9; border-radius: 24px; padding: 43px 48px; display: grid; grid-template-columns: 1fr 1.48fr; gap: 65px; position: relative; }
+.manifesto .eyebrow { color: #90621c; margin-bottom: 14px; }
+.manifesto h2 { font-size: 32px; line-height: 1.14; letter-spacing: -1.3px; margin: 0; }
+.manifesto p { font-size: 18px; line-height: 1.75; letter-spacing: -.3px; margin: 0; color: #6a604c; }
+.manifesto p strong { color: #332c20; font-weight: 650; }
+.section { padding-top: 104px; }
+.section-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 37px; }
+.kicker { font-size: 10px; letter-spacing: 1.9px; font-weight: 750; color: var(--blue); text-transform: uppercase; margin-bottom: 13px; }
+h2 { margin: 0; font-size: 43px; line-height: 1.13; letter-spacing: -1.9px; font-weight: 800; }
+.section-aside { font-size: 14px; color: var(--muted); margin: 0 0 4px; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.step { padding: 27px 28px 30px; background: #fff; border: 1px solid var(--border); border-radius: 20px; }
+.step-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 29px; }
+.step-icon { width: 44px; height: 44px; background: #eef0ff; color: var(--blue); border-radius: 13px; display: grid; place-items: center; }
+.step-number { font-size: 11px; color: #a0a5b6; font-weight: 650; }
+.camera-icon { width: 23px; height: 17px; border: 1.7px solid currentColor; border-radius: 4px; position: relative; }
+.camera-icon::before { content: ""; position: absolute; width: 7px; height: 7px; border: 1.5px solid currentColor; border-radius: 50%; top: 3px; left: 6px; }
+.camera-icon::after { content: ""; position: absolute; width: 9px; height: 4px; border: 1.5px solid currentColor; border-bottom: 0; top: -5px; left: 5px; border-radius: 3px 3px 0 0; }
+.search-icon { width: 17px; height: 17px; border: 1.8px solid currentColor; border-radius: 50%; position: relative; margin: -4px 0 0 -4px; }
+.search-icon::after { content: ""; position: absolute; width: 9px; height: 2px; background: currentColor; transform: rotate(45deg); right: -7px; bottom: -4px; border-radius: 2px; }
+.location-icon { width: 17px; height: 21px; border: 1.8px solid currentColor; border-radius: 12px 12px 12px 0; transform: rotate(-45deg); position: relative; margin-top: -4px; }
+.location-icon::after { content: ""; position: absolute; width: 5px; height: 5px; border: 1.5px solid currentColor; border-radius: 50%; left: 4px; top: 5px; }
+.step h3 { font-size: 19px; letter-spacing: -.55px; margin: 0 0 10px; }
+.step p { font-size: 13px; color: var(--muted); line-height: 1.6; margin: 0; }
+.features { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.feature { background: white; border: 1px solid var(--border); border-radius: 24px; overflow: hidden; }
+.feature-copy { padding: 32px 34px 26px; }
+.feature-index { font-size: 9px; font-weight: 750; letter-spacing: 1.6px; text-transform: uppercase; color: var(--blue); margin-bottom: 12px; }
+.feature h3 { font-size: 26px; font-weight: 750; letter-spacing: -1px; margin: 0 0 10px; }
+.feature p { font-size: 14px; color: var(--muted); line-height: 1.6; margin: 0; }
+.feature-stage { margin: 0 16px 16px; height: 466px; border-radius: 16px; background: #eef0f9; display: flex; align-items: flex-start; justify-content: center; padding-top: 27px; overflow: hidden; position: relative; }
+.feature-stage::before { content: ""; position: absolute; width: 365px; height: 365px; border: 1px solid #dde1f1; border-radius: 50%; top: 70px; }
+.feature-stage .phone { width: 246px; border-radius: 40px; }
+.feature-stage .screen { padding: 0; }
+.feature-stage .screen-label { font-size: 22px; }
+.feature-stage .placeholder-detail { font-size: 11px; }
+.feature:nth-child(2) .feature-stage { background: #f1efe9; }
+.feature:nth-child(2) .feature-stage::before { border-color: #e4dfd3; }
+.feature:nth-child(3) .feature-stage { background: #edf2ee; }
+.feature:nth-child(3) .feature-stage::before { border-color: #dce5dd; }
+.feature:nth-child(4) .feature-stage { background: #f1edf6; }
+.feature:nth-child(4) .feature-stage::before { border-color: #e3dced; }
+.extras { display: flex; align-items: center; justify-content: center; gap: 28px; padding: 28px 0 0; color: #737989; font-size: 12px; }
+.extras span { display: inline-flex; align-items: center; gap: 8px; }
+.mini-dot { width: 5px; height: 5px; background: #9da7de; border-radius: 50%; }
+.family { margin-top: 100px; background: var(--blue); border-radius: 28px; color: white; padding: 58px 55px; display: grid; grid-template-columns: 1.4fr 1fr; align-items: center; gap: 65px; overflow: hidden; position: relative; }
+.family .kicker { color: #c3caff; }
+.family h2 { font-size: 42px; letter-spacing: -1.8px; line-height: 1.12; }
+.family p { font-size: 14px; color: #d9deff; line-height: 1.7; max-width: 415px; margin: 21px 0 0; }
+.invite { background: white; border: 1px solid #ffffff55; border-radius: 20px; padding: 24px; color: var(--ink); box-shadow: 0 18px 35px #11207840; transform: rotate(3deg); }
+.invite-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.invite-title { font-size: 13px; font-weight: 750; }
+.avatars { display: flex; padding-left: 5px; }
+.avatar { width: 29px; height: 29px; border: 2px solid white; border-radius: 50%; background: #eee9db; margin-left: -6px; display: grid; place-items: center; font-size: 9px; font-weight: 750; color: #796646; }
+.avatar:nth-child(2) { background: #e7eafa; color: #5362a0; }
+.avatar:nth-child(3) { background: #e6efe8; color: #4f795b; }
+.code-label { color: var(--muted); font-size: 10px; }
+.code { margin-top: 9px; background: #f4f5fa; border: 1px dashed #d9dce8; border-radius: 12px; padding: 17px 10px; font-size: 29px; letter-spacing: 8px; text-align: center; font-weight: 750; color: var(--blue); }
+.invite-note { margin-top: 12px; font-size: 10px; color: var(--muted); text-align: center; }
+.faq { display: grid; grid-template-columns: .8fr 1.2fr; gap: 65px; padding: 100px 0 95px; }
+.faq h2 { font-size: 38px; }
+.faq-intro { font-size: 14px; color: var(--muted); line-height: 1.7; margin-top: 18px; }
+.faq-list { border-top: 1px solid #dfe2ed; }
+.faq-row { min-height: 77px; border-bottom: 1px solid #dfe2ed; display: flex; justify-content: space-between; align-items: center; gap: 20px; font-size: 15px; font-weight: 600; }
+.plus { width: 25px; height: 25px; border-radius: 50%; border: 1px solid #dfe2ed; position: relative; flex: 0 0 auto; }
+.plus::before, .plus::after { content: ""; position: absolute; width: 9px; height: 1px; background: #72798b; left: 7px; top: 11px; }
+.plus::after { transform: rotate(90deg); }
+footer { border-top: 1px solid var(--border); padding: 33px 0 38px; }
+.footer-top { display: flex; align-items: center; justify-content: space-between; }
+footer .brand { font-size: 24px; gap: 9px; }
+footer .brandmark { transform: scale(.83); transform-origin: left center; margin-right: -5px; }
+.footer-links { display: flex; align-items: center; gap: 27px; font-size: 12px; color: #5f6678; }
+.footer-play { font-weight: 650; color: var(--blue); }
+.footer-bottom { display: flex; justify-content: space-between; margin-top: 23px; font-size: 10px; color: #9399a7; }
+@media (max-width: 720px) {
+  .wrap { width: calc(100% - 40px); }
+  nav { height: 82px; }
+  .brand { font-size: 25px; }
+  .nav-links { gap: 14px; }
+  .language { font-size: 11px; }
+  .nav-cta { font-size: 10px; padding: 11px 13px; }
+  .hero { grid-template-columns: 1fr; padding: 37px 0 45px; gap: 25px; }
+  h1 { font-size: 64px; letter-spacing: -4px; margin-top: 23px; }
+  .hero-copy > p { font-size: 17px; max-width: 350px; }
+  .hero-art { height: 570px; }
+  .orbit { width: 310px; height: 310px; }
+  .hero-phone { width: 262px; }
+  .found-card { width: 221px; left: -3px; bottom: 45px; }
+  .memory-note { right: 0; top: 45px; font-size: 10px; padding: 10px 12px; }
+  .manifesto { grid-template-columns: 1fr; padding: 29px 25px; gap: 22px; }
+  .manifesto h2 { font-size: 29px; }
+  .manifesto p { font-size: 16px; }
+  .manifesto p br { display: none; }
+  .section { padding-top: 64px; }
+  h2 { font-size: 35px; letter-spacing: -1.5px; }
+  .section-head { display: block; margin-bottom: 25px; }
+  .section-aside { margin-top: 15px; font-size: 13px; }
+  .steps { grid-template-columns: 1fr; gap: 12px; }
+  .step { padding: 22px 25px; }
+  .step-top { margin-bottom: 17px; }
+  .features { grid-template-columns: 1fr; gap: 19px; }
+  .feature-copy { padding: 27px 25px 23px; }
+  .feature h3 { font-size: 24px; }
+  .feature-stage { height: 451px; margin: 0 12px 12px; }
+  .extras { flex-direction: column; gap: 13px; align-items: flex-start; padding-left: 10px; }
+  .family { margin-top: 61px; grid-template-columns: 1fr; padding: 34px 26px; gap: 32px; border-radius: 24px; }
+  .family h2 { font-size: 34px; }
+  .invite { transform: rotate(2deg); padding: 21px; }
+  .faq { grid-template-columns: 1fr; padding: 65px 0; gap: 25px; }
+  .faq h2 { font-size: 34px; }
+  .faq-row { font-size: 13px; min-height: 74px; }
+  .footer-top { align-items: flex-start; gap: 26px; flex-direction: column; }
+  .footer-links { flex-wrap: wrap; gap: 18px; font-size: 11px; }
+  .footer-bottom { flex-direction: column; gap: 9px; line-height: 1.5; }
+}
+.screen img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.faq-list details { border-top: 1px solid var(--border); }
+.faq-list details:last-child { border-bottom: 1px solid var(--border); }
+.faq-list summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 22px 0; font-weight: 600; font-size: 17px; }
+.faq-list summary::-webkit-details-marker { display: none; }
+.faq-list summary::after { content: "+"; color: var(--muted); font-size: 22px; font-weight: 300; }
+.faq-list details[open] summary::after { content: "–"; }
+.faq-list details p { margin: 0 0 22px; color: var(--muted); line-height: 1.6; max-width: 560px; }
+
 </style>
 </head>
 <body>
 <div class="wrap">
-  <a class="lang" href="./ko/" hreflang="ko">한국어</a>
-  <section class="hero">
-    <div>
-      <p class="lead">Stow · Android</p>
-      <h1>Where did I put that?</h1>
-      <p class="lead">Stow remembers which room and which box you put things in. Snap a photo, type a name, and find it in one search — with your whole family.</p>
-      <p><a class="cta" href="https://play.google.com/store/apps/details?id=net.jangstar.stow">Get it on Google Play</a></p>
-      <p class="sub">Free · No ads · No analytics trackers</p>
+  <nav aria-label="Main navigation">
+    <a class="brand" href="./" aria-label="Stow home"><span class="brandmark"></span>Stow</a>
+    <div class="nav-links">
+      <a class="language" href="./ko/" hreflang="ko" lang="ko">한국어</a>
+      <a class="pill nav-cta" href="https://play.google.com/store/apps/details?id=net.jangstar.stow">Get it on Google Play</a>
     </div>
-    <img src="./site/01.png" alt="Stow app: searching for an item and seeing which room and box it is in" width="540" height="960" style="width:100%;height:auto;border-radius:16px;" />
-  </section>
+  </nav>
 
-  <h2>Not an organizing app</h2>
-  <p>You already have a sensible place for the winter coats, the camping gear, the kids' old toys and the spare cables. The problem is remembering it six months later. Stow is a memory for your house, not a to-do list for tidying it.</p>
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="status-dot"></span>Free on Android</div>
+        <h1>Where did<br>I put <span>that?</span></h1>
+        <p>Stow is not an organizing app.<br><strong>It’s a memory for your house.</strong></p>
+        <a class="pill hero-cta" href="https://play.google.com/store/apps/details?id=net.jangstar.stow"><span class="play-icon"></span>Get it on Google Play</a>
+        <div class="trust">Free<span>·</span>No ads<span>·</span>No trackers</div>
+      </div>
+      <div class="hero-art">
+        <div class="orbit"></div>
+        <div class="memory-note">Your brain has<br>enough tabs open.</div>
+        <div class="phone hero-phone"><div class="screen"><img src="./site/01.png" alt="Stow search results for “winter”: Winter Blanket in Bedroom › Top Shelf Bin" width="540" height="1049" /></div></div>
+        <div class="found-card">
+          <div class="found-top"><span class="check">✓</span>There it is</div>
+          <div class="found-name">Winter Blanket</div>
+          <div class="found-path">Bedroom &nbsp;›&nbsp; Top Shelf Bin</div>
+        </div>
+      </div>
+    </section>
 
-  <h2>How it works</h2>
-  <div class="steps">
-    <div class="box"><b>1. Snap and name</b>Take a photo as you put something away and type its name. Ten seconds.</div>
-    <div class="box"><b>2. Pick the place and box</b>Places (bedroom, garage, storage unit) hold boxes. Boxes hold things. That's the whole model.</div>
-    <div class="box"><b>3. Search later</b>Type part of the name. Stow shows the photo and the exact place and box.</div>
-    <div class="box"><b>4. Scan the box</b>Print QR labels, 21 per A4 sheet. Scan one and its contents open instantly.</div>
-  </div>
+    <section class="manifesto" id="not-an-organizing-app">
+      <div>
+        <div class="eyebrow">Less searching. More living.</div>
+        <h2>A home to live in.<br>Not a system to keep up.</h2>
+      </div>
+      <p>
+        You don’t need matching boxes or a label maker.<br>
+        You don’t need to become an “organized person.”<br>
+        <strong>Put things away your way. Let Stow remember where.</strong><br>
+        The junk drawer is welcome here.
+      </p>
+    </section>
 
-  <div class="shots">
-    <img src="./site/02.png" alt="Item detail showing the item's photo, location path and quantity" loading="lazy" />
-    <img src="./site/03.png" alt="Box detail listing everything inside the box" loading="lazy" />
-    <img src="./site/04.png" alt="Places list with boxes and item counts" loading="lazy" />
-    <img src="./site/05.png" alt="Family screen with a shared invite code" loading="lazy" />
-  </div>
+    <section class="section" id="how-it-works">
+      <div class="section-head">
+        <div><div class="kicker">How it works</div><h2>Put it away. Find it again.</h2></div>
+        <p class="section-aside">A tiny habit. A lot less “has anyone seen…?”</p>
+      </div>
+      <div class="steps">
+        <article class="step">
+          <div class="step-top"><span class="step-icon"><span class="camera-icon"></span></span><span class="step-number">01</span></div>
+          <h3>Snap it as you stow it.</h3>
+          <p>Add a photo, a name, and where it’s going. Ten seconds.</p>
+        </article>
+        <article class="step">
+          <div class="step-top"><span class="step-icon"><span class="search-icon"></span></span><span class="step-number">02</span></div>
+          <h3>Search when you need it.</h3>
+          <p>Type “winter blanket.” Partial names work too.</p>
+        </article>
+        <article class="step">
+          <div class="step-top"><span class="step-icon"><span class="location-icon"></span></span><span class="step-number">03</span></div>
+          <h3>Go straight to the right box.</h3>
+          <p>Stow tells you the room and the box.</p>
+        </article>
+      </div>
+    </section>
 
-  <h2>Built for households</h2>
-  <p>One invite code brings your family into the same home. Everyone sees the same boxes, every change is logged, and you can keep an office or a second home as a separate space. Expiry dates remind you before food or medicine runs out. Deleted things stay in Trash for 30 days.</p>
+    <section class="section" id="features">
+      <div class="section-head">
+        <div><div class="kicker">A little memory, everywhere</div><h2>For the things you’ll need.<br>Eventually.</h2></div>
+        <p class="section-aside">From spare cables to the good scissors.</p>
+      </div>
+      <div class="features">
+        <article class="feature">
+          <div class="feature-copy">
+            <div class="feature-index">01 / Remember the little things</div>
+            <h3>Snap it, name it, done</h3>
+            <p>A photo, a location, a quantity. Future you says thanks.</p>
+          </div>
+          <div class="feature-stage"><div class="phone "><div class="screen"><img src="./site/02.png" alt="Item detail: photo, location path Bedroom › Top Shelf Bin, and quantity" width="540" height="1049" loading="lazy" /></div></div></div>
+        </article>
+        <article class="feature">
+          <div class="feature-copy">
+            <div class="feature-index">02 / Look inside, without opening</div>
+            <h3>Scan the box, skip the digging</h3>
+            <p>Every box gets a QR label. Scan it to see everything inside.</p>
+          </div>
+          <div class="feature-stage"><div class="phone "><div class="screen"><img src="./site/03.png" alt="Box detail listing everything inside the box" width="540" height="1049" loading="lazy" /></div></div></div>
+        </article>
+        <article class="feature">
+          <div class="feature-copy">
+            <div class="feature-index">03 / A place for every location</div>
+            <h3>Your home, mapped</h3>
+            <p>Places → boxes → items. Just like your actual home.</p>
+          </div>
+          <div class="feature-stage"><div class="phone "><div class="screen"><img src="./site/04.png" alt="Places list with boxes and item counts" width="540" height="1049" loading="lazy" /></div></div></div>
+        </article>
+        <article class="feature">
+          <div class="feature-copy">
+            <div class="feature-index">04 / Everyone in the loop</div>
+            <h3>Whole family, one home</h3>
+            <p>Share an invite code. Everyone can find their own stuff.</p>
+          </div>
+          <div class="feature-stage"><div class="phone "><div class="screen"><img src="./site/05.png" alt="Household screen with members and a shared invite code" width="540" height="1049" loading="lazy" /></div></div></div>
+        </article>
+      </div>
+      <div class="extras">
+        <span><i class="mini-dot"></i>Expiry reminders before it’s too late</span>
+        <span><i class="mini-dot"></i>Runs out? Onto the shopping list.</span>
+        <span><i class="mini-dot"></i>Deleted by accident? 30 days to undo.</span>
+      </div>
+    </section>
 
-  <h2>FAQ</h2>
-  <details><summary>Is Stow free?</summary><p>Yes. No ads, no subscription, no analytics trackers. Your photos are stored privately for your household only.</p></details>
-  <details><summary>Does it work without internet?</summary><p>Your last list stays available offline for searching. Adding items needs a connection; photos taken offline upload later automatically.</p></details>
-  <details><summary>Can I use it for a storage unit, office or garage?</summary><p>Yes. A "space" can be anything: your home, an office, a storage unit. Each space has its own places, boxes and members.</p></details>
-  <details><summary>Is there an iPhone version?</summary><p>Not yet. Stow is on Android today; iOS is planned.</p></details>
-  <details><summary>How do the QR labels work?</summary><p>Every box gets a QR code. Print them from the app (21 per A4 sheet), cut, stick. Scanning with the phone camera opens that box's contents.</p></details>
+    <section class="family" id="family">
+      <div>
+        <div class="kicker">A shared home. A shared memory.</div>
+        <h2>You shouldn’t have to be<br>the family search engine.</h2>
+        <p>One invite code brings everyone into the same home.<br>An office or a storage unit can be its own space.</p>
+      </div>
+      <div class="invite">
+        <div class="invite-header">
+          <span class="invite-title">Our home</span>
+          <div class="avatars"><span class="avatar">J</span><span class="avatar">A</span><span class="avatar">M</span></div>
+        </div>
+        <div class="code-label">One code. Everyone’s invited.</div>
+        <div class="code">STOW24</div>
+        <div class="invite-note">Example invite code · Same home, same answers</div>
+      </div>
+    </section>
 
-  <h2>Documents</h2>
-  <ul>
-    <li><a href="./privacy/en/">Privacy Policy</a> · <a href="./privacy/">개인정보처리방침</a></li>
-    <li><a href="./delete-account/en/">Delete your account</a> · <a href="./delete-account/">계정 및 데이터 삭제</a></li>
-  </ul>
+    <section class="faq" id="faq">
+      <div>
+        <div class="kicker">Good questions</div>
+        <h2>A few things<br>worth knowing.</h2>
+        <p class="faq-intro">Before you forget where you put this tab.</p>
+      </div>
+      <div class="faq-list">
+        <details><summary>Is Stow really free?</summary><p>Yes. No ads, no subscription, no analytics trackers. Photos and lists are visible only to the members of your home.</p></details>
+        <details><summary>Do I have to catalog my whole house?</summary><p>No. Start with the things you actually lose: seasonal clothes, cables, documents, medicine. Add more whenever you put something away.</p></details>
+        <details><summary>Can my family use the same home?</summary><p>Yes. One invite code brings everyone into the same home. Every change is logged so you can see who moved what.</p></details>
+        <details><summary>Do I need QR labels to use Stow?</summary><p>No. Search works without them. Labels are optional: print 21 per A4 sheet, stick them on boxes, and scanning one opens that box’s contents.</p></details>
+        <details><summary>Is there an iPhone version?</summary><p>Not yet. Stow is on Android today; iOS is planned.</p></details>
+      </div>
+    </section>
+  </main>
 
-  <h2>Contact</h2>
-  <p><a href="mailto:jkinject@gmail.com">jkinject@gmail.com</a></p>
-
-  <footer>Stow · 어디뒀지 — <a href="https://play.google.com/store/apps/details?id=net.jangstar.stow">Google Play</a></footer>
+  <footer>
+    <div class="footer-top">
+      <a class="brand" href="./"><span class="brandmark"></span>Stow</a>
+      <div class="footer-links">
+        <a href="./privacy/en/">Privacy</a>
+        <a href="./delete-account/en/">Delete account</a>
+        <a href="mailto:jkinject@gmail.com">Contact</a>
+        <a class="footer-play" href="https://play.google.com/store/apps/details?id=net.jangstar.stow">Google Play ↗</a>
+      </div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 Stow · 어디뒀지. A memory for your house.</span><span>Less “where is it?” More “found it.”</span></div>
+  </footer>
 </div>
 </body>
 </html>
