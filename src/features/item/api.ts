@@ -20,6 +20,13 @@ export type ItemDetail = {
   note: string | null;
   /** 소비기한 YYYY-MM-DD (2026-09-08). null = 기한 없음 */
   expires_on: string | null;
+  /**
+   * 꺼내 쓰기 시작한 시각 (2026-09-17). null = 제자리에 보관 중.
+   * 위치는 그대로다 — 멀티탭처럼 가끔 꺼내 쓰고 다시 그 자리에 두는 물건의 **임시 상태**.
+   */
+  in_use_since: string | null;
+  /** 꺼낸 사람. 서버 트리거(t12)가 채운다 — 클라이언트는 `in_use_since` 만 보낸다 */
+  holder: { display_name: string | null } | null;
   photo_path: string | null;
   thumb_path: string | null;
   created_at: string;
@@ -85,7 +92,7 @@ export function useItem(itemId: string | null) {
         // ⚠ 한 줄 리터럴이어야 한다. 문자열을 이어붙이면 PostgREST 타입 추론이 깨져
         //   data 가 GenericStringError 가 된다.
         .select(
-          'id, household_id, location_id, container_id, name, category_id, quantity, threshold, unit, purchase_url, note, expires_on, photo_path, thumb_path, created_at, updated_at, updater:profiles!items_updated_by_fkey(display_name), container:containers!items_container_id_fkey(name), category:categories!items_category_id_fkey(id, name, color, icon), photos:item_photos(id, photo_path, thumb_path, sort_order, created_at)',
+          'id, household_id, location_id, container_id, name, category_id, quantity, threshold, unit, purchase_url, note, expires_on, in_use_since, photo_path, thumb_path, created_at, updated_at, updater:profiles!items_updated_by_fkey(display_name), holder:profiles!items_in_use_by_fkey(display_name), container:containers!items_container_id_fkey(name), category:categories!items_category_id_fkey(id, name, color, icon), photos:item_photos(id, photo_path, thumb_path, sort_order, created_at)',
         )
         .eq('id', itemId!)
         .is('deleted_at', null)
@@ -155,6 +162,8 @@ export type ItemPatch = {
   purchase_url?: string | null;
   note?: string | null;
   expires_on?: string | null;
+  /** 지금 시각 = 꺼내 쓰기, null = 제자리에 두기. 꺼낸 사람은 서버가 찍는다 */
+  in_use_since?: string | null;
 };
 
 /**
@@ -199,7 +208,7 @@ export function useUpdateItem(itemId: string) {
         // ⚠ 한 줄 리터럴이어야 한다. 문자열을 이어붙이면 PostgREST 타입 추론이 깨져
         //   data 가 GenericStringError 가 된다.
         .select(
-          'id, household_id, location_id, container_id, name, category_id, quantity, threshold, unit, purchase_url, note, expires_on, photo_path, thumb_path, created_at, updated_at, updater:profiles!items_updated_by_fkey(display_name), container:containers!items_container_id_fkey(name), category:categories!items_category_id_fkey(id, name, color, icon), photos:item_photos(id, photo_path, thumb_path, sort_order, created_at)',
+          'id, household_id, location_id, container_id, name, category_id, quantity, threshold, unit, purchase_url, note, expires_on, in_use_since, photo_path, thumb_path, created_at, updated_at, updater:profiles!items_updated_by_fkey(display_name), holder:profiles!items_in_use_by_fkey(display_name), container:containers!items_container_id_fkey(name), category:categories!items_category_id_fkey(id, name, color, icon), photos:item_photos(id, photo_path, thumb_path, sort_order, created_at)',
         )
         .single();
       if (error) throw error;

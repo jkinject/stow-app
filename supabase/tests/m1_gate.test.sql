@@ -274,7 +274,8 @@ reset role;
 select is(
   (select array_agg(tgname order by tgname)::text
      from pg_trigger where tgrelid='public.items'::regclass and not tgisinternal),
-  '{t05_rate_limit,t10_stamp_actor,t20_enforce_container_location,t30_log_item_event,t40_sync_shopping_list,t50_broadcast}',
+  -- t12 는 사용중 상태(20260917000100) — t10 이 updated_by 를 찍은 뒤에 돌아야 auth.uid() 가 없을 때 그 값을 빌려 쓴다
+  '{t05_rate_limit,t10_stamp_actor,t12_in_use_actor,t20_enforce_container_location,t30_log_item_event,t40_sync_shopping_list,t50_broadcast}',
   '[9] items 트리거가 t05→t50 이름순으로 정렬된다 (실행 순서 = 이름순)');
 
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);

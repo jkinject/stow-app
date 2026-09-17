@@ -14,7 +14,7 @@ import { supabase } from '@/lib/supabase';
 
 export type ItemEvent = {
   id: number;
-  type: 'created' | 'updated' | 'moved' | 'qty_changed' | 'deleted' | 'restored';
+  type: 'created' | 'updated' | 'moved' | 'qty_changed' | 'deleted' | 'restored' | 'checked_out' | 'returned';
   payload: Record<string, unknown>;
   created_at: string;
   actor: { display_name: string | null } | null;

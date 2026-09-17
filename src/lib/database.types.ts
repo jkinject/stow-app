@@ -456,6 +456,8 @@ export type Database = {
           expires_on: string | null
           household_id: string
           id: string
+          in_use_by: string | null
+          in_use_since: string | null
           location_id: string
           name: string
           note: string | null
@@ -478,6 +480,8 @@ export type Database = {
           expires_on?: string | null
           household_id: string
           id: string
+          in_use_by?: string | null
+          in_use_since?: string | null
           location_id: string
           name: string
           note?: string | null
@@ -500,6 +504,8 @@ export type Database = {
           expires_on?: string | null
           household_id?: string
           id?: string
+          in_use_by?: string | null
+          in_use_since?: string | null
           location_id?: string
           name?: string
           note?: string | null
@@ -546,6 +552,13 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_in_use_by_fkey"
+            columns: ["in_use_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -918,6 +931,8 @@ export type Database = {
           expires_on: string | null
           household_id: string
           id: string
+          in_use_by: string | null
+          in_use_since: string | null
           location_id: string
           name: string
           note: string | null

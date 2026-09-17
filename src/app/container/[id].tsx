@@ -321,6 +321,7 @@ export default function ContainerDetail() {
                 quantity={it.quantity}
                 width={cardW}
                 thumb={thumbs.get(it.thumb_path)}
+                inUse={!!it.in_use_since}
                 onPress={() => router.push(`/item/${it.id}`)}
               />
             ))}

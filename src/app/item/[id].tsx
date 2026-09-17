@@ -52,6 +52,7 @@ import {
 import { useLocations } from '@/features/storage/api';
 import { useT } from '@/lib/i18n';
 import { overlay, radius, type, useTheme, space, tracking, leading } from '@/lib/theme';
+import { relTime } from '@/lib/time';
 
 /**
  * 물건 상세 — **수정 모드가 없다** (2026-08-31 사용자 요청).
@@ -117,6 +118,8 @@ export default function ItemDetailScreen() {
   const [photoSheet, setPhotoSheet] = useState(false);
   const [viewer, setViewer] = useState(false);
   const [expirySheet, setExpirySheet] = useState(false);
+  /** 꺼내기·돌려놓기 요청이 도는 동안 — `update.isPending` 은 자동 저장 칸들과 공유라 따로 센다 */
+  const [togglingUse, setTogglingUse] = useState(false);
 
   /**
    * **등록 직후인가** (2026-09-02 사용자 요청).
@@ -263,6 +266,26 @@ export default function ItemDetailScreen() {
     });
   }
 
+  /**
+   * 꺼내 쓰기 ↔ 제자리에 두기 (2026-09-17 사용자 요청).
+   *
+   * 보내는 값은 `in_use_since` 하나다 — 누가 꺼냈는지는 서버 트리거(t12)가 auth.uid() 로
+   * 찍는다. 수량·위치는 건드리지 않는다: 꺼내 썼다고 재고가 줄거나 자리가 바뀐 것이 아니다.
+   * 성공은 토스트, 실패는 Alert — 이동과 같은 규칙.
+   */
+  async function onToggleUse() {
+    const next = row.in_use_since ? null : new Date().toISOString();
+    setTogglingUse(true);
+    try {
+      await update.mutateAsync({ in_use_since: next });
+      toast(next ? t.item.inUse.tookOut : t.item.inUse.putBackDone);
+    } catch (e) {
+      Alert.alert(t.item.inUse.failed, e instanceof Error ? e.message : t.common.tryAgain);
+    } finally {
+      setTogglingUse(false);
+    }
+  }
+
   function onDelete() {
     Alert.alert(t.item.deleteTitle, t.item.deleteBody(row.name), [
       { text: t.common.cancel, style: 'cancel' },
@@ -380,6 +403,14 @@ export default function ItemDetailScreen() {
               onPress={() => setMoving(true)}
             />
           </View>
+
+          {/* 사용중 (2026-09-17) — 위치 바로 아래. "여기 있어야 하는데 지금은 없다" 는 위치의 주석이다 */}
+          <InUseBox
+            since={row.in_use_since}
+            holder={row.holder?.display_name ?? null}
+            busy={togglingUse}
+            onToggle={() => void onToggleUse()}
+          />
 
           {/* 수량 — 가장 자주 바뀌는 값 */}
           <View style={[st.qtyBox, { backgroundColor: c.card }]}>
@@ -954,6 +985,60 @@ function CategoryPicker({
 }
 
 /**
+ * 사용중 상태 한 줄 (2026-09-17).
+ *
+ * 멀티탭·공구처럼 **가끔 꺼내 쓰고 다시 그 자리에 두는** 물건을 위한 임시 표시.
+ * 보관 중이면 조용히("제자리에 보관 중" + 테두리 없는 버튼), 사용중이면 강조색 테두리에
+ * 누가 언제부터 가지고 있는지 적는다 — 가족이 같이 쓰니 "누가" 가 곧 "어디" 다.
+ *
+ * ⚠ 버튼 문구는 이동이 아니라 꺼냄·돌려놓음이다. "이동" 은 옆 위치 줄에 따로 있고,
+ *   그건 등록된 자리 자체를 바꾸는 일이다.
+ */
+function InUseBox({
+  since,
+  holder,
+  busy,
+  onToggle,
+}: {
+  since: string | null;
+  holder: string | null;
+  busy: boolean;
+  onToggle: () => void;
+}) {
+  const { c } = useTheme();
+  const t = useT();
+  const inUse = !!since;
+  return (
+    <View
+      style={[
+        st.useBox,
+        { backgroundColor: c.card, borderColor: inUse ? c.accentText : c.card },
+      ]}
+    >
+      <View style={st.flex}>
+        <FieldLabel>{t.item.inUse.label}</FieldLabel>
+        <Text style={[st.useState, { color: inUse ? c.accentText : c.text }]}>
+          {inUse ? t.item.inUse.inUse : t.item.inUse.stored}
+        </Text>
+        {since ? (
+          // ⚠ '알 수 없음' 이 아니다 — 프로필이 안 보이는 건 그 사람이 집을 떠났기 때문이다
+          <Text style={[st.useMeta, { color: c.textMuted }]} numberOfLines={1}>
+            {t.item.inUse.since(holder ?? t.item.formerMember, relTime(since, t))}
+          </Text>
+        ) : null}
+      </View>
+      <Button
+        size="small"
+        variant={inUse ? 'primary' : 'secondary'}
+        label={inUse ? t.item.inUse.putBack : t.item.inUse.takeOut}
+        busy={busy}
+        onPress={onToggle}
+      />
+    </View>
+  );
+}
+
+/**
  * 소비기한 한 줄 — "2027. 3. 15.까지 · 188일 남음 (D-188)". 급할수록 붉다.
  * 기한이 없으면 "기한 없음" 을 흐리게 — 누르면 넣을 수 있다는 것이 보여야 한다.
  */
@@ -1041,6 +1126,17 @@ const st = StyleSheet.create({
   pathRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
   pathHint: { marginBottom: space.xs },
   path: { fontSize: type.title, fontWeight: '700', letterSpacing: tracking.tight, lineHeight: leading.title },
+  /** 사용중 상자 — 수량 상자와 같은 결. 테두리는 사용중일 때만 색이 든다(아니면 바탕과 같은 색) */
+  useBox: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    padding: space.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+  },
+  useState: { fontSize: type.bodyStrong, fontWeight: '700', marginTop: space.xs },
+  useMeta: { fontSize: type.caption, marginTop: space.xs },
   qtyBox: { borderRadius: radius.md, padding: space.lg, gap: space.md },
   qtyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   qtyValue: { fontSize: type.display, fontWeight: '700', fontVariant: ['tabular-nums'] },

@@ -272,6 +272,7 @@ export default function FindTab() {
         width={cardW}
         thumb={thumbs.get(item.thumb_path)}
         expiresOn={item.expires_on}
+        inUse={!!item.in_use_since}
         onPress={() => router.push(`/item/${item.id}`)}
       />
     ),

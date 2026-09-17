@@ -27,6 +27,7 @@ export function ItemCard({
   width,
   thumb,
   expiresOn,
+  inUse,
   onPress,
   onLongPress,
 }: {
@@ -56,6 +57,11 @@ export function ItemCard({
   thumb?: ImageSource;
   /** 소비기한 — 있으면 사진 **왼쪽 아래**에 D-N 뱃지 (2026-09-08) */
   expiresOn?: string | null;
+  /**
+   * 꺼내 쓰는 중 — 사진 **오른쪽 아래**에 "사용중" 뱃지 (2026-09-17).
+   * 격자를 훑다가 "저건 지금 제자리에 없구나" 가 읽혀야 다 쓰고 돌려놓는 것을 잊지 않는다.
+   */
+  inUse?: boolean;
   onPress: () => void;
   /** 박스 카드의 이름·삭제 메뉴 */
   onLongPress?: () => void;
@@ -114,6 +120,14 @@ export function ItemCard({
             ⚠ 사진 위라 테마 색을 쓰지 않는다 — 분류 뱃지와 같은 이유. */}
         {expiresOn ? <ExpiryBadge expiresOn={expiresOn} /> : null}
 
+        {/* 사용중 — 오른쪽 아래. 네 귀퉁이 중 남은 자리다 (왼위 분류 · 오른위 수량 · 왼아래 기한).
+            ⚠ 사진 위라 테마 색을 쓰지 않는다 — 다른 뱃지와 같은 이유. */}
+        {inUse ? (
+          <View style={st.useBadge}>
+            <Text style={st.useText}>{t.item.inUse.badge}</Text>
+          </View>
+        ) : null}
+
         {category ? (
           <View style={[st.catBadge, categoryColor ? { backgroundColor: categoryColor } : null]}>
             <Text
@@ -154,6 +168,8 @@ function ExpiryBadge({ expiresOn }: { expiresOn: string }) {
 /** 사진 위의 경고색 — 밑이 이미지라 테마와 무관하게 늘 같은 값 (overlay 주석과 같은 이유) */
 const EXPIRY_SOON = '#D9821F';
 const EXPIRY_URGENT = '#D93A4A';
+/** 사용중 — 경고가 아니라 **상태**라 붉은 계열을 피한다. 흰 글씨 대비 5.4 */
+const IN_USE = '#2F62D6';
 
 const st = StyleSheet.create({
   /**
@@ -194,6 +210,16 @@ const st = StyleSheet.create({
     paddingVertical: space.xs,
   },
   expText: { color: overlay.fg, fontSize: type.tiny, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  useBadge: {
+    position: 'absolute',
+    right: 6,
+    bottom: 6,
+    backgroundColor: IN_USE,
+    borderRadius: radius.full,
+    paddingHorizontal: space.sm,
+    paddingVertical: space.xs,
+  },
+  useText: { color: overlay.fg, fontSize: type.tiny, fontWeight: '800' },
   /**
    * 다 떨어진 물건은 격자에서 **멀리서도** 구분돼야 한다.
    * 구석의 작은 배지로는 훑어볼 때 놓친다 — 사진을 짙게 덮고 가운데 크게 쓴다.

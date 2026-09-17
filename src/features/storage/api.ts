@@ -38,6 +38,8 @@ export type ItemRow = {
   container_id: string | null;
   location_id: string;
   thumb_path: string | null;
+  /** 꺼내 쓰는 중이면 그 시각 (2026-09-17). 카드에 "사용중" 배지 */
+  in_use_since: string | null;
 };
 
 export const storageKeys = {
@@ -206,7 +208,7 @@ export function useContainerItems(containerId: string) {
       const { data, error } = await supabase
         .from('items')
         .select(
-          'id, name, quantity, container_id, location_id, thumb_path, category:categories!items_category_id_fkey(name, color)',
+          'id, name, quantity, container_id, location_id, thumb_path, in_use_since, category:categories!items_category_id_fkey(name, color)',
         )
         .eq('container_id', containerId)
         .is('deleted_at', null)
@@ -226,7 +228,7 @@ export function useLooseItems(locationId: string) {
       const { data, error } = await supabase
         .from('items')
         .select(
-          'id, name, quantity, container_id, location_id, thumb_path, category:categories!items_category_id_fkey(name, color)',
+          'id, name, quantity, container_id, location_id, thumb_path, in_use_since, category:categories!items_category_id_fkey(name, color)',
         )
         .eq('location_id', locationId)
         .is('container_id', null)
