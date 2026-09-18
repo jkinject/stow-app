@@ -76,8 +76,8 @@ Play 앱 서명을 켜면 **구글이 다시 서명**하므로, 스토어에서 
 
 ## 남은 이슈
 
-- **iOS 미출시**: Apple 심사 지침 4.8 은 소셜 로그인을 쓰는 앱에 "이메일 비공개 대안"을 요구합니다.
-  Sign in with Apple 이 없어 **현재 상태로는 iOS 제출 시 반려**됩니다. (`src/lib/auth.tsx` 주석 참고)
+- **iOS**: Sign in with Apple 을 넣어 지침 4.8 반려 사유는 해소했습니다(2026-09-18).
+  남은 절차는 [ios-release-checklist.md](ios-release-checklist.md).
 - **AAB 97MB**: Play 가 기기별로 쪼개 배포하므로 실제 다운로드는 훨씬 작습니다.
   다만 `react-native-worklets` 등 네이티브가 커서, 필요하면 나중에 줄일 여지가 있습니다.
 

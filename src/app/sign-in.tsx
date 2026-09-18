@@ -1,8 +1,10 @@
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Image,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -17,7 +19,7 @@ import { IconLock, IconMail } from '@/components/Icon';
 import { KeyboardSpacer } from '@/components/KeyboardSpacer';
 import { TextButton } from '@/components/ui';
 import { SIGNIN_HERO_URI } from '@/features/auth/heroImage';
-import { authMessage, useAuth } from '@/lib/auth';
+import { appleMessage, authMessage, useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
 import { useTheme, type, radius, space, tracking, leading } from '@/lib/theme';
 
@@ -38,6 +40,13 @@ import { useTheme, type, radius, space, tracking, leading } from '@/lib/theme';
  *
  * ⚠ 길은 둘뿐이다: 구글, 이메일+비밀번호(가입/로그인). "메일 링크로 받기" 는 지웠다
  *   (2026-09-09) — lib/auth.tsx 머리말 참고. 여기에 세 번째 길을 다시 두지 말 것.
+ *   **iOS 에만** Sign in with Apple 이 하나 더 선다(2026-09-18, 심사 지침 4.8 — 소셜 로그인이
+ *   있으면 Apple 로그인도 있어야 한다). 새 길이 아니라 Apple 이 요구하는 짝이다.
+ *
+ * ⚠ Apple 버튼은 **Apple 이 그린다**(AppleAuthenticationButton). 심사 지침이 모양·문구를
+ *   정해 두어서 우리 Pill 로 흉내 내면 안 된다. 높이·둥글기만 Pill 과 맞춘다. iOS 에서는
+ *   이 버튼이 맨 위 주 동작이고 구글은 테두리 버튼으로 내려간다 — Apple 로그인이 다른
+ *   소셜 로그인보다 눈에 덜 띄면 그것도 반려 사유다.
  *
  * ⚠ 그라데이션은 `react-native-svg` 로 그린다. `expo-linear-gradient` 를 넣으면
  *   네이티브 의존성이 하나 더 늘어나는데, svg 는 이미 쓰고 있다(아이콘·QR).
@@ -61,7 +70,7 @@ const HERO_SCREEN_INPUT = 0.34;
 const FADE_PART = 0.62;
 
 export default function SignIn() {
-  const { signInWithGoogle, signInWithPassword, signUpWithPassword } = useAuth();
+  const { signInWithGoogle, signInWithApple, signInWithPassword, signUpWithPassword } = useAuth();
   const { c, isDark } = useTheme();
   const t = useT();
   const insets = useSafeAreaInsets();
@@ -69,7 +78,7 @@ export default function SignIn() {
 
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
-  const [busy, setBusy] = useState<'google' | 'pw' | null>(null);
+  const [busy, setBusy] = useState<'google' | 'apple' | 'pw' | null>(null);
   /** 가입 인증 메일을 보낸 상태 — "메일함을 확인하세요" 를 보여 준다 */
   const [confirmSent, setConfirmSent] = useState(false);
   /** 레퍼런스처럼 입력칸은 처음에 숨긴다 — 한 번 더 눌러야 나온다 */
@@ -89,6 +98,18 @@ export default function SignIn() {
       await signInWithGoogle();
     } catch (e) {
       Alert.alert(t.auth.googleFailed, e instanceof Error ? e.message : t.common.tryAgain);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function onApple() {
+    if (busy !== null) return; // Apple 버튼엔 disabled 가 없다 — 여기서 막는다
+    setBusy('apple');
+    try {
+      await signInWithApple();
+    } catch (e) {
+      Alert.alert(t.auth.appleFailed, appleMessage(e, t));
     } finally {
       setBusy(null);
     }
@@ -246,12 +267,25 @@ export default function SignIn() {
             </View>
           ) : (
             <View style={s.actions}>
+              {Platform.OS === 'ios' && (
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+                  buttonStyle={
+                    isDark
+                      ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+                      : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                  }
+                  cornerRadius={radius.full}
+                  style={[s.appleBtn, busy !== null && busy !== 'apple' && s.pressed]}
+                  onPress={() => void onApple()}
+                />
+              )}
               <Pill
                 label={t.auth.google}
                 onPress={onGoogle}
                 busy={busy === 'google'}
                 disabled={busy !== null}
-                filled
+                filled={Platform.OS !== 'ios'}
               />
               <Pill
                 label={t.auth.emailCta}
@@ -327,6 +361,8 @@ const s = StyleSheet.create({
   },
   pillText: { fontSize: type.bodyStrong, fontWeight: '700' },
   pressed: { opacity: 0.72 },
+  /** Apple 이 그리는 버튼 — 높이는 Pill(위아래 여백 16 + 글자 23)과 같게 */
+  appleBtn: { width: '100%', height: space.lg * 2 + leading.bodyStrong },
 
   textBtn: { alignSelf: 'center', paddingVertical: space.md, paddingHorizontal: space.lg },
 

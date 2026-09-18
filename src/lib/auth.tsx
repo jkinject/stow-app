@@ -1,8 +1,11 @@
 import type { Session } from '@supabase/supabase-js';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import * as AuthSession from 'expo-auth-session';
 import { getQueryParams } from 'expo-auth-session/build/QueryParams';
+import * as Crypto from 'expo-crypto';
 import * as WebBrowser from 'expo-web-browser';
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 
 import { useT } from './i18n';
 import { supabase } from './supabase';
@@ -20,16 +23,28 @@ WebBrowser.maybeCompleteAuthSession();
  *   안 된다" 는 문의가 생긴다. `signInWithOtp` 를 다시 부르는 코드를 넣지 말 것 — 메일
  *   템플릿(magic_link)도 같이 지웠다.
  *
- * ⚠ Sign in with Apple 은 사용자 결정으로 연기됐다 (2026-08-28).
- *   Apple 심사 가이드라인 4.8 은 소셜 로그인을 쓰는 앱에 "이메일을 비공개로
- *   유지할 수 있는 동등한 대안"을 요구한다. 이메일+비밀번호 가입이 있으니 해석에 따라
- *   통할 수도 있지만 확인된 바 없다 — iOS 제출 전에 확인할 것 (R24).
+ *  - Sign in with Apple (iOS 만, 2026-09-18) : Apple 심사 가이드라인 4.8 — 구글 같은 소셜
+ *    로그인을 쓰는 앱은 "이메일을 비공개로 유지할 수 있는 동등한 대안" 을 둬야 한다.
+ *    2026-08-28 에 연기했던 것을 iOS 출시 준비(R24)로 넣었다.
+ *
+ * ⚠ Apple 은 **네이티브 흐름**이다 — 브라우저를 열지 않는다. 기기가 준 id_token 을
+ *   `signInWithIdToken` 으로 Supabase 에 바로 넘긴다. 그래서 Supabase 쪽엔 OAuth 비밀키가
+ *   필요 없고, Apple provider 에 **번들 ID(net.jangstar.stow)를 client_id 로** 넣어 두기만
+ *   하면 된다(supabase/config.toml). 리플레이를 막는 nonce 는 우리가 만든다: Apple 에는
+ *   SHA-256 해시를, Supabase 에는 원문을 준다 — Supabase 가 토큰 안의 해시와 대조한다.
+ *
+ * ⚠ 이름은 **첫 로그인에만** 온다. Apple 이 두 번째부터는 fullName 을 비워 보낸다. 그리고
+ *   id_token 에는 이름이 없어서 profiles 트리거(handle_new_user)가 display_name 을 이메일
+ *   앞부분으로 만드는데, "이메일 숨기기" 를 고른 사람은 그게 `abc123@privaterelay…` 라
+ *   가족 화면에 난수가 뜬다. 그래서 이름이 오면 그 자리에서 profiles 를 고쳐 둔다.
  */
 
 type AuthState = {
   session: Session | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
+  /** Sign in with Apple — iOS 에서만 뜬다. 사용자가 취소하면 조용히 돌아온다 */
+  signInWithApple: () => Promise<void>;
   /** 이메일 + 비밀번호 로그인 */
   signInWithPassword: (email: string, password: string) => Promise<void>;
   /**
@@ -104,6 +119,40 @@ async function createSessionFromUrl(url: string) {
   return data.session;
 }
 
+/**
+ * Apple 이 준 이름 조각을 한 줄로. 한글 이름은 성+이름을 붙여 쓰고("김보관"),
+ * 그 밖에는 이름 성 순서에 띄어쓴다("Tim Jang"). 한쪽만 와도 그것만 쓴다.
+ */
+function joinAppleName(family: string | null | undefined, given: string | null | undefined): string | null {
+  const f = family?.trim() ?? '';
+  const g = given?.trim() ?? '';
+  if (!f && !g) return null;
+  const hangul = /[가-힣]/.test(f + g);
+  return hangul ? `${f}${g}` : [g, f].filter(Boolean).join(' ');
+}
+
+/** expo-apple-authentication 이 취소를 오류로 던진다 — 그건 오류가 아니다 */
+function isAppleCancel(e: unknown): boolean {
+  return typeof e === 'object' && e !== null && (e as { code?: string }).code === 'ERR_REQUEST_CANCELED';
+}
+
+/**
+ * Apple 로그인 오류를 사람 말로.
+ *
+ * ⚠ 네이티브 오류 문구를 **그대로 보여주면 안 된다.** 기기에 Apple 계정이 없으면
+ *   "RequestUnknownException: … (at ExpoAppleAuthentication/AppleAuthenticationExceptions.swift:61)"
+ *   처럼 Swift 클래스명과 파일 경로까지 딸려 온다(시뮬레이터에서 확인). 사용자가 할 수 있는
+ *   일은 하나뿐이다 — 기기 설정에서 Apple 계정에 로그인하는 것. 그것만 말한다.
+ *
+ * ⚠ 네이티브 오류는 전부 `ERR_` 로 시작하는 code 를 갖는다. 그게 아니면 Supabase 쪽에서
+ *   온 것이므로 기존 번역(`authMessage`)에 맡긴다.
+ */
+function appleMessage(e: unknown, t: ReturnType<typeof useT>): string {
+  const code = typeof e === 'object' && e !== null ? String((e as { code?: unknown }).code ?? '') : '';
+  if (code.startsWith('ERR_')) return t.auth.appleUnavailable;
+  return authMessage(e instanceof Error ? e.message : t.common.tryAgain, t);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -154,6 +203,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await createSessionFromUrl(result.url);
       },
 
+      async signInWithApple() {
+        if (Platform.OS !== 'ios') throw new Error('Sign in with Apple 은 iOS 에서만 됩니다.');
+        // nonce: Apple 에는 해시, Supabase 에는 원문 (머리말 참고)
+        const rawNonce = Crypto.randomUUID();
+        const hashedNonce = await Crypto.digestStringAsync(
+          Crypto.CryptoDigestAlgorithm.SHA256,
+          rawNonce,
+        );
+
+        let credential: AppleAuthentication.AppleAuthenticationCredential;
+        try {
+          credential = await AppleAuthentication.signInAsync({
+            requestedScopes: [
+              AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+              AppleAuthentication.AppleAuthenticationScope.EMAIL,
+            ],
+            nonce: hashedNonce,
+          });
+        } catch (e) {
+          if (isAppleCancel(e)) return; // 사용자가 시트를 닫았다 — 조용히
+          throw e;
+        }
+        if (!credential.identityToken) throw new Error('Apple 에서 토큰을 받지 못했습니다.');
+
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'apple',
+          token: credential.identityToken,
+          nonce: rawNonce,
+        });
+        if (error) throw error;
+
+        // 첫 로그인에만 오는 이름 — 놓치면 다시 못 받는다 (머리말 참고)
+        const name = joinAppleName(credential.fullName?.familyName, credential.fullName?.givenName);
+        if (name && data.user) {
+          const { error: nameError } = await supabase
+            .from('profiles')
+            .update({ display_name: name })
+            .eq('id', data.user.id);
+          // 이름을 못 고쳐도 로그인은 됐다 — 막지 않고 흔적만 남긴다
+          if (nameError) console.warn('Apple 이름을 프로필에 쓰지 못했습니다', nameError.message);
+        }
+      },
+
       async signInWithPassword(email: string, password: string) {
         const { error } = await supabase.auth.signInWithPassword({
           email: email.trim(),
@@ -196,4 +288,4 @@ export function useAuth() {
   return ctx;
 }
 
-export { authMessage, createSessionFromUrl, redirectTo };
+export { appleMessage, authMessage, createSessionFromUrl, redirectTo };

@@ -49,6 +49,8 @@ export const EN: Dict = {
     signUpFailed: "Couldn't create the account",
     resend: 'Use a different address',
     googleFailed: "Couldn't sign in with Google",
+    appleFailed: "Couldn't sign in with Apple",
+    appleUnavailable: "No Apple Account was found on this device. Sign in to your Apple Account in Settings, then try again.",
     emailInvalid: 'Check your email',
     emailInvalidBody: 'Please enter a valid email address.',
     signingIn: 'Signing in…',

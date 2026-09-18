@@ -329,11 +329,15 @@ max_frequency = "5s"
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
 # `twitter`, `x`, `slack`, `spotify`, `workos`, `zoom`.
+# ── Sign in with Apple (2026-09-18, iOS 출시 준비 R24) ────────────────────────
+# 앱은 **네이티브 흐름**(signInWithIdToken)만 쓴다. 그 흐름에서 Supabase 가 검사하는 것은
+# id_token 의 audience 뿐이라 client_id 에 **앱 번들 ID** 를 넣는다. OAuth 비밀키(.p8 로 만든
+# JWT)는 브라우저 OAuth 흐름에만 필요하고, 우리는 그 길을 열지 않으므로 비워 둔다.
+# 웹 로그인을 붙일 일이 생기면 그때 Services ID 와 secret 을 더한다.
 [auth.external.apple]
-enabled = false
-client_id = ""
-# DO NOT commit your OAuth provider secret to git. Use environment variable substitution instead:
-secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
+enabled = true
+client_id = "net.jangstar.stow"
+secret = ""
 # Overrides the default auth callback URL derived from auth.external_url.
 redirect_uri = ""
 # Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
@@ -429,8 +433,7 @@ enabled = true
 # 실제 값은 .env.local 이 아니라 셸 환경변수로 준다 — config.toml 은 커밋된다.
 #   export SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=...
 #   export SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=...
-# ⚠ Sign in with Apple 은 사용자 결정으로 연기됨 (2026-08-28).
-#   이 상태로는 iOS 스토어 제출이 반려된다 (가이드라인 4.8). M9 게이트 R24 참조.
+# Sign in with Apple 은 위 [auth.external.apple] — 2026-09-18 에 넣었다 (R24 해소).
 [auth.external.google]
 enabled = true
 client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"

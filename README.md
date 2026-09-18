@@ -95,8 +95,8 @@ docs/           GitHub Pages (개인정보처리방침) + 출시 문서
   무엇이 남았는지.
 - 그래픽 애셋은 `docs/store/` 에 있습니다 (아이콘 512, 그래픽 이미지 1024×500, 스크린샷 6장).
 
-**iOS 는 아직 못 냅니다.** Apple 심사 지침 4.8 이 소셜 로그인 앱에 "이메일을
-비공개로 유지할 수 있는 대안" 을 요구하는데, Sign in with Apple 이 없어 반려됩니다.
+**iOS 는 출시 준비 중입니다.** 반려 사유였던 Sign in with Apple 을 넣었고(2026-09-18),
+남은 것은 Apple 개발자 계정·스크린샷·제출뿐입니다 — [docs/ios-release-checklist.md](docs/ios-release-checklist.md).
 
 ## 개인정보
 

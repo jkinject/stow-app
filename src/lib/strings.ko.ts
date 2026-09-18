@@ -87,6 +87,10 @@ export const KO = {
     signUpFailed: '가입하지 못했습니다',
     resend: '다른 주소로 다시 보내기',
     googleFailed: '구글 로그인 실패',
+    /** 버튼 글자는 Apple 이 기기 언어로 그린다 — 여기엔 실패 문구만 */
+    appleFailed: 'Apple 로그인 실패',
+    /** 기기에 Apple 계정이 없을 때 — 네이티브가 주는 문구는 Swift 예외라 쓸 수 없다 */
+    appleUnavailable: '이 기기에서 Apple 계정을 찾지 못했습니다. 설정에서 Apple 계정에 로그인한 뒤 다시 시도해 주세요.',
     emailInvalid: '이메일을 확인해 주세요',
     emailInvalidBody: '올바른 이메일 주소를 입력해 주세요.',
     signingIn: '로그인 중…',
