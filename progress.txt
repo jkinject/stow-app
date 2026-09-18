@@ -774,3 +774,22 @@ dev 빌드에서 화면이 죽기 때문**이었다. 지금은 릴리스 APK 를
 - 검증(시뮬레이터): Apple 버튼이 라이트=검정/다크=흰색으로 맨 위, 한국어 "Apple로 계속하기" 를 Apple 이 그린다. 계정이 없어 로그인 자체는 실패하지만
   버튼→signInWithApple→오류 안내까지 경로 확인. **실제 로그인은 TestFlight 실기기에서 봐야 한다.**
   (expo-notifications 키체인 오류는 CODE_SIGNING_ALLOWED=NO 빌드의 부작용 — 서명된 빌드에는 없다.)
+
+## 2026-09-18 — iOS: Apple 개발자 계정 등록·앱 생성·스크린샷 (사용자가 이피소프트로 계정 개설)
+- Apple Developer: **EP Soft Co., Ltd. / 팀 GZNYLNJY9P** (jkinject@gmail.com, Aside `--account u0`). Safedrink 가 먼저 쓰고 있던 계정.
+- Aside(브라우저 에이전트)로 진행: App ID `net.jangstar.stow` 생성 + **Sign in with Apple capability** 체크 →
+  App Store Connect 신규 앱. ⚠ 이름 **"Stow" 단독은 이미 선점**돼 거부("입력한 앱 이름이 이미 사용 중입니다") →
+  Play 의 영어 이름 `Stow - Find What You Put Away`(29자)로 생성. **Apple ID 6813274331**.
+  eas.json submit.production.ios 에 appleTeamId·ascAppId 기록.
+- Supabase 프로덕션에 Apple provider 반영(`./scripts/push-auth-config.sh`). 검증: `/auth/v1/settings` 의 `external.apple: true`,
+  네이티브 흐름에 가짜 토큰을 넣으면 "Unable to detect issuer in ID token for Apple provider" — provider 를 통과해 토큰 검증까지 간다는 뜻.
+  ⚠ `/auth/v1/authorize?provider=apple` 는 400("missing OAuth secret")인데 **정상**이다 — 브라우저 OAuth 는 안 쓴다.
+- ⚠⚠ **권한 문구가 한국어 하나뿐이었다** — 영어권 사용자·심사자에게 한국어 카메라 권한 창이 떴다(시뮬레이터에서 우연히 발견).
+  Expo `locales`(app.json) + `locales/{en,ko}.json` 으로 갈랐다: 기본 Info.plist 는 영어, 한국어 기기만 ko.lproj.
+  ko.json 의 CFBundleDisplayName 으로 **iOS 런처 이름도 "어디뒀지"** 가 된다(전에는 iOS 만 늘 "Stow" 였다).
+  검증: 한국어 시뮬레이터에서 홈 화면 아이콘 이름이 "어디뒀지" 로 바뀐 것을 확인. Expo locales 는 iOS 전용 —
+  Android 는 여전히 plugins/withKoreanAppName.
+- 스크린샷: **영어 5장 완료** `docs/store/screenshots/ios/en/` (1320×2868). iPhone 17 Pro Max 캡처가 6.9" 규격과 정확히 일치한다.
+  `scripts/gen-store-screenshots.py` 에 세 번째 인자 `play|appstore` 를 더해 **한 스크립트가 두 스토어**를 만든다(캡션 문구는 한 곳에만).
+  한국어 세트는 아직 — docs/ios-release-checklist.md 에 절차를 적어 뒀다.
+- 남은 것: `eas build --platform ios --profile production`(Apple 로그인 필요) → submit → TestFlight 실기기에서 Apple 로그인 확인.

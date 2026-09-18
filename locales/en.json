@@ -1,0 +1,4 @@
+{
+  "NSCameraUsageDescription": "Stow uses the camera to photograph an item so you can see where you put it.",
+  "NSPhotoLibraryUsageDescription": "Stow uses your photo library so you can pick an existing photo of an item."
+}

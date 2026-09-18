@@ -54,7 +54,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "물건 사진을 찍어 어디에 뒀는지 기록하기 위해 카메라를 사용합니다.",
+          "cameraPermission": "Stow uses the camera to photograph an item so you can see where you put it.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }
@@ -62,8 +62,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "앨범에서 물건 사진을 고르기 위해 사진 접근을 사용합니다.",
-          "cameraPermission": "물건 사진을 찍어 어디에 뒀는지 기록하기 위해 카메라를 사용합니다.",
+          "photosPermission": "Stow uses your photo library so you can pick an existing photo of an item.",
+          "cameraPermission": "Stow uses the camera to photograph an item so you can see where you put it.",
           "microphonePermission": false
         }
       ],
@@ -92,6 +92,10 @@
         "expo-channel-name": "production"
       },
       "url": "https://u.expo.dev/ab3e4a13-9fff-470c-bdbb-0f940bfaba22"
+    },
+    "locales": {
+      "en": "./locales/en.json",
+      "ko": "./locales/ko.json"
     }
   }
 }

@@ -1,4 +1,6 @@
-"""Play Store 휴대전화 스크린샷 생성.
+"""스토어 휴대전화 스크린샷 생성 — Play 와 App Store 를 **한 스크립트**가 만든다.
+
+사용: python3 scripts/gen-store-screenshots.py <캡처_폴더> [en|ko] [play|appstore]
 
 ⚠ Play 규격: 각 변 320~3840px, **긴 변이 짧은 변의 2배를 넘으면 안 된다**(최대 2:1).
   기기 원본은 1080×2520 = 2.33 배라 **그대로 올리면 거부된다.**
@@ -7,6 +9,13 @@
   캔버스에 줄여 앉히고, 남는 위쪽 공간에 캡션을 넣는다 — 여백을 버리는 대신
   "이 화면이 무엇인지" 를 말하게 한다. 스토어 목록은 어차피 작게 보여서
   캡션이 없으면 무슨 화면인지 알아보기 어렵다.
+
+⚠ App Store 규격(2026-09-18 추가): 6.9인치 **1320×2868 고정**. 2:1 제한이 없어 캡처를
+  거의 그대로 앉힐 수 있다 — iPhone 17 Pro Max 시뮬레이터 캡처가 정확히 이 크기다.
+  그래도 캡션은 남긴다. 두 스토어의 결이 달라지면 같은 앱으로 안 보인다.
+
+⚠ **두 벌로 만들지 않는다.** 캡션 문구는 한 곳(SHOTS_BY_LANG)에만 있어야 한쪽만
+  고쳐지는 일이 없다. 규격만 PLATFORMS 로 갈린다.
 """
 
 import os
@@ -21,13 +30,27 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SP = sys.argv[1] if len(sys.argv) > 1 else None
 if not SP or not os.path.isdir(SP):
-    raise SystemExit('캡처 폴더를 인자로 주세요: python3 scripts/gen-store-screenshots.py <폴더> [en|ko]')
+    raise SystemExit('캡처 폴더를 인자로 주세요: '
+                     'python3 scripts/gen-store-screenshots.py <폴더> [en|ko] [play|appstore]')
 # ⚠ 언어별로 캡션과 출력 폴더가 다르다. 기본은 en (스토어 기본 언어).
 LANG = sys.argv[2] if len(sys.argv) > 2 else 'en'
-OUT = os.path.join(ROOT, 'docs/store/screenshots', LANG)
+STORE = sys.argv[3] if len(sys.argv) > 3 else 'play'
+
+# 규격만 여기서 갈린다. `out` 은 ROOT 기준 상대 경로.
+PLATFORMS = {
+    'play':     dict(size=(1080, 1920), out='docs/store/screenshots'),
+    # 6.9인치 — iPhone 17 Pro Max 캡처와 같은 크기라 화면이 거의 원본 그대로 들어간다
+    'appstore': dict(size=(1320, 2868), out='docs/store/screenshots/ios'),
+}
+if STORE not in PLATFORMS:
+    raise SystemExit(f'스토어는 {" 또는 ".join(PLATFORMS)} 입니다: {STORE}')
+
+W, H = PLATFORMS[STORE]['size']
+OUT = os.path.join(ROOT, PLATFORMS[STORE]['out'], LANG)
 os.makedirs(OUT, exist_ok=True)
 
-W, H = 1080, 1920            # 9:16 — Play 권장 크기
+# 캡션 글씨와 여백은 캔버스 높이에 비례한다 — 규격이 바뀌어도 같은 비율로 보이게.
+K = H / 1920
 
 # ⚠ 캔버스 배경을 앱 배경(#0d0f16)과 **같은 색으로 두면 안 된다.** 화면 경계가
 #   사라져서 한 덩어리 검은 판으로 보이고, 둥근 모서리도 묻힌다. 실제로 그랬다.
@@ -104,8 +127,8 @@ SHOTS_BY_LANG = {
 }
 SHOTS = SHOTS_BY_LANG[LANG]
 
-TITLE = font(62, 12)   # Bold
-SUBF = font(34, 10)    # Regular
+TITLE = font(round(62 * K), 12)   # Bold
+SUBF = font(round(34 * K), 10)    # Regular
 
 for i, (src, title, sub) in enumerate(SHOTS, 1):
     p = os.path.join(SP, src)
@@ -117,15 +140,18 @@ for i, (src, title, sub) in enumerate(SHOTS, 1):
 
     canvas = gradient()
     d = ImageDraw.Draw(canvas)
-    center(d, title, 96, TITLE, FG)
-    center(d, sub, 190, SUBF, SUB)
+    center(d, title, round(96 * K), TITLE, FG)
+    center(d, sub, round(190 * K), SUBF, SUB)
 
     # 남는 공간에 화면을 앉힌다 (아래는 살짝 잘려 나가도 되게 여유를 둔다)
-    top = 288
-    avail_h = H - top - 40
-    scale = avail_h / shot.height
+    top = round(288 * K)
+    avail_h = H - top - round(40 * K)
+    # ⚠ 높이로만 맞추면 안 된다. App Store 캔버스는 캡처와 비율이 같아서, 높이를 다
+    #   쓰면 폭이 캔버스를 넘어 양옆이 잘린다. 둘 중 작은 배율을 쓴다.
+    avail_w = W - round(96 * K) * 2
+    scale = min(avail_h / shot.height, avail_w / shot.width)
     sw, sh = round(shot.width * scale), round(shot.height * scale)
-    dev, devmask = framed(shot.resize((sw, sh), Image.LANCZOS), 30)
+    dev, devmask = framed(shot.resize((sw, sh), Image.LANCZOS), round(30 * K))
     canvas.paste(dev, ((W - dev.width) // 2, top), devmask)
 
     dst = os.path.join(OUT, f'{i:02d}-{src.split(".")[0]}.png')
