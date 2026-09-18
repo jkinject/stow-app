@@ -20,6 +20,15 @@ const { withDangerousMod } = require('@expo/config-plugins');
  *
  * ⚠ 이름을 또 바꾸게 되면 여기와 `src/lib/strings.*.ts` 의 `auth.appName` 을
  *   같이 고쳐야 한다. 한쪽만 고치면 런처 이름과 앱 안 제목이 어긋난다.
+ *
+ * ⚠⚠ **`values-b+ko/` 도 여기서 지운다** (2026-09-18).
+ *   app.json 의 `locales` 는 iOS 전용이 아니다 — prebuild 가 Android 에도
+ *   `values-b+ko/strings.xml` 을 만들어 **iOS 키를 그대로 넣는다**
+ *   (CFBundleDisplayName, NSCameraUsageDescription…). Android 에서는 아무 의미가 없는데,
+ *   기본 로케일(`values/strings.xml`)에 없는 키라 릴리스 빌드의 lint 가 막는다:
+ *     "CFBundleDisplayName is translated here but not found in default locale [ExtraTranslation]"
+ *   → `lintVitalRelease` 실패. AAB 가 아예 안 나온다(2026-09-18 실제로 겪음).
+ *   한국어 런처 이름은 위의 `values-ko/app_name` 이 이미 담당하므로 저 폴더는 버려도 된다.
  */
 const LOCALIZED = {
   ko: '어디뒀지',
@@ -30,6 +39,13 @@ module.exports = function withKoreanAppName(config) {
     'android',
     async (cfg) => {
       const resDir = path.join(cfg.modRequest.platformProjectRoot, 'app/src/main/res');
+
+      // iOS 용 locales 가 흘러든 폴더를 걷어낸다 (머리말 참고)
+      for (const dir of fs.readdirSync(resDir, { withFileTypes: true })) {
+        if (dir.isDirectory() && dir.name.startsWith('values-b+')) {
+          fs.rmSync(path.join(resDir, dir.name), { recursive: true, force: true });
+        }
+      }
 
       for (const [lang, label] of Object.entries(LOCALIZED)) {
         const dir = path.join(resDir, `values-${lang}`);

@@ -25,7 +25,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "net.jangstar.stow",
-      "versionCode": 3,
+      "versionCode": 4,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.CAMERA"
@@ -68,6 +68,13 @@
         }
       ],
       "expo-sharing",
+      [
+        "./plugins/withIosLocales",
+        {
+          "en": "./locales/en.json",
+          "ko": "./locales/ko.json"
+        }
+      ],
       "./plugins/withKoreanAppName",
       "./plugins/withReleaseSigning",
       "expo-localization",
@@ -92,10 +99,6 @@
         "expo-channel-name": "production"
       },
       "url": "https://u.expo.dev/ab3e4a13-9fff-470c-bdbb-0f940bfaba22"
-    },
-    "locales": {
-      "en": "./locales/en.json",
-      "ko": "./locales/ko.json"
     }
   }
 }
