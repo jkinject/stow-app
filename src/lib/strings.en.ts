@@ -29,6 +29,7 @@ export const EN: Dict = {
     appName: 'Stow',
     tagline: 'Find anything in your home',
     google: 'Continue with Google',
+    apple: 'Continue with Apple',
     or: 'or',
     emailPlaceholder: 'Email address',
     emailCta: 'Continue with email',

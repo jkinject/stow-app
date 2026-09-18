@@ -63,6 +63,8 @@ export const KO = {
     appName: '어디뒀지',
     tagline: '집 안 물건이 어디 있는지 찾아주는 앱',
     google: '구글로 계속하기',
+    /** ⚠ Apple 이 승인한 문구만 쓸 수 있다. 직역·의역 금지 */
+    apple: 'Apple로 계속하기',
     or: '또는',
     emailPlaceholder: '이메일 주소',
     /** 첫 화면의 두 번째 버튼 — 누르면 그때 입력칸이 나온다 */

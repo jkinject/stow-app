@@ -1,4 +1,3 @@
-import * as AppleAuthentication from 'expo-apple-authentication';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -51,10 +50,17 @@ import { PALETTES, type, radius, space, tracking, leading } from '@/lib/theme';
  *   그 위에 흰 버튼을 얹는다. 라이트 팔레트를 쓰면 흰 바탕에 흰 버튼이라 버튼이 사라진다.
  *   제목·설명·입력칸 색도 전부 그 어두운 바탕 기준이다.
  *
- * ⚠ Apple 버튼만은 여전히 **Apple 이 그린다**(AppleAuthenticationButton, WHITE). 로고·문구·
- *   지역화가 지침에 묶여 있어 우리가 그리면 언어마다 문구를 직접 관리해야 한다. 흰색은 Apple 이
- *   허용한 세 가지(흰색·검정·흰색+테두리) 중 하나라 나머지 둘과 같은 결이 된다.
- *   높이·모서리는 아래 Pill 과 같은 값으로 맞춘다 — Apple 로그인이 덜 눈에 띄면 반려 사유다.
+ * ⚠⚠ Apple 버튼도 **우리가 그린다.** 전에는 네이티브 `AppleAuthenticationButton` 을 썼는데,
+ *   그 버튼은 **글씨 크기를 받지 않는다** — 높이에 비례해 iOS 가 자체 계산한다. 높이를 다른
+ *   버튼과 같은 55 로 맞추자 글씨만 23pt 로 그려져 혼자 1.35배 컸다(사용자 지적, 실측).
+ *   디자인 토큰이 닿지 않는 버튼이 하나 있으면 나란히 선 셋이 영영 안 맞는다.
+ *
+ *   대신 Apple HIG 의 커스텀 버튼 규칙을 **우리가 지킨다**:
+ *     · 배경은 흰색 — Apple 이 허용한 셋(흰색·검정·흰색+테두리) 중 하나
+ *     · 로고는 검정, 공식 모양 그대로. 변형·회전·색 바꾸기 금지
+ *     · 문구는 승인된 것만(`t.auth.apple`). 기기 언어로 지역화 — 우리 앱은 en·ko 뿐이라
+ *       사전 두 곳이면 끝이다. 문구를 손볼 때 Apple 승인 목록 밖으로 나가지 말 것
+ *     · 크기는 다른 로그인 버튼과 같게 — 작으면 반려 사유다(지침 4.8)
  *
  * ⚠ 그라데이션은 `react-native-svg` 로 그린다. `expo-linear-gradient` 를 넣으면
  *   네이티브 의존성이 하나 더 늘어나는데, svg 는 이미 쓰고 있다(아이콘·QR).
@@ -107,6 +113,22 @@ const BTN = {
   googleBorder: '#747775',
   text: '#000000',
 } as const;
+
+/**
+ * Apple 로고. 흰 버튼 위이므로 **검정** 고정 — Apple 이 허용한 두 색(흰색·검정) 중 하나다.
+ * ⚠ 모양을 손대지 말 것. 로고 변형은 브랜드 규칙 위반이고 심사에서 지적된다.
+ */
+/**
+ * ⚠ 기본값이 다른 로고보다 **2 작다.** Apple 마크는 속이 꽉 찬 검정 한 덩어리라, 같은 치수로
+ *   두면 구글 G(컬러)·봉투(선)보다 무겁게 보인다. 숫자를 맞추는 게 아니라 눈에 맞추는 값이다.
+ */
+function AppleLogo({ size = 16 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={BTN.text}>
+      <Path d="M17.05 12.04c-.03-2.75 2.25-4.07 2.35-4.13-1.28-1.87-3.27-2.13-3.98-2.16-1.69-.17-3.31 1-4.16 1-.86 0-2.19-.98-3.6-.95-1.85.03-3.56 1.08-4.51 2.73-1.93 3.34-.49 8.28 1.38 10.99.92 1.33 2.01 2.81 3.44 2.76 1.39-.06 1.91-.89 3.59-.89 1.67 0 2.15.89 3.61.86 1.49-.02 2.43-1.34 3.34-2.68 1.06-1.54 1.49-3.03 1.51-3.1-.03-.01-2.9-1.11-2.93-4.41M14.3 4.06c.76-.92 1.27-2.2 1.13-3.47-1.09.04-2.42.73-3.2 1.65-.7.81-1.32 2.12-1.15 3.36 1.22.09 2.46-.62 3.22-1.54" />
+    </Svg>
+  );
+}
 
 /**
  * 구글 G 로고. 브랜드 가이드가 **변형·단색화를 금지**하므로 공식 4색 그대로 그린다.
@@ -327,18 +349,15 @@ export default function SignIn() {
                 textColor={BTN.googleText}
                 borderColor={BTN.googleBorder}
               />
-              {/*
-                ⚠ Apple 이 그리는 버튼이라 우리 Pill 이 아니다. 그래도 **같은 줄에 같은 무게**로
-                  보여야 해서 높이·모서리를 Pill 과 같은 값으로 준다. 눌림 표시도 Apple 몫이라
-                  `busy` 일 때만 우리가 흐리게 한다(그 동안 다시 눌리는 것은 onApple 이 막는다).
-              */}
+              {/* iOS 에만. 나머지 둘과 **완전히 같은 Pill** 이다 — 머리말의 HIG 항목 참고 */}
               {Platform.OS === 'ios' && (
-                <AppleAuthentication.AppleAuthenticationButton
-                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
-                  cornerRadius={radius.full}
-                  style={[s.appleBtn, busy !== null && s.pressed]}
+                <Pill
+                  label={t.auth.apple}
                   onPress={() => void onApple()}
+                  busy={busy === 'apple'}
+                  disabled={busy !== null}
+                  icon={<AppleLogo />}
+                  textColor={BTN.text}
                 />
               )}
               <Pill
@@ -446,8 +465,6 @@ const s = StyleSheet.create({
   pillIcon: { alignItems: 'center', justifyContent: 'center' },
   pillText: { fontSize: type.bodyStrong, fontWeight: '700' },
   pressed: { opacity: 0.72 },
-  /** Apple 이 그리는 버튼 — 높이·모서리를 Pill 과 **같은 값**으로 */
-  appleBtn: { width: '100%', height: PILL_H },
 
   textBtn: { alignSelf: 'center', paddingVertical: space.md, paddingHorizontal: space.lg },
 
