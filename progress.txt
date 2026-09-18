@@ -834,3 +834,20 @@ dev 빌드에서 화면이 죽기 때문**이었다. 지금은 릴리스 APK 를
   App Privacy(4개 유형만·추적 아니요·게시됨), 연령 등급 **4+**, 심사 정보(데모 계정·노트·연락처), 저작권, **수동 출시**.
   ⚠ 전화번호는 국가 코드 앞 `+` 가 없으면 저장이 막힌다(`+82-2-6951-5406`).
   ⚠ 남은 것은 **iOS 빌드 하나** — 그것만 올리면 제출 가능.
+
+## 2026-09-18 — iOS 빌드가 두 번 죽은 이유: fingerprint 불일치
+- 증상: `eas build --platform ios` 가 **Configure expo-updates** 단계에서 1분 만에 죽는다.
+  겉 메시지는 "Unknown error" 뿐이고, 로그를 열어야 진짜 문구가 보인다:
+    "Runtime version calculated on local machine not equal to runtime version calculated during build."
+- runtimeVersion 정책이 **fingerprint** 라, 로컬과 EAS 서버가 계산한 해시가 다르면 빌드를 거부한다.
+  fingerprint 는 `node_modules/<pkg>` **디렉터리 전체를 해시**한다(rncoreAutolinkingIos 등).
+- ⚠ 원인 1: **로컬 Android 빌드가 node_modules 를 오염시킨다.** gradle 이 28개 패키지 안에
+  `android/build`, `android/.cxx` 를 만들어 두어 로컬 해시가 서버와 갈렸다.
+    find node_modules -maxdepth 5 -type d \( -path "*/android/build" -o -path "*/android/.cxx" -o -path "*/android/.gradle" \) -exec rm -rf {} +
+- ⚠ 원인 2: 그걸 지워도 여전히 갈렸다. 로컬 node_modules 가 그동안의 `expo install` 로 lockfile 과 어긋나 있었다.
+  **서버는 `npm ci --include=dev` 를 쓴다** → 로컬도 `npm ci` 로 맞춰야 한다. 그제야 해시가 일치했다.
+- 검증 방법: `npx expo-updates fingerprint:generate --platform ios` 로 로컬 해시를 뽑아 빌드 로그의 값과 대조.
+  (`eas fingerprint:compare <hash>` 는 **업로드된 해시만** 비교 가능 — 실패한 빌드의 서버 계산값은 못 쓴다.)
+- 결과: 3차 빌드 성공. IPA 나옴(빌드 85b2227c-a793-4dfa-ba78-6c3fe4061c63).
+- ⚠ `eas submit --non-interactive` 는 **App Store Connect API 키를 요구**한다. 키가 없으면(우리 상황)
+  `--non-interactive` 없이 대화형으로 돌려 Apple ID 로 제출해야 한다.
