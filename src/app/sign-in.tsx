@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
 import { IconLock, IconMail } from '@/components/Icon';
 import { KeyboardSpacer } from '@/components/KeyboardSpacer';
@@ -21,7 +21,7 @@ import { TextButton } from '@/components/ui';
 import { SIGNIN_HERO_URI } from '@/features/auth/heroImage';
 import { appleMessage, authMessage, useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
-import { useTheme, type, radius, space, tracking, leading } from '@/lib/theme';
+import { PALETTES, type, radius, space, tracking, leading } from '@/lib/theme';
 
 /**
  * 로그인 — 앱을 처음 여는 사람이 보는 **유일한** 화면이다.
@@ -43,10 +43,18 @@ import { useTheme, type, radius, space, tracking, leading } from '@/lib/theme';
  *   **iOS 에만** Sign in with Apple 이 하나 더 선다(2026-09-18, 심사 지침 4.8 — 소셜 로그인이
  *   있으면 Apple 로그인도 있어야 한다). 새 길이 아니라 Apple 이 요구하는 짝이다.
  *
- * ⚠ Apple 버튼은 **Apple 이 그린다**(AppleAuthenticationButton). 심사 지침이 모양·문구를
- *   정해 두어서 우리 Pill 로 흉내 내면 안 된다. 높이·둥글기만 Pill 과 맞춘다. iOS 에서는
- *   이 버튼이 맨 위 주 동작이고 구글은 테두리 버튼으로 내려간다 — Apple 로그인이 다른
- *   소셜 로그인보다 눈에 덜 띄면 그것도 반려 사유다.
+ * ⚠⚠ 버튼 셋은 **같은 무게**다 — 흰 알약 세 개, 순서는 구글 → 애플 → 이메일
+ *   (2026-09-18 사용자 결정, 시안 "시네마 화이트"). 전에는 Apple 만 네이티브 검정 버튼이라
+ *   혼자 튀었고 구글이 강조색으로 채워져 있어 위계가 셋 다 달랐다.
+ *
+ * ⚠ 그래서 이 화면만 **테마를 따르지 않는다.** 버튼 뒤 바탕을 항상 어둡게(다크 팔레트) 깔고
+ *   그 위에 흰 버튼을 얹는다. 라이트 팔레트를 쓰면 흰 바탕에 흰 버튼이라 버튼이 사라진다.
+ *   제목·설명·입력칸 색도 전부 그 어두운 바탕 기준이다.
+ *
+ * ⚠ Apple 버튼만은 여전히 **Apple 이 그린다**(AppleAuthenticationButton, WHITE). 로고·문구·
+ *   지역화가 지침에 묶여 있어 우리가 그리면 언어마다 문구를 직접 관리해야 한다. 흰색은 Apple 이
+ *   허용한 세 가지(흰색·검정·흰색+테두리) 중 하나라 나머지 둘과 같은 결이 된다.
+ *   높이·모서리는 아래 Pill 과 같은 값으로 맞춘다 — Apple 로그인이 덜 눈에 띄면 반려 사유다.
  *
  * ⚠ 그라데이션은 `react-native-svg` 로 그린다. `expo-linear-gradient` 를 넣으면
  *   네이티브 의존성이 하나 더 늘어나는데, svg 는 이미 쓰고 있다(아이콘·QR).
@@ -68,10 +76,55 @@ const HERO_SCREEN_WIDE = 0.5;
 const HERO_SCREEN_INPUT = 0.34;
 /** 그림 높이 중 그라데이션이 덮는 비율 */
 const FADE_PART = 0.62;
+/**
+ * 입력 모드에서는 **더 많이 덮는다.**
+ *
+ * ⚠ 그림이 34% 로 줄면 그라데이션도 같은 비율로 짧아져서, 사진이 어두운 바탕 위에
+ *   상자처럼 뚝 끊긴다(시뮬레이터에서 확인). 바탕이 늘 어두워진 뒤로 그 선이 더 보인다.
+ *   덮는 비율을 키워 사진이 끝까지 녹게 한다.
+ */
+const FADE_PART_INPUT = 0.88;
+
+/** 로그인 버튼 세 개의 높이. Apple 버튼도 이 값을 쓴다 — 아래 `pill` 주석 참고 */
+const PILL_H = space.lg * 2 + leading.bodyStrong;
+
+/**
+ * 이 화면은 테마를 따르지 않는다(머리말 참고). 바탕은 늘 어둡다.
+ * ⚠ `useTheme()` 을 쓰지 말 것 — 라이트에서 버튼이 바탕에 묻힌다.
+ */
+const c = PALETTES.dark;
+
+/**
+ * 버튼 세 개의 색. 사진 위이고 브랜드 규칙이 걸려 있어 **테마 팔레트를 쓰지 않는다**
+ * (overlay 주석과 같은 이유).
+ *
+ * ⚠ 구글 글자·테두리 값은 구글 브랜드 가이드의 라이트 버튼 규격이다. 임의로 바꾸지 말 것.
+ * ⚠ Apple 은 여기 없다 — Apple 이 자기 버튼을 그린다.
+ */
+const BTN = {
+  face: '#FFFFFF',
+  googleText: '#1F1F1F',
+  googleBorder: '#747775',
+  text: '#000000',
+} as const;
+
+/**
+ * 구글 G 로고. 브랜드 가이드가 **변형·단색화를 금지**하므로 공식 4색 그대로 그린다.
+ * (Icon.tsx 의 선 아이콘들과 달리 stroke 가 아니라 fill 이라 여기 따로 둔다)
+ */
+function GoogleLogo({ size = 18 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 48 48">
+      <Path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+      <Path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+      <Path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+      <Path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+    </Svg>
+  );
+}
 
 export default function SignIn() {
   const { signInWithGoogle, signInWithApple, signInWithPassword, signUpWithPassword } = useAuth();
-  const { c, isDark } = useTheme();
   const t = useT();
   const insets = useSafeAreaInsets();
   const win = useWindowDimensions();
@@ -155,7 +208,7 @@ export default function SignIn() {
    *   기준 삼을 상자가 없어서, 아래가 다 안 덮이고 **그림이 뚝 잘린 선**이 보인다
    *   (실기기에서 그 선을 봤다). 픽셀로 계산해서 넘긴다.
    */
-  const fadeH = Math.round(heroH * FADE_PART);
+  const fadeH = Math.round(heroH * (emailMode ? FADE_PART_INPUT : FADE_PART));
 
   return (
     <View style={[s.root, { backgroundColor: c.bg }]}>
@@ -163,11 +216,9 @@ export default function SignIn() {
       <View style={[s.heroLayer, { height: heroH }]} pointerEvents="none">
         {/* ⚠ `require()` 로 된 번들 에셋은 이 기기에서 **오류 없이 안 그려졌다.**
             경위와 시도한 것들은 heroImage.ts 주석에 적어 뒀다. */}
-        <Image
-          source={{ uri: SIGNIN_HERO_URI }}
-          style={[s.hero, isDark && s.heroDim]}
-          resizeMode="cover"
-        />
+        {/* ⚠ 늘 살짝 죽인다. 전에는 다크 모드에서만 그랬는데, 이제 아래 바탕이 항상
+            어두워서 원본 그대로면 사진만 혼자 밝게 떠 버린다. */}
+        <Image source={{ uri: SIGNIN_HERO_URI }} style={[s.hero, s.heroDim]} resizeMode="cover" />
         {/* ⚠ 그라데이션이 그림의 **아래 절반**을 덮어 배경색으로 이어 준다.
             이게 없으면 그림이 상자처럼 뚝 끊긴다 — 그게 이전 시안의 문제였다. */}
         <Svg style={[s.fade, { height: fadeH }]} width="100%" height={fadeH}>
@@ -249,7 +300,7 @@ export default function SignIn() {
                 onPress={onPassword}
                 busy={busy === 'pw'}
                 disabled={busy !== null}
-                filled
+                accent
               />
 
               <TextButton
@@ -267,30 +318,35 @@ export default function SignIn() {
             </View>
           ) : (
             <View style={s.actions}>
-              {Platform.OS === 'ios' && (
-                <AppleAuthentication.AppleAuthenticationButton
-                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-                  buttonStyle={
-                    isDark
-                      ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
-                      : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
-                  }
-                  cornerRadius={radius.full}
-                  style={[s.appleBtn, busy !== null && busy !== 'apple' && s.pressed]}
-                  onPress={() => void onApple()}
-                />
-              )}
               <Pill
                 label={t.auth.google}
                 onPress={onGoogle}
                 busy={busy === 'google'}
                 disabled={busy !== null}
-                filled={Platform.OS !== 'ios'}
+                icon={<GoogleLogo />}
+                textColor={BTN.googleText}
+                borderColor={BTN.googleBorder}
               />
+              {/*
+                ⚠ Apple 이 그리는 버튼이라 우리 Pill 이 아니다. 그래도 **같은 줄에 같은 무게**로
+                  보여야 해서 높이·모서리를 Pill 과 같은 값으로 준다. 눌림 표시도 Apple 몫이라
+                  `busy` 일 때만 우리가 흐리게 한다(그 동안 다시 눌리는 것은 onApple 이 막는다).
+              */}
+              {Platform.OS === 'ios' && (
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+                  cornerRadius={radius.full}
+                  style={[s.appleBtn, busy !== null && s.pressed]}
+                  onPress={() => void onApple()}
+                />
+              )}
               <Pill
                 label={t.auth.emailCta}
                 onPress={() => setEmailMode(true)}
                 disabled={busy !== null}
+                icon={<IconMail size={18} color={BTN.text} />}
+                textColor={BTN.text}
               />
             </View>
           )}
@@ -300,37 +356,58 @@ export default function SignIn() {
   );
 }
 
-/** 알약 버튼 — 채운 것(주 동작) 하나와 테두리만 있는 것들이 쌓인다 */
+/**
+ * 알약 버튼.
+ *
+ * ⚠ 로그인 방법 버튼들은 **전부 같은 모양**이다 — 흰 알약에 왼쪽 로고, 가운데 글자
+ *   (2026-09-18 시안 "시네마 화이트"). 하나만 채워 강조하던 예전 구조로 되돌리지 말 것:
+ *   Apple 로그인이 다른 소셜 로그인보다 덜 눈에 띄면 심사에서 반려된다(지침 4.8).
+ *
+ * ⚠ 아래 이메일 입력 모드의 "로그인/가입하기" 는 이야기가 다르다. 거기서는 그것이 유일한
+ *   주 동작이라 강조색으로 채운다 — `accent` 를 넘겨서 쓴다.
+ */
 function Pill({
   label,
   onPress,
   busy,
   disabled,
-  filled,
+  icon,
+  textColor = BTN.text,
+  borderColor,
+  accent,
 }: {
   label: string;
   onPress: () => void;
   busy?: boolean;
   disabled?: boolean;
-  filled?: boolean;
+  /** 글자 왼쪽 로고. 없으면 글자만 가운데 */
+  icon?: React.ReactNode;
+  textColor?: string;
+  /** 있으면 1.5px 테두리 (구글 브랜드 규격) */
+  borderColor?: string;
+  /** 강조색으로 채운다 — 이메일 폼의 주 동작 전용 */
+  accent?: boolean;
 }) {
-  const { c } = useTheme();
+  const bg = accent ? c.accent : BTN.face;
+  const fg = accent ? c.onAccent : textColor;
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => [
         s.pill,
-        filled
-          ? { backgroundColor: c.accent }
-          : { borderWidth: 1.5, borderColor: c.borderStrong },
+        { backgroundColor: bg },
+        borderColor ? { borderWidth: 1.5, borderColor } : null,
         pressed && s.pressed,
       ]}
     >
       {busy ? (
-        <ActivityIndicator color={filled ? c.onAccent : c.text} />
+        <ActivityIndicator color={fg} />
       ) : (
-        <Text style={[s.pillText, { color: filled ? c.onAccent : c.text }]}>{label}</Text>
+        <>
+          {icon ? <View style={s.pillIcon}>{icon}</View> : null}
+          <Text style={[s.pillText, { color: fg }]}>{label}</Text>
+        </>
       )}
     </Pressable>
   );
@@ -352,17 +429,25 @@ const s = StyleSheet.create({
   sub: { fontSize: type.bodyStrong, lineHeight: leading.bodyStrong },
 
   actions: { gap: space.md },
-  /** 알약 — 레퍼런스 셋 다 완전히 둥근 버튼을 쓴다 */
+  /**
+   * 알약 — 레퍼런스 셋 다 완전히 둥근 버튼을 쓴다.
+   * ⚠ 높이를 **값으로 못 박는다**(PILL_H). Apple 버튼은 우리가 그리는 게 아니라 높이를
+   *   따로 줘야 하는데, 여기 여백으로만 정해 두면 둘이 조금씩 어긋난다 — 나란히 서는
+   *   버튼이라 1px 차이도 보인다.
+   */
   pill: {
-    paddingVertical: space.lg,
+    height: PILL_H,
     borderRadius: radius.full,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: space.sm,
   },
+  pillIcon: { alignItems: 'center', justifyContent: 'center' },
   pillText: { fontSize: type.bodyStrong, fontWeight: '700' },
   pressed: { opacity: 0.72 },
-  /** Apple 이 그리는 버튼 — 높이는 Pill(위아래 여백 16 + 글자 23)과 같게 */
-  appleBtn: { width: '100%', height: space.lg * 2 + leading.bodyStrong },
+  /** Apple 이 그리는 버튼 — 높이·모서리를 Pill 과 **같은 값**으로 */
+  appleBtn: { width: '100%', height: PILL_H },
 
   textBtn: { alignSelf: 'center', paddingVertical: space.md, paddingHorizontal: space.lg },
 
