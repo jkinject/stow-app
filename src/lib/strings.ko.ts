@@ -142,7 +142,8 @@ export const KO = {
     switched: (name: string) => `${name}(으)로 바꿨습니다`,
   },
 
-  tabs: { find: '찾기', places: '보관 장소', shopping: '살 것', more: '더보기' },
+  /** 살 것 탭은 음식 탭이 됐다 (2026-09-29). 살 것은 더보기 → 집 관리로 옮겼다 */
+  tabs: { find: '찾기', places: '보관 장소', food: '음식', more: '더보기' },
 
   find: {
     searchPlaceholder: '물건 이름 (초성도 됩니다: ㄱㅈㅈ)',
@@ -486,6 +487,61 @@ export const KO = {
     linkFailed: '링크를 열 수 없습니다',
   },
 
+  /**
+   * 음식 탭 (2026-09-29 사용자 요청). 살 것 탭 자리를 이어받았다.
+   * 음식 = 소비기한이 있는 물건. 카테고리를 보지 않는다 — features/food/api.ts 헤더 참고.
+   */
+  food: {
+    title: '음식',
+    /** 빈 상태 — 기한을 안 넣은 식품은 여기 안 보인다는 걸 가르치는 자리 */
+    empty: '소비기한이 있는 음식이 아직 없어요',
+    emptyHint: '소비기한을 넣으면 여기 모입니다.\n등록한 물건에서 음식을 찾아 소비기한을 넣어 주세요.',
+    findExisting: '등록한 물건 찾기',
+    section: (n: number) => `가진 음식 · ${n}개`,
+    /** 카드 아래 한 줄 — 어디 있는지 */
+    noUsable: '지금 쓸 수 있는 재료가 없습니다',
+    noUsableHint: '수량이 0 이거나 기한이 지난 음식은 재료로 쓰지 않습니다.',
+  },
+
+  /** 레시피 추천 — Gemini. 문구의 주어는 늘 "추천" 이지 "앱" 이 아니다 (참고용이라는 뜻) */
+  recipes: {
+    title: '가진 음식으로 한 끼',
+    intro: (n: number) => `음식 ${n}개를 자동으로 참고합니다.`,
+    hintPlaceholder: '원하는 게 있으면 한 줄 (예: 매운 거, 국물, 아이 반찬)',
+    generate: '레시피 추천',
+    generating: '레시피를 찾고 있어요…',
+    replace: '다른 레시피 추천',
+    /** 첫 호출 직전 — 무엇이 나가는지. 사진은 안 나간다 */
+    dataHint: '이름·수량·소비기한을 Google에 보내 추천을 받습니다. 사진은 보내지 않습니다.',
+    saved: '가족과 함께 보는 저장된 추천',
+    /** 성공 토스트 — 헤더 라벨을 재활용하면 확인이 아니라 제목처럼 읽힌다 */
+    savedToast: '추천을 저장했습니다',
+    savedAt: (when: string) => `${when} 저장`,
+    fromCache: '같은 재료로 받았던 추천을 다시 보여드려요',
+    /** 힌트가 있었으면 그 세트에 표시 */
+    withHint: (h: string) => `힌트: ${h}`,
+    minutes: (n: number) => `약 ${n}분`,
+    easy: '쉬움',
+    medium: '보통',
+    servings: (n: number) => `${n}인분`,
+    owned: '가진 재료',
+    staples: '있다고 본 기본 재료',
+    missing: '더 필요한 재료',
+    steps: '만드는 순서',
+    remaining: (n: number) => `오늘 ${n}번 더 받을 수 있어요`,
+    reference: 'AI 참고용 레시피 · 재료 상태와 필요한 양을 확인해 주세요',
+    /* 실패는 Alert */
+    failed: '추천을 받지 못했습니다',
+    limit: '오늘은 새 추천을 더 받을 수 없어요',
+    limitHint: '내일(UTC 기준) 다시 받을 수 있습니다. 지금 저장된 추천은 그대로 볼 수 있어요.',
+    changed: '가족이 먼저 추천을 바꿨어요',
+    changedHint: '최신 추천을 불러왔습니다. 다시 눌러 주세요.',
+    noFood: '재료로 쓸 음식이 없어요',
+    tooMany: '음식이 너무 많아 지금은 추천하기 어려워요',
+    modelFailed: '추천 서비스가 응답하지 않아요. 잠시 후 다시 시도해 주세요.',
+    notConfigured: '추천 기능이 아직 준비되지 않았어요',
+  },
+
   more: {
     title: '더보기',
     profile: '내 정보',
@@ -507,6 +563,8 @@ export const KO = {
     family: '가족',
     familyValue: (n: number) => `${n}명`,
     trash: '휴지통',
+    /** 탭에서 내려온 살 것 (2026-09-29) — 세제·건전지도 들어오므로 '식재료' 로 좁히지 않는다 */
+    shopping: '살 것',
     expiryReminders: '소비기한 알림',
     trashHint: '지운 물건·박스·장소를 30일 안에 되돌릴 수 있습니다.',
     account: '계정',

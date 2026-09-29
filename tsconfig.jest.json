@@ -8,5 +8,6 @@
     "esModuleInterop": true,
     "isolatedModules": false
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "types/**/*.d.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "types/**/*.d.ts", "supabase/functions/_shared/**/*.ts"],
+  "exclude": ["node_modules"]
 }

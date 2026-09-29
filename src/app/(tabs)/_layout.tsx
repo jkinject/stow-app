@@ -3,7 +3,7 @@ import { Tabs } from 'expo-router';
 import { useEffect, useMemo } from 'react';
 
 
-import { IconBoxes, IconCart, IconDots, IconSearch } from '@/components/Icon';
+import { IconBowl, IconBoxes, IconDots, IconSearch } from '@/components/Icon';
 import { useHousehold } from '@/features/household/context';
 import { useAuth } from '@/lib/auth';
 import { useExpiryReminderSync } from '@/features/item/reminders';
@@ -89,11 +89,13 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => <IconBoxes color={color} />,
         }}
       />
+      {/* 살 것 → 음식 (2026-09-29). 살 것은 거의 안 쓰여 더보기로 내렸고, 이 자리는
+          소비기한이 있는 물건(=음식)을 모아 레시피를 받는 화면이 가져간다. */}
       <Tabs.Screen
-        name="shopping"
+        name="food"
         options={{
-          title: t.tabs.shopping,
-          tabBarIcon: ({ color }) => <IconCart color={color} />,
+          title: t.tabs.food,
+          tabBarIcon: ({ color }) => <IconBowl color={color} />,
         }}
       />
       <Tabs.Screen

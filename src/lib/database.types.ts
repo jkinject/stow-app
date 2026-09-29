@@ -229,6 +229,124 @@ export type Database = {
           },
         ]
       }
+      food_recipe_current: {
+        Row: {
+          household_id: string
+          revision: number
+          set_id: string
+          updated_at: string
+        }
+        Insert: {
+          household_id: string
+          revision?: number
+          set_id: string
+          updated_at?: string
+        }
+        Update: {
+          household_id?: string
+          revision?: number
+          set_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_recipe_current_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: true
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "food_recipe_current_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "food_recipe_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      food_recipe_sets: {
+        Row: {
+          cache_key: string
+          created_at: string
+          created_by: string
+          generation: number
+          hint: string
+          household_id: string
+          id: string
+          inventory: Json
+          locale: string
+          model: string
+          request_id: string
+          result: Json
+          spec_version: string
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string
+          created_by: string
+          generation?: number
+          hint?: string
+          household_id: string
+          id?: string
+          inventory: Json
+          locale: string
+          model: string
+          request_id: string
+          result: Json
+          spec_version: string
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string
+          created_by?: string
+          generation?: number
+          hint?: string
+          household_id?: string
+          id?: string
+          inventory?: Json
+          locale?: string
+          model?: string
+          request_id?: string
+          result?: Json
+          spec_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_recipe_sets_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      food_recipe_usage: {
+        Row: {
+          attempts: number
+          day: string
+          household_id: string
+        }
+        Insert: {
+          attempts?: number
+          day: string
+          household_id: string
+        }
+        Update: {
+          attempts?: number
+          day?: string
+          household_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_recipe_usage_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       household_members: {
         Row: {
           household_id: string
@@ -992,6 +1110,38 @@ export type Database = {
       enqueue_storage_gc: {
         Args: { p_household: string; p_paths: string[] }
         Returns: undefined
+      }
+      food_recipe_point: {
+        Args: {
+          p_expected_revision: number
+          p_household: string
+          p_set_id: string
+        }
+        Returns: number
+      }
+      food_recipe_reserve: {
+        Args: { p_household: string; p_limit: number }
+        Returns: number
+      }
+      food_recipe_store: {
+        Args: {
+          p_cache_key: string
+          p_created_by: string
+          p_expected_revision: number
+          p_generation: number
+          p_hint: string
+          p_household: string
+          p_inventory: Json
+          p_locale: string
+          p_model: string
+          p_request_id: string
+          p_result: Json
+          p_spec_version: string
+        }
+        Returns: {
+          revision: number
+          set_id: string
+        }[]
       }
       gen_invite_code: { Args: never; Returns: string }
       household_deletion_preview: {

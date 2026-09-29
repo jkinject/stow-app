@@ -12,6 +12,27 @@
         "8081"
       ],
       "port": 8081
+    },
+    {
+      "name": "metro-8082",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--dev-client",
+        "--port",
+        "8082"
+      ],
+      "port": 8082
+    },
+    {
+      "name": "gemini-stub",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "scripts/dev/gemini-stub.py",
+        "8091"
+      ],
+      "port": 8091
     }
   ]
 }

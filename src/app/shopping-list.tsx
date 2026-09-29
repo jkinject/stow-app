@@ -13,13 +13,17 @@ import { useTheme, type, space, leading } from '@/lib/theme';
 /**
  * 살 것 (AC16 · AC18).
  *
+ * ⚠ 2026-09-29 에 **탭에서 더보기 → 집 관리로 내려왔다.** 거의 쓰이지 않아 탭 자리를
+ *   음식 탭에 내줬다. 화면·훅·트리거(t40)·shopping_list 표는 그대로다 — 옮긴 건 입구뿐이다.
+ *   경로는 `/shopping-list`. (탭 시절 경로 `/shopping` 을 여는 코드는 없었다 — 확인함.)
+ *
  * 이 화면은 **읽는 화면**이다. 편입·해제는 DB 트리거가 수량 변화에 따라 처리한다.
  * 사용자가 여기서 하는 일은 두 가지뿐이다: 구매 링크로 나가기, 사 온 것을 채우기.
  *
  * "사 왔음" 버튼을 따로 두지 않았다(AC19 제외, 사용자 결정). 물건을 눌러 상세로 가서
  * 수량을 올리면 트리거가 목록에서 알아서 뺀다 — 실제로 몇 개를 채웠는지도 함께 기록된다.
  */
-export default function ShoppingTab() {
+export default function ShoppingListScreen() {
   const { c } = useTheme();
   const t = useT();
   const router = useRouter();
@@ -44,7 +48,7 @@ export default function ShoppingTab() {
   }
 
   return (
-    <Screen title={t.shopping.title}>
+    <Screen back title={t.shopping.title}>
       <View style={st.body}>
         {list.isLoading ? (
           <Loading />

@@ -9,6 +9,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ChoiceSheet } from '@/components/ChoiceSheet';
 import {
   IconBell,
+  IconCart,
   IconChevron,
   IconGlobe,
   IconMoon,
@@ -223,9 +224,15 @@ export default function MoreTab() {
 
         {/* 집 관리 */}
         <SettingsGroup>
+          {/* 살 것 — 탭에서 내려왔다 (2026-09-29). 장소가 없어도 뜬다: 수량 0 은 장소와 무관하다 */}
+          <SettingsRow
+            first
+            icon={(color) => <IconCart color={color} />}
+            label={t.more.shopping}
+            onPress={() => router.push('/shopping-list')}
+          />
           {hasPlaces && (
             <SettingsRow
-              first
               icon={(color) => <IconPrinter color={color} />}
               label={t.more.printLabels}
               onPress={() => router.push('/labels')}
@@ -233,7 +240,6 @@ export default function MoreTab() {
           )}
           {/* 카테고리 관리는 owner 전용이 아니다 — 물건을 분류하는 도구이지 권한이 아니다 */}
           <SettingsRow
-            first={!hasPlaces}
             icon={(color) => <IconTag color={color} />}
             label={t.category.manage}
             onPress={() => router.push('/categories')}
