@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { IconGear, IconPlus, IconX } from '@/components/Icon';
+import { SelectionBar, BAR_SPACE } from '@/components/SelectionBar';
 import { SettingsCard } from '@/components/SettingsCard';
-import { Button, Empty, FieldLabel, IconButton, Loading, Screen, SectionLabel } from '@/components/ui';
+import { Button, Empty, FieldLabel, IconButton, Loading, Screen, SectionLabel, TextButton } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { useEnsureActive } from '@/features/household/useEnsureActive';
 import { useAudit } from '@/features/history/api';
@@ -16,7 +17,9 @@ import { PhotoViewer } from '@/components/PhotoViewer';
 import { useToast } from '@/components/Toast';
 import { ItemCard } from '@/features/item/ItemCard';
 import { IMAGE_CACHE_POLICY, useThumbUrls } from '@/features/item/thumbs';
-import { useItemPhotoUrl } from '@/features/item/api';
+import { useItemPhotoUrl, useMoveItems } from '@/features/item/api';
+import { MovePicker, type MoveTarget } from '@/features/item/MovePicker';
+import { useSelection } from '@/features/item/selection';
 import { CameraCapture } from '@/features/item/CameraCapture';
 import { preparePhoto } from '@/features/item/photo';
 import { useRemovePhoto, useSetPhoto } from '@/features/item/photoApi';
@@ -80,6 +83,18 @@ export default function ContainerDetail() {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [moving, setMoving] = useState(false);
+
+  /**
+   * 내용물 여러 개를 골라 한 번에 옮기기 (2026-09-21).
+   *
+   * ⚠ id 배열을 `useMemo` 로 감싼다 — 렌더마다 새 배열이면 선택 훅의 파생값이
+   *   매번 새 참조가 된다(selection.ts 의 주석 참고). 의존은 `list` 가 아니라
+   *   `items.data` 다. `?? []` 가 매 렌더 새 배열을 만들기 때문이다.
+   */
+  const ids = useMemo(() => (items.data ?? []).map((it) => it.id), [items.data]);
+  const sel = useSelection(ids);
+  const [bulkMoving, setBulkMoving] = useState(false);
+  const moveItems = useMoveItems();
   const [photoSheet, setPhotoSheet] = useState(false);
   const [viewer, setViewer] = useState(false);
 
@@ -122,7 +137,21 @@ export default function ContainerDetail() {
   return (
     <Screen
       back
-      float={<Fab onPress={() => router.push(`/add/${containerId}`)} />}
+      float={
+        /* ＋는 "물건 등록" 한 가지 뜻이다 — 고르는 중에 등록할 일은 없고 자리도 겹친다 */
+        sel.active ? (
+          <SelectionBar
+            count={sel.picked.length}
+            allPicked={sel.allPicked}
+            busy={moveItems.isPending}
+            onToggleAll={sel.toggleAll}
+            onCancel={sel.exit}
+            onMove={() => setBulkMoving(true)}
+          />
+        ) : (
+          <Fab onPress={() => router.push(`/add/${containerId}`)} />
+        )
+      }
     >
       <View style={st.body}>
         {/* 박스 한 장 카드.
@@ -248,6 +277,43 @@ export default function ContainerDetail() {
           }}
         />
 
+        {/*
+          고른 물건들을 한 번에 옮기기.
+
+          ⚠ 여기서 고른 것은 **모두 이 박스 안**에 있다 — 출발지가 하나라서 단건 이동과
+            똑같이 "지금 여기" 를 표시하고 그 자리로 스크롤할 수 있다.
+          ⚠ 이 화면(MovePicker)에는 "+ 여기에 박스 만들기" 가 있다. 박스를 새로 사서
+            정리하는 흐름에서는 그 한 번으로 박스가 생기고 고른 것이 통째로 들어간다.
+        */}
+        <MovePicker
+          visible={bulkMoving}
+          title={t.select.moveTitle(sel.picked.length)}
+          addBoxHint={t.select.addBoxHint(sel.picked.length)}
+          householdId={activeId}
+          currentContainerId={containerId}
+          currentLocationId={container.data?.location_id ?? ''}
+          busy={moveItems.isPending}
+          onClose={() => setBulkMoving(false)}
+          onPick={async (target: MoveTarget, label: string) => {
+            const picked = sel.picked;
+            try {
+              const res = await moveItems.mutateAsync({ ids: picked, target });
+              setBulkMoving(false);
+              sel.exit();
+              /**
+               * ⚠ 부분 성공을 성공이라고 하지 않는다. `.in()` 은 권한에 걸린 행을
+               *   조용히 건너뛰므로, 돌아온 개수가 요청 개수와 다르면 그대로 말한다.
+               * ⚠ 하나도 못 옮겼으면 Alert 이다 — 사라지는 알림으로 알리면 놓친다.
+               */
+              if (res.moved === 0) Alert.alert(t.select.movedNone, t.select.movedNoneHint);
+              else if (res.moved < res.total) toast(t.select.movedSome(res.moved, res.total, label));
+              else toast(t.select.moved(res.moved, label));
+            } catch (e) {
+              Alert.alert(t.select.moveFailed, e instanceof Error ? e.message : t.common.tryAgain);
+            }
+          }}
+        />
+
         {/* 크게 보기 — 물건 상세와 **같은 컴포넌트**를 쓴다 */}
         <PhotoViewer
           visible={viewer}
@@ -305,7 +371,16 @@ export default function ContainerDetail() {
         </Modal>
       )}
 
-        <SectionLabel>{t.container.contents(list.length)}</SectionLabel>
+        <SectionLabel
+          action={
+            /* 길게 누르기만 두면 아무도 못 찾는다 — 눈에 보이는 길을 함께 둔다 */
+            list.length > 1 && !sel.active ? (
+              <TextButton label={t.select.enter} onPress={sel.open} size="small" />
+            ) : null
+          }
+        >
+          {t.container.contents(list.length)}
+        </SectionLabel>
         {items.isLoading ? (
           <Loading />
         ) : list.length === 0 ? (
@@ -322,11 +397,18 @@ export default function ContainerDetail() {
                 width={cardW}
                 thumb={thumbs.get(it.thumb_path)}
                 inUse={!!it.in_use_since}
-                onPress={() => router.push(`/item/${it.id}`)}
+                selectable={sel.active}
+                selected={sel.ids.has(it.id)}
+                /* ⚠ 고르는 중에는 상세로 가지 않는다 — 빠져나가면 골라 둔 것이 날아간다 */
+                onPress={() => (sel.active ? sel.toggle(it.id) : router.push(`/item/${it.id}`))}
+                onLongPress={() => sel.start(it.id)}
               />
             ))}
           </CardGrid>
         )}
+
+        {/* ⚠ 막대는 떠 있는 것이라 스스로 자리를 못 만든다 — 마지막 줄이 가리지 않게 비운다 */}
+        {sel.active ? <View style={{ height: BAR_SPACE }} /> : null}
       </View>
     </Screen>
   );

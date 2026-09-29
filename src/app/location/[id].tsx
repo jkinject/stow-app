@@ -1,15 +1,19 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 
 import { IconGear, IconX } from '@/components/Icon';
+import { SelectionBar, BAR_SPACE } from '@/components/SelectionBar';
 import { SettingsCard } from '@/components/SettingsCard';
 import { Button, Empty, Field, IconButton, Loading, Screen, SectionLabel, TextButton } from '@/components/ui';
 import { useHousehold } from '@/features/household/context';
 import { useAudit } from '@/features/history/api';
 import { CardGrid, useCardWidth } from '@/components/CardGrid';
 import { Fab } from '@/components/Fab';
+import { useMoveItems } from '@/features/item/api';
 import { ItemCard } from '@/features/item/ItemCard';
+import { MovePicker, type MoveTarget } from '@/features/item/MovePicker';
+import { useSelection } from '@/features/item/selection';
 import { useThumbUrls } from '@/features/item/thumbs';
 import {
   useContainers,
@@ -20,6 +24,7 @@ import {
   useUpdateLocation,
   useLooseItems,
 } from '@/features/storage/api';
+import { useToast } from '@/components/Toast';
 import { useT } from '@/lib/i18n';
 import { relTime } from '@/lib/time';
 import { useTheme, type, radius, space, tracking, leading } from '@/lib/theme';
@@ -59,6 +64,23 @@ export default function LocationDetail() {
 
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
+
+  /**
+   * 낱개 물건 여러 개를 골라 한 번에 옮기기 (2026-09-21 사용자 요청).
+   *
+   * 박스 없이 장소에 쌓아 둔 물건이 이 화면의 "낱개" 섹션이다. 박스를 새로 들이면
+   * 그것들을 통째로 옮기게 되는데, 지금까지는 하나씩 상세를 열고 이동을 눌러야 했다.
+   *
+   * ⚠ 선택은 **낱개 물건에만** 건다. 위의 박스 격자는 물건이 아니다 —
+   *   박스를 옮기는 일은 박스 상세에 따로 있다(BoxMovePicker).
+   * ⚠ id 배열을 `useMemo` 로 감싼다 — 렌더마다 새 배열이면 선택 훅의 파생값이 매번
+   *   새 참조가 된다(selection.ts 주석). 의존은 `ls` 가 아니라 `loose.data` 다.
+   */
+  const looseIds = useMemo(() => (loose.data ?? []).map((it) => it.id), [loose.data]);
+  const sel = useSelection(looseIds);
+  const [bulkMoving, setBulkMoving] = useState(false);
+  const moveItems = useMoveItems();
+  const toast = useToast();
 
   async function onAdd() {
     const n = name.trim();
@@ -137,16 +159,28 @@ export default function LocationDetail() {
     <Screen
       back
       /* ＋ 는 앱 전체에서 **물건 등록** 한 가지 뜻이다.
-         박스 만들기는 "박스" 섹션 제목 옆에 남는다 — 구조를 만드는 일이라 성격이 다르다. */
+         박스 만들기는 "박스" 섹션 제목 옆에 남는다 — 구조를 만드는 일이라 성격이 다르다.
+         ⚠ 그래서 고르는 중에는 ＋ 를 치운다 — 등록할 때가 아니고 자리도 정확히 겹친다. */
       float={
-        <Fab
-          onPress={() =>
-            router.push({
-              pathname: '/add/[target]',
-              params: { target: locationId, loose: '1' },
-            })
-          }
-        />
+        sel.active ? (
+          <SelectionBar
+            count={sel.picked.length}
+            allPicked={sel.allPicked}
+            busy={moveItems.isPending}
+            onToggleAll={sel.toggleAll}
+            onCancel={sel.exit}
+            onMove={() => setBulkMoving(true)}
+          />
+        ) : (
+          <Fab
+            onPress={() =>
+              router.push({
+                pathname: '/add/[target]',
+                params: { target: locationId, loose: '1' },
+              })
+            }
+          />
+        )
       }
     >
       <View style={st.body}>
@@ -250,7 +284,16 @@ export default function LocationDetail() {
 
         {ls.length > 0 && (
           <>
-            <SectionLabel>{t.location.looseSection(ls.length)}</SectionLabel>
+            <SectionLabel
+              action={
+                /* 길게 누르기만 두면 아무도 못 찾는다 — 눈에 보이는 길을 함께 둔다 */
+                ls.length > 1 && !sel.active ? (
+                  <TextButton label={t.select.enter} onPress={sel.open} size="small" />
+                ) : null
+              }
+            >
+              {t.location.looseSection(ls.length)}
+            </SectionLabel>
             <CardGrid>
               {ls.map((it) => (
                 <ItemCard
@@ -262,13 +305,56 @@ export default function LocationDetail() {
                   width={cardW}
                   thumb={thumbs.get(it.thumb_path)}
                   inUse={!!it.in_use_since}
-                  onPress={() => router.push(`/item/${it.id}`)}
+                  selectable={sel.active}
+                  selected={sel.ids.has(it.id)}
+                  /* ⚠ 고르는 중에는 상세로 가지 않는다 — 빠져나가면 골라 둔 것이 날아간다 */
+                  onPress={() => (sel.active ? sel.toggle(it.id) : router.push(`/item/${it.id}`))}
+                  onLongPress={() => sel.start(it.id)}
                 />
               ))}
             </CardGrid>
           </>
         )}
 
+        {/*
+          고른 낱개 물건들을 한 번에 옮기기.
+
+          ⚠ 고른 것은 **모두 이 장소 직속**(container_id = null)이다 — 출발지가 하나라
+            단건 이동과 똑같이 "지금 여기" 를 표시하고 그 자리로 스크롤할 수 있다.
+          ⚠ 이 화면(MovePicker)에는 "+ 여기에 박스 만들기" 가 있다. 박스를 새로 사서
+            정리하는 흐름이라면 그 한 번으로 박스가 생기고 고른 것이 통째로 들어간다.
+        */}
+        <MovePicker
+          visible={bulkMoving}
+          title={t.select.moveTitle(sel.picked.length)}
+          addBoxHint={t.select.addBoxHint(sel.picked.length)}
+          householdId={activeId}
+          currentContainerId={null}
+          currentLocationId={locationId}
+          busy={moveItems.isPending}
+          onClose={() => setBulkMoving(false)}
+          onPick={async (target: MoveTarget, label: string) => {
+            const picked = sel.picked;
+            try {
+              const res = await moveItems.mutateAsync({ ids: picked, target });
+              setBulkMoving(false);
+              sel.exit();
+              /**
+               * ⚠ 부분 성공을 성공이라고 하지 않는다. `.in()` 은 권한에 걸린 행을
+               *   조용히 건너뛰므로, 돌아온 개수가 요청 개수와 다르면 그대로 말한다.
+               * ⚠ 하나도 못 옮겼으면 Alert 이다 — 사라지는 알림으로 알리면 놓친다.
+               */
+              if (res.moved === 0) Alert.alert(t.select.movedNone, t.select.movedNoneHint);
+              else if (res.moved < res.total) toast(t.select.movedSome(res.moved, res.total, label));
+              else toast(t.select.moved(res.moved, label));
+            } catch (e) {
+              Alert.alert(t.select.moveFailed, e instanceof Error ? e.message : t.common.tryAgain);
+            }
+          }}
+        />
+
+        {/* ⚠ 막대는 떠 있는 것이라 스스로 자리를 못 만든다 — 마지막 줄이 가리지 않게 비운다 */}
+        {sel.active ? <View style={{ height: BAR_SPACE }} /> : null}
       </View>
     </Screen>
   );

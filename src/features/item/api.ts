@@ -174,6 +174,17 @@ export type ItemPatch = {
  */
 function invalidateItemViews(qc: ReturnType<typeof useQueryClient>, itemId: string) {
   void qc.invalidateQueries({ queryKey: itemKeys.detail(itemId) });
+  invalidateItemLists(qc);
+}
+
+/**
+ * 물건 **한 건과 무관한** 목록들만. 여러 건을 한 번에 옮길 때 쓴다.
+ *
+ * ⚠ 일괄 이동에서 물건마다 `invalidateItemViews` 를 부르면 안 된다. 목록 일곱 종류를
+ *   개수만큼 다시 부르게 된다 — 스무 개를 옮기면 140번이다. 낱개 상세만 개수만큼
+ *   비우고, 목록은 **한 번만** 비운다.
+ */
+function invalidateItemLists(qc: ReturnType<typeof useQueryClient>) {
   void qc.invalidateQueries({ queryKey: ['items'] });           // 박스 내용물 · 낱개 목록
   void qc.invalidateQueries({ queryKey: ['search'] });          // 검색 인덱스 (찾기 격자)
   void qc.invalidateQueries({ queryKey: ['locations'] });       // 장소별 물건 수
@@ -345,5 +356,72 @@ export function useMoveItem(itemId: string) {
     // 옮기면 **떠난 곳과 도착한 곳** 두 목록이 모두 바뀐다. 한쪽만 갱신하면
     // 원래 박스에 물건이 남아 있는 것처럼 보인다.
     onSuccess: () => invalidateItemViews(qc, itemId),
+  });
+}
+
+/** 목적지 — 박스에 넣거나(containerId), 박스 없이 장소에 두거나(locationId) */
+export type MoveTo = { containerId: string } | { locationId: string };
+
+/**
+ * 한 UPDATE 에 실을 id 개수.
+ *
+ * ⚠ PostgREST 는 `PATCH /items?id=in.(uuid,uuid,…)` 로 나간다 — id 가 본문이 아니라
+ *   **쿼리스트링**에 들어간다. UUID 는 36자라 200개면 7KB 를 넘어 URL 한도에 닿는다.
+ *   (정확한 한도는 재 보지 않았다. 100 은 여유 있게 잡은 값이다.)
+ */
+const MOVE_CHUNK = 100;
+
+/**
+ * 물건 **여러 개**를 한 번에 옮긴다 (2026-09-21 사용자 요청).
+ *
+ * 박스 없이 쌓아 둔 물건을 새로 산 박스로 몰아넣을 때 하나씩 상세를 열던 것을 없앤다.
+ *
+ * ⚠ 단건(`useMoveItem`)과 **같은 규칙**으로 보낸다: 박스로 넣을 때 `location_id` 를
+ *   같이 보내지 않는다 — 트리거 t20 이 박스의 장소로 맞춘다. 박스에서 빼내 장소에
+ *   둘 때만 장소를 함께 지정한다. 여기서 규칙이 갈리면 한쪽만 고쳐진다.
+ *
+ * ⚠ 서버 코드는 늘어나지 않는다. 행마다 기존 트리거가 그대로 돈다 —
+ *   t10(수정자 스탬프) · t20(장소 정렬) · t30(물건마다 'moved' 이벤트).
+ *   스무 개면 이력도 스무 건이고 그게 맞다. 박스 통째 이동(t46)이 이미 같은 판단이다.
+ *
+ * ⚠⚠ **부분 실패를 성공으로 넘기지 않는다.** `.in()` 은 RLS 에 걸린 행을 에러가 아니라
+ *   **0행**으로 건너뛴다. 돌아온 개수를 세어 요청 개수와 함께 돌려주고, 부르는 쪽이
+ *   "20개 중 18개" 로 말하게 한다. 조용히 다 된 척하면 안 옮겨진 두 개를 영영 모른다.
+ */
+export function useMoveItems() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, target }: { ids: string[]; target: MoveTo }) => {
+      const patch =
+        'containerId' in target
+          ? { container_id: target.containerId }              // 장소는 트리거가 맞춘다
+          : { container_id: null, location_id: target.locationId };
+
+      let moved = 0;
+      try {
+        for (let i = 0; i < ids.length; i += MOVE_CHUNK) {
+          const slice = ids.slice(i, i + MOVE_CHUNK);
+          const { data, error } = await supabase
+            .from('items')
+            .update(patch)
+            .in('id', slice)
+            .is('deleted_at', null)
+            .select('id');
+          if (error) throw error;
+          moved += (data ?? []).length;
+        }
+      } finally {
+        /**
+         * ⚠ `finally` 다. 중간 묶음에서 터져도 **그 앞은 이미 옮겨졌다.** 캐시를 안
+         *   맞추면 옮겨진 물건이 떠난 자리에 그대로 남아 보인다 — 실패했는데 화면은
+         *   두 곳에 있는 것처럼 말하는, 아무 일도 안 일어난 것보다 나쁜 상태다.
+         * ⚠ 무효화를 mutationFn 안에서 한다 — 화면을 떠나며 끝나는 경로에서 onSuccess
+         *   가 통째로 건너뛰어지는 것을 이 파일에서 이미 겪었다(useUpdateItem 주석).
+         */
+        for (const id of ids) void qc.invalidateQueries({ queryKey: itemKeys.detail(id) });
+        invalidateItemLists(qc);
+      }
+      return { moved, total: ids.length };
+    },
   });
 }

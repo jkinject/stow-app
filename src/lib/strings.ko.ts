@@ -355,6 +355,37 @@ export const KO = {
     openLocation: '이 장소 열기',
   },
 
+  /**
+   * 여러 개 고르기 → 한 번에 옮기기 (2026-09-21 사용자 요청).
+   *
+   * ⚠ 개수가 들어가는 문구는 **부분 성공**까지 말할 수 있어야 한다. `.in()` 은 권한에
+   *   걸린 행을 조용히 건너뛰므로 "다 됐습니다" 만 있으면 안 옮겨진 것을 영영 모른다.
+   */
+  select: {
+    enter: '선택',
+    /** 스크린리더가 읽는 이름 — 막대 왼쪽 ✕ */
+    exit: '선택 끝내기',
+    count: (n: number) => `${n}개 선택`,
+    all: '전체 선택',
+    none: '선택 해제',
+    move: '이동',
+    moveTitle: (n: number) => `${n}개를 어디로 옮길까요?`,
+    /** 조사는 받침을 따라간다 — `item.movedTo` 와 같은 규칙(withRo) */
+    moved: (n: number, path: string) => `${n}개를 ${withRo(path)} 옮겼습니다.`,
+    movedSome: (moved: number, total: number, path: string) =>
+      `${total}개 중 ${moved}개만 ${withRo(path)} 옮겼습니다.`,
+    /**
+     * 목적지 화면에서 박스를 새로 만들 때의 안내.
+     *
+     * ⚠ 단건용(`item.addBoxHint`)은 "이 물건이" 라 여러 개를 고른 화면에서 틀린 말이 된다.
+     *   실기기에서 3개를 고르고 박스를 만들다 발견했다(2026-09-21).
+     */
+    addBoxHint: (n: number) => `만들면 고른 ${n}개가 바로 그 박스로 들어갑니다.`,
+    movedNone: '아무것도 옮기지 못했습니다',
+    movedNoneHint: '권한이 없거나 이미 지워진 물건일 수 있습니다.',
+    moveFailed: '옮기지 못했습니다',
+  },
+
   add: {
     namePlaceholder: '물건 이름',
     register: '등록',

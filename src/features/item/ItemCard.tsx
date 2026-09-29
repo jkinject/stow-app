@@ -1,7 +1,7 @@
 import { Image, type ImageSource } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { IconImage } from '@/components/Icon';
+import { IconCheck, IconImage } from '@/components/Icon';
 import { useT } from '@/lib/i18n';
 import { useTheme, type, radius, overlay, space, tracking } from '@/lib/theme';
 
@@ -28,6 +28,8 @@ export function ItemCard({
   thumb,
   expiresOn,
   inUse,
+  selectable = false,
+  selected = false,
   onPress,
   onLongPress,
 }: {
@@ -62,6 +64,15 @@ export function ItemCard({
    * 격자를 훑다가 "저건 지금 제자리에 없구나" 가 읽혀야 다 쓰고 돌려놓는 것을 잊지 않는다.
    */
   inUse?: boolean;
+  /**
+   * 고르는 중 (2026-09-21 일괄 이동).
+   *
+   * ⚠ 이때는 **수량 배지를 숨긴다.** 카드 네 귀퉁이가 이미 다 차 있어서(왼위 분류 ·
+   *   오른위 수량 · 왼아래 기한 · 오른아래 사용중) 체크를 끼워 넣을 자리가 없다.
+   *   고르는 동안 수량은 판단에 쓰이지 않으므로 그 자리를 내준다.
+   */
+  selectable?: boolean;
+  selected?: boolean;
   onPress: () => void;
   /** 박스 카드의 이름·삭제 메뉴 */
   onLongPress?: () => void;
@@ -100,13 +111,15 @@ export function ItemCard({
            */
           <IconImage color={c.textFaint} size={28} />
         )}
-        {/* 수량 0 은 **살 것**을 뜻한다 — 배지로 눈에 띄게 하고 사진을 흐리게 해서
-            "여긴 지금 없다" 가 격자에서 바로 읽히게 한다 */}
+        {/* 수량 0 은 **살 것**을 뜻한다 — 사진을 짙게 덮어 "여긴 지금 없다" 가
+            격자에서 바로 읽히게 한다.
+            ⚠ 고르는 중에도 남긴다. 이건 물건에 대한 사실이라 선택과 무관하다. */}
         {quantity === 0 ? (
           <View style={st.outScrim}>
             <Text style={st.outText}>{t.shopping.outOfStock}</Text>
           </View>
-        ) : (quantity ?? 0) > 1 ? (
+        ) : null}
+        {!selectable && (quantity ?? 0) > 1 ? (
           <View style={st.qtyBadge}>
             <Text style={st.qtyText}>{t.common.qty(quantity ?? 0)}</Text>
           </View>
@@ -138,6 +151,16 @@ export function ItemCard({
             </Text>
           </View>
         ) : null}
+
+        {/* 고르는 중 — 수량 배지가 비운 오른쪽 위.
+            ⚠ 사진 위라 테마 색을 쓰지 않는다(다른 뱃지와 같은 이유). 흰 테두리 동그라미는
+              밝은 사진에서도 어두운 사진에서도 보인다.
+            ⚠ 재고 없음 가림막 **뒤에** 그린다 — 덮이면 무엇을 골랐는지 알 수 없다. */}
+        {selectable ? (
+          <View style={[st.check, selected ? { backgroundColor: SELECT_ON } : null]}>
+            {selected ? <IconCheck size={14} color={overlay.fg} /> : null}
+          </View>
+        ) : null}
       </View>
       <View style={st.body}>
         <Text style={[st.name, { color: c.text }]} numberOfLines={1}>
@@ -149,6 +172,18 @@ export function ItemCard({
           </Text>
         ) : null}
       </View>
+
+      {/*
+        선택 테두리. **절대 위치로 덧그린다** — 카드에 borderWidth 를 주면 선택될 때마다
+        안쪽 폭이 2px 씩 줄어 사진이 들썩인다. 카드가 overflow:'hidden' 이라 둥근 모서리에
+        맞춰 잘린다.
+        ⚠ **맨 마지막 자식**이다. 사진 다음에 두면 이름 줄이 그 위에 그려져 아래쪽
+          테두리가 끊겨 보인다(본문에 바탕색이 없어 지금은 비치지만, 나중에 바탕을
+          주는 순간 조용히 끊긴다). 누르는 것을 가리지 않게 pointerEvents 를 끈다.
+      */}
+      {selectable && selected ? (
+        <View pointerEvents="none" style={[st.ring, { borderColor: c.accent }]} />
+      ) : null}
     </Pressable>
   );
 }
@@ -170,6 +205,8 @@ const EXPIRY_SOON = '#D9821F';
 const EXPIRY_URGENT = '#D93A4A';
 /** 사용중 — 경고가 아니라 **상태**라 붉은 계열을 피한다. 흰 글씨 대비 5.4 */
 const IN_USE = '#2F62D6';
+/** 골라진 체크의 속. 라이트 accent 와 같은 값이지만 **사진 위**라 테마를 따르지 않는다 */
+const SELECT_ON = '#2547C4';
 
 const st = StyleSheet.create({
   /**
@@ -220,6 +257,29 @@ const st = StyleSheet.create({
     paddingVertical: space.xs,
   },
   useText: { color: overlay.fg, fontSize: type.tiny, fontWeight: '800' },
+  check: {
+    position: 'absolute',
+    right: 6,
+    top: 6,
+    // 동그라미는 기하학이라 간격 토큰을 쓰지 않는다 (theme.ts 의 radius 주석과 같은 이유)
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: overlay.hairline,
+    backgroundColor: overlay.scrim,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ring: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderWidth: 2,
+    borderRadius: radius.md,
+  },
   /**
    * 다 떨어진 물건은 격자에서 **멀리서도** 구분돼야 한다.
    * 구석의 작은 배지로는 훑어볼 때 놓친다 — 사진을 짙게 덮고 가운데 크게 쓴다.

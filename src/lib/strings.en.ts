@@ -260,6 +260,22 @@ export const EN: Dict = {
     openLocation: 'Open this place',
   },
 
+  select: {
+    enter: 'Select',
+    exit: 'Done selecting',
+    count: (n) => `${n} selected`,
+    all: 'Select all',
+    none: 'Clear',
+    move: 'Move',
+    moveTitle: (n) => `Move ${n} item${n === 1 ? '' : 's'} where?`,
+    moved: (n, path) => `Moved ${n} item${n === 1 ? '' : 's'} to ${path}.`,
+    movedSome: (moved, total, path) => `Moved only ${moved} of ${total} to ${path}.`,
+    addBoxHint: (n) => `All ${n} selected go straight into it.`,
+    movedNone: "Nothing was moved",
+    movedNoneHint: 'They may be gone already, or out of your reach.',
+    moveFailed: "Couldn't move",
+  },
+
   add: {
     namePlaceholder: 'Item name',
     register: 'Add',

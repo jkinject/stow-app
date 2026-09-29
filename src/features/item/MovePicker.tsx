@@ -32,6 +32,7 @@ export type MoveTarget = { containerId: string } | { locationId: string };
 export function MovePicker({
   visible,
   title,
+  addBoxHint,
   householdId,
   currentContainerId,
   currentLocationId,
@@ -42,6 +43,13 @@ export function MovePicker({
   visible: boolean;
   /** 등록 화면에서는 "어디에 둘까요?" 다 — 이동이 아니다 */
   title?: string;
+  /**
+   * 박스를 새로 만드는 칸 아래의 한 줄.
+   *
+   * ⚠ 기본값은 **한 건**을 옮기는 말이다("이 물건이"). 여러 개를 고른 화면에서 그대로
+   *   쓰면 틀린 말이 된다 — 부르는 쪽이 개수를 아는 유일한 자리라 여기서 받는다.
+   */
+  addBoxHint?: string;
   householdId: string | null;
   currentContainerId: string | null;
   currentLocationId: string;
@@ -420,7 +428,7 @@ export function MovePicker({
                               busy={createBox.isPending}
                             />
                             <Text style={[st.hint, { color: c.textFaint }]}>
-                              {t.item.addBoxHint}
+                              {addBoxHint ?? t.item.addBoxHint}
                             </Text>
                           </View>
                         ) : (
