@@ -13,11 +13,11 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 
-import { IconImage, IconPlus, IconX } from '@/components/Icon';
+import { IconImage, IconPlus, IconRotate, IconX } from '@/components/Icon';
 import { useT } from '@/lib/i18n';
 import { overlay, radius, space, type, useTheme } from '@/lib/theme';
 
-import { PHOTO_ASPECT } from './photo';
+import { isQuarterTurn, PHOTO_ASPECT, type Rotation } from './photo';
 import { IMAGE_CACHE_POLICY } from './thumbs';
 
 /**
@@ -58,6 +58,13 @@ export type GallerySlide = {
   source?: ImageSource;
   /** 아직 서버에 없는 사진. 상세에서 큐의 상태를 그대로 넘긴다 */
   status?: 'uploading' | 'failed';
+  /**
+   * 아직 **파일에 반영되지 않은** 회전 (2026-09-22 등록 화면).
+   *
+   * 실제 회전은 저장할 때 `preparePhoto` 가 한 번에 하고, 그때까지는 여기 값으로
+   * 화면만 돌려 보여 준다 — 누를 때마다 다시 구우면 느리고 화질도 깎인다.
+   */
+  deg?: Rotation;
 };
 
 export function PhotoGallery({
@@ -69,6 +76,7 @@ export function PhotoGallery({
   canAdd = true,
   onRetry,
   onDropSlide,
+  onRotateSlide,
   onMoveSlide,
   onDragStateChange,
   showCover = true,
@@ -86,6 +94,13 @@ export function PhotoGallery({
   onRetry?: (key: string) => void;
   /** 넘기면 큰 사진 구석에 "빼기" 가 뜬다 — 등록 화면(아직 저장 전)에서 쓴다 */
   onDropSlide?: (i: number) => void;
+  /**
+   * 넘기면 "회전" 이 뜬다 — 누를 때마다 시계 방향 90도 (2026-09-22 사용자 요청).
+   *
+   * 폰을 눕혀 찍으면 방향이 틀어지는데, 지금까지는 **다시 찍는 것 말고 길이 없었다.**
+   * 각도는 부르는 쪽이 들고 있다가 저장할 때 파일에 반영한다 — `GallerySlide.deg` 참고.
+   */
+  onRotateSlide?: (i: number) => void;
   /** 넘기면 썸네일을 길게 눌러 끌어 옮길 수 있다. `to` 는 새 자리 (위 주석) */
   onMoveSlide?: (from: number, to: number) => void;
   /**
@@ -226,16 +241,10 @@ export function PhotoGallery({
                   if (s.status === 'uploading') return;
                   onPressSlide?.(i);
                 }}
-                style={{ width, height }}
+                style={[st.slide, { width, height }]}
               >
                 {s.source ? (
-                  <Image
-                    source={s.source}
-                    style={st.fill}
-                    contentFit="cover"
-                    transition={150}
-                    cachePolicy={IMAGE_CACHE_POLICY}
-                  />
+                  <Turned source={s.source} deg={s.deg} w={width} h={height} transition={150} />
                 ) : (
                   <View style={[st.fill, st.center]}>
                     <IconImage color={c.textFaint} size={28} />
@@ -255,6 +264,18 @@ export function PhotoGallery({
                       </>
                     )}
                   </View>
+                ) : null}
+                {onRotateSlide && !s.status ? (
+                  <Pressable
+                    onPress={() => onRotateSlide(i)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={t.photo.rotate}
+                    style={({ pressed }) => [st.rotateChip, pressed && { opacity: 0.6 }]}
+                  >
+                    <IconRotate size={14} color={overlay.fg} />
+                    <Text style={st.chipText}>{t.photo.rotate}</Text>
+                  </Pressable>
                 ) : null}
                 {onDropSlide ? (
                   <Pressable
@@ -342,12 +363,7 @@ export function PhotoGallery({
                 ]}
               >
                 {s.source ? (
-                  <Image
-                    source={s.source}
-                    style={st.fill}
-                    contentFit="cover"
-                    cachePolicy={IMAGE_CACHE_POLICY}
-                  />
+                  <Turned source={s.source} deg={s.deg} w={THUMB_W} h={THUMB_W / PHOTO_ASPECT} />
                 ) : null}
                 {s.status === 'uploading' ? (
                   <View style={[st.fill, st.center, st.scrim]}>
@@ -394,6 +410,45 @@ const RETENTION = { top: 60, bottom: 60, left: 60, right: 60 };
 /** 썸네일 한 칸의 간격 — 끌 때 "몇 번째 칸 위인가" 를 이걸로 나눈다. strip 의 gap 과 같아야 한다 */
 const SLOT = THUMB_W + space.sm;
 
+/**
+ * 사진을 **화면에서만** 돌려 그린다 — 파일은 저장할 때 한 번에 돌린다 (2026-09-22).
+ *
+ * ⚠ 90·270 도면 이미지의 **레이아웃 칸을 뒤바꿔** 놓고 돌린다. 변환(transform)은 레이아웃을
+ *   바꾸지 않으므로, 칸을 그대로 둔 채 돌리면 긴 쪽이 칸 밖으로 삐져나가 잘린 것처럼 보인다.
+ *   (h × w) 칸을 90도 돌리면 화면에서 정확히 (w × h) 를 덮는다 — 그래서 뒤바꾼다.
+ * ⚠ 감싸는 칸에 `overflow: 'hidden'` 과 가운데 정렬이 있어야 한다(st.slide · st.thumb).
+ *   없으면 돌린 사진이 이웃 칸을 침범한다.
+ * ⚠ 이렇게 그린 모습이 **저장 뒤 카드에서 보일 모습과 같다.** 돌린 사진을 3:4 칸에
+ *   cover 로 넣는 것과 같은 계산이라, 미리보기와 결과가 어긋나지 않는다.
+ */
+function Turned({
+  source,
+  deg = 0,
+  w,
+  h,
+  transition,
+}: {
+  source: ImageSource;
+  deg?: Rotation;
+  w: number;
+  h: number;
+  transition?: number;
+}) {
+  const turned = isQuarterTurn(deg);
+  return (
+    <Image
+      source={source}
+      style={[
+        turned ? { width: h, height: w } : { width: w, height: h },
+        deg !== 0 ? { transform: [{ rotate: `${deg}deg` }] } : null,
+      ]}
+      contentFit="cover"
+      transition={transition}
+      cachePolicy={IMAGE_CACHE_POLICY}
+    />
+  );
+}
+
 const st = StyleSheet.create({
   root: { gap: space.sm },
   pagerBox: { width: '100%', borderRadius: radius.md, overflow: 'hidden' },
@@ -415,6 +470,20 @@ const st = StyleSheet.create({
   badgeRight: { right: space.sm },
   chipText: { color: overlay.fg, fontSize: type.tiny, fontWeight: '700' },
   counter: { fontVariant: ['tabular-nums'] },
+  /** 돌린 사진이 칸 밖으로 나가지 않게 — `Turned` 주석 참고 */
+  slide: { overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  rotateChip: {
+    position: 'absolute',
+    left: space.sm,
+    bottom: space.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
+    backgroundColor: overlay.chip,
+    borderRadius: radius.full,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+  },
   dropChip: {
     position: 'absolute',
     right: space.sm,

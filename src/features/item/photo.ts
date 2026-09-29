@@ -62,7 +62,22 @@ export type PreparedPhoto = {
  *   장변이 320 이 아니라 427 이 된다. 픽셀이 1.8배가 되어 §4.9 의 용량 예산이 어긋난다.
  *   방향을 보고 긴 쪽에 값을 준다.
  */
-export async function preparePhoto(sourceUri: string): Promise<PreparedPhoto> {
+/**
+ * 사진을 돌린 각도. 시계 방향 0·90·180·270 만 쓴다.
+ *
+ * ⚠ 임의 각도를 허용하지 않는다. 폰을 눕혀 찍어 방향이 90도 틀어지는 것이 이 기능의
+ *   이유이고, 그 밖의 각도는 빈 모서리를 어떻게 채울지부터 정해야 한다.
+ */
+export type Rotation = 0 | 90 | 180 | 270;
+
+export function nextRotation(deg: Rotation): Rotation {
+  return (((deg + 90) % 360) as Rotation);
+}
+
+/** 90·270 이면 가로세로가 뒤바뀐다 — 크기 계산이 이걸 놓치면 장변 예산이 어긋난다 */
+export const isQuarterTurn = (deg: Rotation) => deg === 90 || deg === 270;
+
+export async function preparePhoto(sourceUri: string, deg: Rotation = 0): Promise<PreparedPhoto> {
   // ⚠ 카메라가 보고한 width/height 로 방향을 판정하면 안 된다. 센서는 가로 기준으로
   //   보고하는데 저장되는 이미지는 회전이 반영된 세로다. 그 값을 믿고
   //   resize({ width: 1280 }) 하면 결과가 1280×1706 이 되어 장변이 1706 이 된다 —
@@ -70,9 +85,18 @@ export async function preparePhoto(sourceUri: string): Promise<PreparedPhoto> {
   //   한 번 렌더해 **실제 치수**를 보고 긴 쪽에 값을 준다.
   const probe = await ImageManipulator.ImageManipulator.manipulate(sourceUri).renderAsync();
 
+  /**
+   * ⚠ 돌린 **뒤의** 치수로 계산한다. 90·270 이면 가로세로가 뒤바뀌는데, 돌리기 전
+   *   치수로 장변을 정하면 짧은 쪽에 값을 주게 되어 결과가 의도보다 커진다.
+   *   (세로 기준을 잘못 잡아 33% 커졌던 위 함정과 같은 종류다.)
+   */
+  const turned = isQuarterTurn(deg);
+  const w = turned ? probe.height : probe.width;
+  const h = turned ? probe.width : probe.height;
+
   const [thumb, full] = await Promise.all([
-    fitResize(sourceUri, probe.width, probe.height, SIZES.thumb.long, SIZES.thumb.quality),
-    fitResize(sourceUri, probe.width, probe.height, SIZES.full.long, SIZES.full.quality),
+    fitResize(sourceUri, w, h, SIZES.thumb.long, SIZES.thumb.quality, deg),
+    fitResize(sourceUri, w, h, SIZES.full.long, SIZES.full.quality, deg),
   ]);
   return { thumbUri: thumb, fullUri: full };
 }
@@ -90,12 +114,21 @@ export async function preparePhoto(sourceUri: string): Promise<PreparedPhoto> {
  */
 async function fitResize(
   uri: string,
+  /** **돌린 뒤의** 치수다 — 부르는 쪽에서 이미 뒤바꿔서 넘긴다 */
   srcW: number,
   srcH: number,
   long: number,
   quality: number,
+  deg: Rotation,
 ): Promise<string> {
   const ctx = ImageManipulator.ImageManipulator.manipulate(uri);
+  /**
+   * ⚠ **돌리기를 같은 사슬 안에서** 한다 (2026-09-22 사진 회전).
+   *   미리 돌려 파일로 저장한 뒤 그 파일을 다시 넣으면 JPEG 를 한 번 더 굽는 셈이라,
+   *   돌릴 때마다 화질이 깎인다. 여기서는 디코딩 한 번에 회전·축소가 함께 끝난다.
+   * ⚠ 돌리기가 **축소보다 먼저**여야 한다. 아래 resize 가 받는 값은 이미 돌린 뒤 기준이다.
+   */
+  if (deg !== 0) ctx.rotate(deg);
   // 원본이 이미 작으면 키우지 않는다 — 없는 화질이 생기지는 않고 용량만 는다
   const scale = Math.min(1, long / Math.max(srcW, srcH));
   ctx.resize({ width: Math.round(srcW * scale), height: Math.round(srcH * scale) });

@@ -20,7 +20,13 @@ import { useHousehold } from '@/features/household/context';
 import { CameraCapture } from '@/features/item/CameraCapture';
 import { MovePicker, type MoveTarget } from '@/features/item/MovePicker';
 import { abandonCycle, markFirstInput } from '@/features/item/metrics';
-import { MAX_ITEM_PHOTOS, preparePhoto, type PreparedPhoto } from '@/features/item/photo';
+import {
+  MAX_ITEM_PHOTOS,
+  nextRotation,
+  preparePhoto,
+  type PreparedPhoto,
+  type Rotation,
+} from '@/features/item/photo';
 import { PhotoGallery } from '@/features/item/PhotoGallery';
 import { QUEUE_LIMIT, useRegisterQueue, type DraftItem } from '@/features/item/queue';
 import { supabase } from '@/lib/supabase';
@@ -143,7 +149,10 @@ export default function AddItem() {
       onPhoto={(uri) => {
         const first = shots.length === 0;
         // 처리를 시작만 하고 기다리지 않는다. 실패는 등록 시점에 드러난다.
-        setShots((prev) => [...prev, { key: Crypto.randomUUID(), uri, prepared: preparePhoto(uri) }]);
+        setShots((prev) => [
+          ...prev,
+          { key: Crypto.randomUUID(), uri, deg: 0, prepared: preparePhoto(uri) },
+        ]);
         if (first) setStep(2); // 첫 장은 찍자마자 폼으로 (P1). 그 뒤는 "완료" 로 돌아온다
       }}
       onSkip={shots.length === 0 ? () => setStep(2) : undefined}
@@ -159,6 +168,26 @@ export default function AddItem() {
       queue={queue}
       onAddMore={() => setStep(1)}
       onDropShot={(i) => setShots((prev) => prev.filter((_, j) => j !== i))}
+      /**
+       * 회전 (2026-09-22 사용자 요청).
+       *
+       * ⚠ 화면에 보이는 각도(`deg`)를 바꾸는 **동시에** 처리도 다시 건다. 각도만 바꾸고
+       *   저장 때 처리하면, 그때서야 이미지 두 장을 굽느라 등록 버튼이 멈춘다 —
+       *   "셔터를 눌러도 곧바로 안 넘어간다" 로 이미 한 번 겪은 지연이 그대로 돌아온다.
+       *   회전은 자주 누르는 동작이 아니라 다시 거는 비용이 싸다.
+       * ⚠ 직전 처리는 버린다. 결과를 안 쓰므로 그대로 두면 되지만, 실패하면 잡히지 않은
+       *   거부가 되므로 삼켜 둔다.
+       */
+      onRotateShot={(i) =>
+        setShots((prev) =>
+          prev.map((s, j) => {
+            if (j !== i) return s;
+            s.prepared.catch(() => {});
+            const deg = nextRotation(s.deg);
+            return { ...s, deg, prepared: preparePhoto(s.uri, deg) };
+          }),
+        )
+      }
       onMoveShot={(from, to) =>
         setShots((prev) => {
           const next = prev.slice();
@@ -184,8 +213,13 @@ export default function AddItem() {
   );
 }
 
-/** 찍은 한 장 — 원본 uri 와, 배경에서 도는 처리 결과 */
-type Shot = { key: string; uri: string; prepared: Promise<PreparedPhoto> };
+/**
+ * 찍은 한 장 — 원본 uri 와, 배경에서 도는 처리 결과.
+ *
+ * `deg` 는 사용자가 "회전" 을 누른 횟수다. 화면은 이 값으로 **돌려 그리기만** 하고,
+ * 파일에 반영되는 것은 `prepared` 안이다 — 돌릴 때마다 처리를 다시 건다.
+ */
+type Shot = { key: string; uri: string; deg: Rotation; prepared: Promise<PreparedPhoto> };
 
 function pathOf(d: AddContext, t: ReturnType<typeof useT>): string {
   return d.containerName ? `${d.locationName} › ${d.containerName}` : `${d.locationName}${t.add.noBox}`;
@@ -203,6 +237,7 @@ function FormStep({
   queue,
   onAddMore,
   onDropShot,
+  onRotateShot,
   onMoveShot,
   onPickDest,
   onDone,
@@ -217,6 +252,7 @@ function FormStep({
   queue: ReturnType<typeof useRegisterQueue>;
   onAddMore: () => void;
   onDropShot: (i: number) => void;
+  onRotateShot: (i: number) => void;
   onMoveShot: (from: number, to: number) => void;
   onPickDest: (d: AddContext) => void;
   onDone: (itemId: string, name: string) => void;
@@ -334,11 +370,12 @@ function FormStep({
           아직 저장 전이라 로컬 원본을 그대로 보여 준다.
         */}
         <PhotoGallery
-          slides={shots.map((s) => ({ key: s.key, source: { uri: s.uri } }))}
+          slides={shots.map((s) => ({ key: s.key, source: { uri: s.uri }, deg: s.deg }))}
           index={photoIndex}
           onIndexChange={setPhotoIndex}
           onAdd={onAddMore}
           canAdd={shots.length < MAX_ITEM_PHOTOS}
+          onRotateSlide={onRotateShot}
           onDropSlide={(i) => {
             setPhotoIndex((cur) => Math.max(0, Math.min(cur, shots.length - 2)));
             onDropShot(i);
