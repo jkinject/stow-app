@@ -1,11 +1,18 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
+import { Directory, File, Paths } from 'expo-file-system';
 
-import { supabase } from '@/lib/supabase';
+import { photoPaths, supabase } from '@/lib/supabase';
 
 import { itemKeys, type ItemDetail } from './api';
 
-import { deletePhotoObjects, uploadEntityPhoto, type PreparedPhoto } from './photo';
+import {
+  deletePhotoObjects,
+  preparePhoto,
+  uploadEntityPhoto,
+  type PreparedPhoto,
+  type Rotation,
+} from './photo';
 import { attachPhotosLater } from './photoQueue';
 
 /**
@@ -203,6 +210,90 @@ export function useSetItemCover(itemId: string) {
         .select('id');
       if (error) throw error;
       if ((data ?? []).length === 0) throw new Error('사진을 찾을 수 없습니다.');
+    },
+    onSuccess: () => invalidatePhotoViews(qc, 'items', itemId),
+  });
+}
+
+/**
+ * 이미 등록된 사진을 **돌린다** (2026-09-22 사용자 요청).
+ *
+ * 등록할 때는 저장 전이라 각도만 들고 있다가 한 번에 구우면 됐다. 이미 올라간 사진은
+ * 그럴 수 없어서 왕복이 길다 — 내려받고 · 돌려 굽고 · 다시 올리고 · 행을 고친다.
+ *
+ * ⚠⚠ **새 경로로 올린다.** 같은 경로에 덮어쓰면 파일은 바뀌는데 화면은 안 바뀐다 —
+ *   expo-image 의 디스크 캐시 키가 **경로**이기 때문이다(photo.ts 의 uploadEntityPhoto
+ *   주석, 박스 사진이 같은 이유로 매번 새 uuid 를 쓴다). 사진을 돌렸는데 그대로면
+ *   "안 되네" 하고 여러 번 누르게 되고, 그때마다 왕복이 한 번씩 더 난다.
+ *
+ * ⚠ 그래서 파일 이름이 더 이상 행 id 와 같지 않다. 괜찮다 — 스토리지 청소(storage_gc)와
+ *   고아 점검(orphan_report)은 **행에 적힌 경로 값**으로 대조하지 파일명을 파싱하지 않는다.
+ *   (그 규칙이 깨지면 살아 있는 사진이 고아로 잡힌다. 확인하고 들어왔다.)
+ *
+ * ⚠ 대표 사진을 돌려도 `items.photo_path` 는 **손대지 않는다.** 서버 트리거 t61 이
+ *   insert·update·delete 모두에 걸려 있어 첫 장을 다시 복사해 준다. 여기서 같이 쓰면
+ *   트리거와 싸운다.
+ *
+ * ⚠ 옛 파일 치우기가 실패해도 데이터는 멀쩡하다. 그리고 이번에는 조용히 새지 않는다 —
+ *   마이그레이션 20260922000100 의 t64 가 경로가 바뀌는 그 트랜잭션에서 옛 경로를
+ *   수거 큐에 넣는다. 여기서 지우는 건 빠른 길일 뿐이다.
+ *
+ * ⚠ 돌릴 때마다 JPEG 를 다시 굽는다. 원본 카메라 파일은 이미 없고 우리가 가진 것은
+ *   1280 짜리 표시용 사진뿐이라 피할 수 없다. 한 번 돌릴 때 한 세대씩 깎이므로,
+ *   네 번 눌러 제자리로 돌리는 것은 **공짜가 아니다.**
+ */
+export function useRotateItemPhoto(itemId: string, householdId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ photo, deg }: { photo: ItemPhotoRef; deg: Rotation }) => {
+      if (!householdId) throw new Error('가구를 찾을 수 없습니다.');
+      if (deg === 0) return;
+
+      const { data: signed, error: signErr } = await supabase.storage
+        .from(photoPaths.bucket)
+        .createSignedUrl(photo.photo_path, 600);
+      if (signErr) throw signErr;
+      if (!signed?.signedUrl) throw new Error('사진을 찾을 수 없습니다.');
+
+      // 캐시에 받는다 — 성공하든 실패하든 아래에서 지운다
+      const dir = new Directory(Paths.cache, 'rotate');
+      if (!dir.exists) dir.create({ intermediates: true, idempotent: true });
+      const local = await File.downloadFileAsync(signed.signedUrl, dir);
+
+      try {
+        const prepared = await preparePhoto(local.uri, deg);
+        const version = Crypto.randomUUID();
+        const { thumbPath, photoPath } = await uploadEntityPhoto(
+          householdId,
+          itemId,
+          version,
+          prepared,
+        );
+
+        const { data, error } = await supabase
+          .from('item_photos')
+          .update({ photo_path: photoPath, thumb_path: thumbPath })
+          .eq('id', photo.id)
+          .select('id');
+        /**
+         * ⚠ 행이 새 파일을 가리키지 못했으면 방금 올린 두 장을 **여기서** 치운다.
+         *   경로를 아는 것은 지금 이 호출뿐이라, 그냥 던지면 아무도 못 찾는 파일이 남는다
+         *   (useSetPhoto 와 같은 이유). RLS 거부는 오류가 아니라 0행이다.
+         */
+        if (error || (data ?? []).length === 0) {
+          await deletePhotoObjects([photoPath, thumbPath]).catch(() => {});
+          throw error ?? new Error('사진을 찾을 수 없습니다.');
+        }
+
+        // 행이 새 경로를 가리킨 뒤에 옛 파일을 치운다 — 반대면 실패 시 깨진 칸이 남는다
+        await deletePhotoObjects([photo.photo_path, photo.thumb_path]);
+      } finally {
+        try {
+          if (local.exists) local.delete();
+        } catch {
+          // 캐시에 남는 것뿐이라 해가 없다. 시스템이 알아서 비운다.
+        }
+      }
     },
     onSuccess: () => invalidatePhotoViews(qc, 'items', itemId),
   });

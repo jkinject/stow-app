@@ -13,6 +13,7 @@
 --  (10) 30일 지난 물건을 하드 삭제할 때 **모든 장**의 경로가 수거 큐에 들어간다
 --  (11) 탈퇴 미리보기에 모든 장의 경로가 나온다
 --  (12) 기존 한 장짜리 물건은 마이그레이션이 item_photos 로 옮겨 놓았다 (시드로 확인)
+--  (13) 사진 **경로가 바뀌면**(회전) 옛 파일이 수거 큐에 들어가고 대표가 따라온다 (2026-09-22)
 
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -148,6 +149,42 @@ select is(
     where i.photo_path is not null
       and not exists (select 1 from item_photos p where p.item_id = i.id)),
   0, '(12) 대표 사진이 있는데 item_photos 행이 없는 물건은 없다');
+
+-- ─────────────────────────────────────────────────────────────
+-- (13) 사진 회전 — 경로가 바뀌는 경우 (2026-09-22)
+--
+-- 회전은 **새 경로로 올리고 행을 갱신한다**(같은 경로에 덮어쓰면 앱의 디스크 캐시가
+-- 옛 사진을 계속 보여준다). 그러면 옛 파일 두 개가 참조를 잃는데, 그때까지 item_photos
+-- 에는 **삭제**에 걸린 t62 뿐이라 경로 변경은 안전망 밖이었다 → t64 를 더했다.
+-- ─────────────────────────────────────────────────────────────
+reset role;
+reset request.jwt.claims;
+
+insert into items (id, household_id, location_id, name, created_by, updated_by)
+  values ('f0000004-0000-0000-0000-0000000000cc', :'ha', :'la', '회전 시험', :'ua', :'ua');
+insert into item_photos (id, household_id, item_id, photo_path, thumb_path, sort_order, created_by)
+  values ('f0000005-0000-0000-0000-0000000000cc', :'ha', 'f0000004-0000-0000-0000-0000000000cc',
+          'ha/cc/old.jpg', 'ha/cc/old_t.jpg', 0, :'ua');
+
+select is((select photo_path from items where id = 'f0000004-0000-0000-0000-0000000000cc'),
+  'ha/cc/old.jpg', '(13) 넣자마자 대표가 맞춰졌다');
+
+-- 회전이 하는 일과 같다: 두 경로를 새 것으로 갈아끼운다
+update item_photos
+   set photo_path = 'ha/cc/new.jpg', thumb_path = 'ha/cc/new_t.jpg'
+ where id = 'f0000005-0000-0000-0000-0000000000cc';
+
+select is((select photo_path from items where id = 'f0000004-0000-0000-0000-0000000000cc'),
+  'ha/cc/new.jpg', '(13) 대표 사진 경로가 바뀌면 items 도 따라온다 (t61)');
+select is((select count(*)::int from storage_gc where path in ('ha/cc/old.jpg', 'ha/cc/old_t.jpg')),
+  2, '(13) 옛 파일 두 개가 수거 큐에 들어갔다 (t64)');
+select is((select count(*)::int from storage_gc where path in ('ha/cc/new.jpg', 'ha/cc/new_t.jpg')),
+  0, '(13) 살아 있는 새 파일은 큐에 넣지 않는다');
+
+-- ⚠ 순서만 바꾸는 일은 자주 일어난다. 거기까지 큐에 넣으면 살아 있는 파일을 지운다.
+update item_photos set sort_order = 5 where id = 'f0000005-0000-0000-0000-0000000000cc';
+select is((select count(*)::int from storage_gc where path like 'ha/cc/%'), 2,
+  '(13) 순서만 바꾸면 큐는 그대로다');
 
 select * from finish();
 rollback;

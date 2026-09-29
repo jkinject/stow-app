@@ -37,12 +37,18 @@ import {
 import { MovePicker, type MoveTarget } from '@/features/item/MovePicker';
 import { PhotoViewer } from '@/components/PhotoViewer';
 import { CameraCapture } from '@/features/item/CameraCapture';
-import { MAX_ITEM_PHOTOS, preparePhoto } from '@/features/item/photo';
+import { MAX_ITEM_PHOTOS, nextRotation, preparePhoto, type Rotation } from '@/features/item/photo';
 import { PhotoGallery, type GallerySlide } from '@/features/item/PhotoGallery';
 import { ExpirySheet } from '@/features/item/ExpirySheet';
 import { daysUntil, expiryTone } from '@/features/item/expiry';
 import { nudgeReminderPermission } from '@/features/item/reminders';
-import { useAddItemPhotos, useRemoveItemPhoto, useReorderItemPhotos, useSetItemCover } from '@/features/item/photoApi';
+import {
+  useAddItemPhotos,
+  useRemoveItemPhoto,
+  useReorderItemPhotos,
+  useRotateItemPhoto,
+  useSetItemCover,
+} from '@/features/item/photoApi';
 import { IMAGE_CACHE_POLICY, useThumbUrls } from '@/features/item/thumbs';
 import {
   dropPendingPhoto,
@@ -98,6 +104,7 @@ export default function ItemDetailScreen() {
   const removeItemPhoto = useRemoveItemPhoto(itemId);
   const setCover = useSetItemCover(itemId);
   const reorder = useReorderItemPhotos(itemId);
+  const rotatePhoto = useRotateItemPhoto(itemId, activeId);
   /**
    * 등록할 때 찍은 사진이 아직 안 올라갔는가 (2026-09-06).
    *
@@ -109,6 +116,15 @@ export default function ItemDetailScreen() {
   /** 셔터를 누른 뒤 `preparePhoto` 가 도는 장수 — 그동안도 자리를 보여 준다 */
   const [preparing, setPreparing] = useState(0);
   const [photoIndex, setPhotoIndex] = useState(0);
+  /**
+   * 아직 서버에 반영되지 않은 회전 — 사진 id → 각도 (2026-09-22).
+   *
+   * 저장된 사진을 돌리는 일은 내려받기·굽기·올리기라 몇 초 걸린다. 그동안 아무 변화가
+   * 없으면 **안 눌린 줄 알고 또 누른다** — 누를 때마다 왕복이 한 번씩 더 난다.
+   * 그래서 화면은 먼저 돌려 두고, 서버가 끝나면 이 표에서 뺀다(그때는 파일 자체가
+   * 돌아가 있으므로 더 돌리면 두 번 돌아간다).
+   */
+  const [pendingTurn, setPendingTurn] = useState<Record<string, Rotation>>({});
   /** 썸네일을 끄는 동안 — 화면 스크롤을 잠근다 (PhotoGallery.onDragStateChange 주석) */
   const [draggingPhoto, setDraggingPhoto] = useState(false);
 
@@ -172,6 +188,7 @@ export default function ItemDetailScreen() {
       key: p.id,
       // 큰 사진이 아직 서명 전이면 썸네일로 먼저 그린다 — 빈 칸보다 낫다
       source: fullUrls.data?.[p.photo_path] ?? thumbs.get(p.thumb_path),
+      deg: pendingTurn[p.id],
     })),
     ...waiting.map((j) => ({ key: j.photoId, source: { uri: j.thumbUri }, status: j.state })),
     ...Array.from({ length: preparing }, (_, i) => ({
@@ -188,6 +205,40 @@ export default function ItemDetailScreen() {
   const viewerSources = photos
     .map((p) => fullUrls.data?.[p.photo_path] ?? thumbs.get(p.thumb_path))
     .filter((x): x is NonNullable<typeof x> => !!x);
+
+  /**
+   * 저장된 사진을 시계 방향 90도 돌린다 (2026-09-22 사용자 요청).
+   *
+   * ⚠ 화면을 **먼저** 돌리고 서버를 부른다. 왕복이 몇 초라 그동안 아무 변화가 없으면
+   *   또 누르게 되고, 누른 만큼 왕복이 난다.
+   * ⚠ 이미 돌리는 중인 장은 무시한다. 연타하면 같은 원본에서 각자 굽고 각자 올려
+   *   **마지막에 끝난 것만 남는다** — 두 번 돌린 결과가 한 번으로 보인다.
+   * ⚠ 끝나면 `pendingTurn` 에서 뺀다. 그 시점엔 파일 자체가 돌아가 있어서, 그대로 두면
+   *   화면이 한 번 더 돌아간다.
+   * ⚠ 실패해도 뺀다 — 화면만 돌아간 채 서버는 그대로인 거짓말을 남기지 않는다.
+   */
+  function onRotatePhoto(i: number) {
+    const p = photos[i];
+    if (!p || pendingTurn[p.id] !== undefined) return;
+    const deg = nextRotation(0);
+    setPendingTurn((prev) => ({ ...prev, [p.id]: deg }));
+    void (async () => {
+      try {
+        await rotatePhoto.mutateAsync({
+          photo: { id: p.id, photo_path: p.photo_path, thumb_path: p.thumb_path },
+          deg,
+        });
+      } catch (e) {
+        Alert.alert(t.photo.rotateFailed, e instanceof Error ? e.message : t.common.tryAgain);
+      } finally {
+        setPendingTurn((prev) => {
+          const next = { ...prev };
+          delete next[p.id];
+          return next;
+        });
+      }
+    })();
+  }
 
   function openCamera() {
     if (!canAdd) {
@@ -357,6 +408,9 @@ export default function ItemDetailScreen() {
               setPhotoIndex(i);
               setViewer(true);
             }}
+            /* ⚠ 서버에 올라간 장만 돌릴 수 있다. 큐에 있는 장은 아직 경로가 없어
+               내려받을 것이 없다 — 그 장들은 `photos` 뒤에 붙으므로 길이로 가른다. */
+            onRotateSlide={(i) => i < photos.length && onRotatePhoto(i)}
             onAdd={openCamera}
             canAdd={canAdd}
             onRetry={(key) => retryPendingPhoto(key)}
